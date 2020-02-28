@@ -1,0 +1,16 @@
+.page-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+.sidenav-trigger .material-icons {
+    padding: 15px 0 0 15px;
+    transform: scale(1.5);
+}
+
+.squid {
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 50px;
+}
