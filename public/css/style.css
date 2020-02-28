@@ -5,12 +5,12 @@
 }
 
 .sidenav-trigger .material-icons {
-    padding: 15px 0 0 15px;
-    transform: scale(1.5);
+    padding: 10px 0 0 15px;
+    color: #F18996;
 }
 
 .squid {
-    width: 100%;
+    width: 97%;
     margin-top: 20px;
     margin-bottom: 50px;
 }
