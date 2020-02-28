@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "compile": "npm run fix && tsc --extendedDiagnostics",
-    "watch": "concurrently \"tsc --watch\" \"webpack-dev-server --config=webpack.dev.server.js\"",
-    "start": "webpack-dev-server",
+    "start": "concurrently \"tsc --watch\" \"webpack-dev-server --config=webpack.dev.server.js\"",
     "fix": "eslint --fix .\\src\\*"
   },
   "keywords": [
