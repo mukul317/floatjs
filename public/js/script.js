@@ -5,10 +5,8 @@ const scrollInView = id => {
     try {
         const element = document.getElementById(id);
         if (element) {
-            const scrollTimer = setTimeout(() => {
-                element.scrollIntoView({ behavior: "smooth", inline: "nearest" });
-                clearTimeout(scrollTimer);
-            }, 500);
+            element.scrollIntoView({ behavior: "smooth", inline: "nearest" });
+            clearTimeout(scrollTimer);
         }
     } catch (err) {
         console.warn(err.message);
