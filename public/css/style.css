@@ -3,14 +3,38 @@
     bottom: 0;
     width: 100%;
 }
-
-.sidenav-trigger .material-icons {
-    padding: 10px 0 0 15px;
-    color: #F18996;
+.sidenav-trigger {
+    position: fixed;
+    left: 15px;
+    top: 10px;
 }
 
-.squid {
-    width: 97%;
+h1 {
+    margin: 4.8rem 0 1.68rem 0;
+    font-weight: bold;
+}
+
+blockquote {
+    font-size: 1.4rem;
+}
+
+.sidenav-trigger .material-icons {
+    color: #EE6E73;
+}
+
+#slide-out .squid {
+    width: 80%;
+    display: block;
+    margin: auto;
     margin-top: 20px;
     margin-bottom: 50px;
+}
+
+.wallsquid {
+    width: 100%;
+}
+
+.section {
+    height: auto;
+    min-height: 90vh;
 }

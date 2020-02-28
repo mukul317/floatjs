@@ -23,8 +23,13 @@ module.exports = {
 	},
 	devServer: {
 		contentBase: path.join(__dirname, "public"),
-		compress: false,
+		compress: true,
 		port: 8000,
-		open: true
+		open: true,
+		before: function (app, server, compiler) {
+			app.get('/#about', function (req, res) {
+				res.json({ custom: 'response' });
+			});
+		}
 	}
 };
