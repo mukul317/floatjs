@@ -1,7 +1,7 @@
 {
-  "name": "typescriptsandbox",
+  "name": "floatjs",
   "version": "0.0.1",
-  "description": "Extensible web plugins",
+  "description": "Extensible typescript plugins that float on your framework",
   "main": "index.js",
   "scripts": {
     "compile": "npm run fix && tsc --extendedDiagnostics",
