@@ -1,0 +1,4 @@
+/dist
+.vscode/*
+.eslintcache
+node_modules/
