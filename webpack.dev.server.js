@@ -1,4 +1,4 @@
-var path = require("path");
+const path = require("path");
 
 module.exports = {
 	mode: "development",
@@ -24,7 +24,8 @@ module.exports = {
 	devServer: {
 		contentBase: path.join(__dirname, "public"),
 		compress: true,
-		port: 8000,
-		open: true
+		port: 1234,
+		open: true,
+		hotOnly: true,
 	}
 };
