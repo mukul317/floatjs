@@ -7,7 +7,7 @@
 		"compile": "npm run fix && tsc --extendedDiagnostics",
 		"dev": "webpack-dev-server --config=webpack.dev.server.js",
 		"fix": "eslint --fix .\\src\\*",
-		"start": "webpack --config=webpack.dev.server.js && http-server .\\public"
+		"start": "webpack --config=webpack.dev.server.js && http-server ./public"
 	},
 	"keywords": [
 		"Typescript",
