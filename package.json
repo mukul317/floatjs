@@ -6,7 +6,8 @@
 	"scripts": {
 		"compile": "npm run fix && tsc --extendedDiagnostics",
 		"start": "webpack-dev-server --config=webpack.dev.server.js",
-		"fix": "eslint --fix .\\src\\*"
+		"fix": "eslint --fix .\\src\\*",
+		"serve": "webpack --config=webpack.dev.server.js && http-server .//public"
 	},
 	"keywords": [
 		"Typescript",
@@ -18,9 +19,6 @@
 	"author": "Mukul Sharma",
 	"license": "ISC",
 	"dependencies": {
-		"webpack": "^4.41.6",
-		"webpack-cli": "^3.3.11",
-		"webpack-dev-server": "^3.10.3",
 		"@typescript-eslint/eslint-plugin": "^2.21.0",
 		"@typescript-eslint/parser": "^2.21.0",
 		"concurrently": "^5.1.0",
@@ -37,6 +35,9 @@
 		"npm": "^6.14.1",
 		"standard": "^14.3.1",
 		"ts-loader": "^6.2.1",
-		"typescript": "^3.8.2"
+		"typescript": "^3.8.2",
+		"webpack": "^4.41.6",
+		"webpack-cli": "^3.3.11",
+		"webpack-dev-server": "^3.10.3"
 	}
 }
