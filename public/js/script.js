@@ -1,12 +1,12 @@
 const M = window.M;
 const defaultPage = "about";
+const sections = document.querySelectorAll(".section");
 
 const scrollInView = id => {
     try {
         const element = document.getElementById(id);
         if (element) {
             element.scrollIntoView({ behavior: "smooth", inline: "nearest" });
-            clearTimeout(scrollTimer);
         }
     } catch (err) {
         console.warn(err.message);
@@ -23,8 +23,39 @@ const getPageId = (url) => {
     }
 };
 
+const elementInViewport = el => {
+    let top = el.offsetTop;
+    let left = el.offsetLeft;
+    let width = el.offsetWidth;
+    let height = el.offsetHeight;
+
+    while (el.offsetParent) {
+        el = el.offsetParent;
+        top += el.offsetTop;
+        left += el.offsetLeft;
+    }
+
+    return (
+        top >= window.pageYOffset &&
+        left >= window.pageXOffset &&
+        (top + height) <= (window.pageYOffset + window.innerHeight) &&
+        (left + width) <= (window.pageXOffset + window.innerWidth)
+    );
+}
+
 window.addEventListener("hashchange", function (e) {
     scrollInView(getPageId(e.newURL));
+});
+
+window.addEventListener("scroll", () => {
+    const hashTimer = setTimeout(() => {
+        sections.forEach(section => {
+            if (elementInViewport(section)) {
+                window.location.hash = section.id;
+                clearTimeout(hashTimer);
+            }
+        });
+    }, 0);
 });
 
 window.addEventListener("DOMContentLoaded", function () {
@@ -32,7 +63,7 @@ window.addEventListener("DOMContentLoaded", function () {
     const elems = document.querySelectorAll(".sidenav");
     const instances = M.Sidenav.init(elems, {
         draggable: true,
-        preventScrolling: true
+        preventScrolling: false
     });
     if (linkList && linkList.length > 0) {
         linkList.forEach(item => item.addEventListener("click", () => {

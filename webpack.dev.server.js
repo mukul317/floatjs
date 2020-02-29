@@ -19,17 +19,12 @@ module.exports = {
 		],
 	},
 	resolve: {
-		extensions: ['.tsx', '.ts', '.js'],
+		extensions: [".tsx", ".ts", ".js"],
 	},
 	devServer: {
 		contentBase: path.join(__dirname, "public"),
 		compress: true,
 		port: 8000,
-		open: true,
-		before: function (app, server, compiler) {
-			app.get('/#about', function (req, res) {
-				res.json({ custom: 'response' });
-			});
-		}
+		open: true
 	}
 };

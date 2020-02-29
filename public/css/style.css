@@ -1,3 +1,6 @@
+img {
+    -webkit-user-drag: none;
+}
 .page-footer {
     position: fixed;
     bottom: 0;
