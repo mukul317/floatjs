@@ -5,7 +5,8 @@ module.exports = {
     es6: true
   },
   extends: [
-    'standard'
+    "standard",
+    "plugin:@typescript-eslint/recommended"
   ],
   globals: {
     Atomics: 'readonly',

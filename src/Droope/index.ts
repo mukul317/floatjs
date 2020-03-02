@@ -48,13 +48,13 @@ class SelectBoxInput implements ISubject {
     public lisitingElement: HTMLElement;
     public displayElement: HTMLElement;
     public arrowCounter = -1;
-    public noResultElement:any;
+    public noResultElement: HTMLElement | null = null;
 
     private inputElement: HTMLInputElement;
     private dataSet: IData[] = [];
     private selectLimit: number;
     private listObserverCollection: IObserver[] = [];
-    private displayListOnFocus: boolean = false;
+    private displayListOnFocus = false;
 
     constructor (options: IOptions) {
         this.inputElement = options.inputElement;
@@ -123,7 +123,7 @@ class SelectBoxInput implements ISubject {
 
     public handleBackspace (e: KeyboardEvent) {
         const which = e.which;
-        const query = (<HTMLInputElement>e.target).value.trim();
+        const query = (e.target as HTMLInputElement).value.trim();
         const isQueryEmpty: boolean = query === "";
 
         if (which === 8) {
@@ -136,8 +136,8 @@ class SelectBoxInput implements ISubject {
         }
     }
 
-    public onKeyUp (e:KeyboardEvent) {
-        const query: string = e && e.target && (<HTMLInputElement>e.target).value ? (<HTMLInputElement>e.target).value.trim() : "";
+    public onKeyUp (e: KeyboardEvent) {
+        const query: string = e && e.target && (e.target as HTMLInputElement).value ? (<HTMLInputElement>e.target).value.trim() : "";
         const which: number = e.which;
 
         switch (which) {
