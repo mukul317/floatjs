@@ -83,7 +83,7 @@ class SelectBoxInput implements ISubject {
         }
     }
 
-    public handleDocumentBlur (event: Event) {
+    public handleDocumentBlur (event: any) {
         const eventPath: HTMLElement[] = event.path;
         const hasNotClickedOnListing = eventPath.indexOf(this.lisitingElement) === -1;
         const hasNotClickedOnInput = eventPath.indexOf(this.inputElement) === -1;
