@@ -68,4 +68,4 @@ export default [
     { id: "76", name: "Travel / Tourism" },
     { id: "50", name: "Tyres" },
     { id: "77", name: "Water Treatment / De-Salination / Waste Management" }
-]; ;
+];
