@@ -115,28 +115,31 @@ class SelectBoxInput implements TSubject {
         const which: number = e.which;
 
         switch (which) {
-        case 9: // Tab pressed
+        case 9: { // Tab pressed
             this.handleListingDisplayStateOn("blur");
             return;
-
-        case 13: // Enter
-            // eslint-disable-next-line no-case-declarations
+        }
+        // ENter
+        case 13: {
             const listItem: HTMLElement|null = this.lisitingElement.querySelector(".active");
             if (listItem) {
                 this.handleSelect(listItem);
             }
             return;
+        }
 
         case 38: // Up arrow
             this.handleArrow("up");
             return;
 
-        case 40: // Down arrow
+        case 40: {
+            // Down arrow
             this.handleArrow("down");
             return;
+        }
 
-        default: // Default filtering logic
-            // eslint-disable-next-line no-case-declarations
+        default: {
+            // Default filtering logic
             const filteredList = this.dataSet.filter((item) => {
                 const lowerItem = item.name.toLowerCase();
                 const lowerQuery = query.toLowerCase();
@@ -144,9 +147,7 @@ class SelectBoxInput implements TSubject {
                 return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
             });
 
-            // eslint-disable-next-line no-case-declarations
             const hasResults = filteredList.length !== 0;
-            // eslint-disable-next-line no-case-declarations
             const result: TState = {
                 hasListUpdated: true,
                 list: hasResults ? filteredList : this.dataSet,
@@ -156,6 +157,7 @@ class SelectBoxInput implements TSubject {
             // Reset counter for arrow keys
             this.arrowCounter = -1;
             this.showNoResultMessage(hasResults);
+        }
         }
     }
 
