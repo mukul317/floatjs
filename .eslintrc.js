@@ -6,8 +6,6 @@ module.exports = {
   },
   extends: [
     "standard",
-    'eslint:recommended',
-    'plugin:@typescript-eslint/eslint-recommended',
     'plugin:@typescript-eslint/recommended'
   ],
   globals: {
