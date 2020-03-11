@@ -219,8 +219,8 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * Handles the keyUp event attached to any input field and does different functionalities when the event is
-     * done. Covers a lot of cases for different keys presses that are as follows:
+     * Handles the keyUp event attached to the suggester input field.It does different functionalities
+     * when the event is being  done. Covers a lot of cases for different keys presses that are as follows:
      * case 9: Tabs Pressed
      * Handles the Listing Display State and sets to blur
      * case 13: Enter pressed
@@ -381,7 +381,7 @@ class SelectBoxInput implements TSubject {
     /**
      * Handles the Suggester Search results returned from the api.This function initiates the filtering and fill data
      * into listing by calling the function filterAndFillDataIntoListing
-     * @param resp: TSuggesterResponse : Response of Suggester Search api
+     * @param resp: {TSuggesterResponse} : Response of Suggester Search api
      * @param category: {String} : category of results for which the suggester is visible
      * @param query: {String} : Query that is put inside the input feild
      * @returns{void}
@@ -445,7 +445,7 @@ class SelectBoxInput implements TSubject {
     /**
      * Hides the no result message present on the listing element
      * when no results are there in the listing element
-     * @param hasResults : {boolean} : Boolean flag that checks whether results are there or not
+     * @param {hasResults} : {boolean} : Boolean flag that checks whether results are there or not
      * @returns: {void}
      */
     public hidesNoResultMessage (hasResults: boolean): void {
@@ -455,7 +455,7 @@ class SelectBoxInput implements TSubject {
     /**
      * Shows the no result message present on the listing element
      * when there are results in the listing element
-     * @param hasResults : {boolean}
+     * @param {hasResults} : {boolean}
      * @returns: {void}
      */
     public showNoResultMessage (hasResults: boolean): void {

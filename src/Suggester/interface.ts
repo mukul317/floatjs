@@ -46,15 +46,15 @@ interface TOptions {
 }
 
 interface TSuggesterResponse {
-  resultList: any
+  resultList: any;
 }
 
 interface TRecentSearchResponse {
-  resultConcepts: any
+  resultConcepts: any;
 }
 
 interface TResponse {
-  any: any
+  any: any;
 }
 
-export { TData, TSubject, TState, TObserver, TOptions, TSuggesterResponse, TPayload, TRecentSearchResponse };
+export { TData, TSubject, TState, TObserver, TOptions, TResponse, TSuggesterResponse, TPayload, TRecentSearchResponse };
