@@ -33,6 +33,7 @@ interface TOptions {
     selectLimit?: number;
     displayListOnFocus?: boolean;
     displayDecorationList?: string[];
+    selectedDecorator: string;
     noResultErrorMessage?: string;
 }
 
