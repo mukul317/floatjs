@@ -1,5 +1,5 @@
 interface TData {
-  id: string;
+  id: number;
   name: string;
   displayTextEn?: string;
 }

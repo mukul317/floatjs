@@ -76,15 +76,15 @@ class SelectBoxInput implements TSubject {
         this.selectLimit = options.selectLimit || 1;
         this.displayListOnFocus = options.displayListOnFocus || false;
 
-        this.inputElement.addEventListener("keydown", e => this.handleBackspace(e));
-        this.inputElement.addEventListener("keyup", e => this.onKeyUp(e));
-        this.lisitingElement.addEventListener("click", e =>
+        this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
+        this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
+        this.lisitingElement.addEventListener("click", (e) =>
             this.handleSelect(e.target)
         );
 
         if (this.displayListOnFocus === true) {
-            document.addEventListener("click", e => this.handleDocumentBlur(e));
-            this.inputElement.addEventListener("focus", e =>
+            document.addEventListener("click", (e) => this.handleDocumentBlur(e));
+            this.inputElement.addEventListener("focus", (e) =>
                 this.handleListingDisplayStateOn(e.type)
             );
 
@@ -160,7 +160,7 @@ class SelectBoxInput implements TSubject {
                 const isLastSelectionNow: boolean =
                     this.resultSet.selection.length + 1 >= this.selectLimit;
                 const isDuplicate: boolean =
-                    this.resultSet.selection.filter(item => item.name === selectedObj.name)
+                    this.resultSet.selection.filter((item) => item.name === selectedObj.name)
                         .length > 0;
                 if (selectedObj && isDuplicate === false) {
                     if (selectionLimitExceeded === false) {
@@ -219,6 +219,50 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
+     * Handles the Enter key Press on the list item
+     * @param e : { keyboardEvent }: Event passed
+     */
+    public handleEnter (e: KeyboardEvent): void {
+        try {
+            const listItem = this.lisitingElement.querySelector(".active");
+            if (listItem) {
+                this.handleSelect(listItem);
+            }
+        } catch (e) {
+            console.log("Exception occurred while Pressing Enter:" + e);
+        }
+    }
+
+    /**
+     * Sanitises the String By removing Special Characters by matching with regex
+     * @param query : {String}
+     */
+    public sanitiseQuery (query: string): void{
+        query.toString();
+    }
+
+    /**
+     * Handles the comma being entered by the user in the query . This also sanitises the Query String.
+     * @param query : {String}: Query being entered by the User in the Suggester Input feild
+     * @param selectedObj : {TData}:Selected Object being Selected by clicking on the Listing element
+     */
+
+    public handleComma (query: string, selectedObj: TData): void{
+        try {
+            if (query.length > 1) {
+                selectedObj.id = 0;
+                selectedObj.name = query.split(",")[0];
+
+                this.setSelectedValues(selectedObj);
+            } else {
+                throw new Error("Query not passed in the function");
+            }
+        } catch (e) {
+            console.log("Exception Occurred :" + e);
+        }
+    }
+
+    /**
      * Handles the keyUp event attached to the suggester input field.It does different functionalities
      * when the event is being  done. Covers a lot of cases for different keys presses that are as follows:
      * case 9: Tabs Pressed
@@ -235,52 +279,48 @@ class SelectBoxInput implements TSubject {
      */
     public onKeyUp (e: KeyboardEvent): void {
         try {
-            const query: string =
+            if (e) {
+                const query: string =
                 e && e.target && (e.target as HTMLInputElement).value
                     ? (e.target as HTMLInputElement).value.trim()
                     : "";
-            const which: number = e.which;
-            const category = "top";
-            const selectedObj: any = {};
-            switch (which) {
-            case 9: // Tab pressed
-                this.handleListingDisplayStateOn("blur");
-                return;
+                const which: number = e.which;
+                const category = "top";
+                const selectedObj: any = {};
+                switch (which) {
+                case 9: // Tab pressed
+                    this.handleListingDisplayStateOn("blur");
+                    return;
 
-            case 13: // Enter
+                case 13: // Enter
                 // eslint-disable-next-line no-case-declarations
-                const listItem = this.lisitingElement.querySelector(".active");
-                if (listItem) {
-                    this.handleSelect(listItem);
-                }
-                return;
+                    this.handleEnter(e);
+                    return;
 
-            case 38: // Up arrow
-                this.handleArrow("up");
-                return;
+                case 38: // Up arrow
+                    this.handleArrow("up");
+                    return;
 
-            case 40: // Down arrow
-                this.handleArrow("down");
-                return;
-            case 188:
-                if (query.length > 1) {
-                    selectedObj.id = 0;
-                    selectedObj.name = query.split(",")[0];
+                case 40: // Down arrow
+                    this.handleArrow("down");
+                    return;
+                case 188:
+                    this.handleComma(query, selectedObj);
+                    return;
 
-                    this.setSelectedValues(selectedObj);
-                }
-                return;
-
-            default:
-                this.handlesApiResponse(
-                    Helper.sendXhr(suggesterConfig.urls.autoComplete, {
+                default:
+                    this.handlesApiResponse(
+                        Helper.sendXhr(suggesterConfig.urls.autoComplete, {
+                            query,
+                            category
+                        }),
+                        category,
                         query,
-                        category
-                    }),
-                    category,
-                    query,
-                    "sug"
-                );
+                        "sug"
+                    );
+                }
+            } else {
+                throw new Error("Event not happened Event Object Missing");
             }
         } catch (e) {
             console.error("Error found: " + e);
@@ -544,7 +584,7 @@ class SelectBoxInput implements TSubject {
             list: [...this.resultSet.list],
             selection: [
                 ...this.resultSet.selection.filter(
-                    item => item.name !== name
+                    (item) => item.name !== name
                 )
             ]
         };
