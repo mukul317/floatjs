@@ -25,7 +25,7 @@ class Helper {
                   limit: suggesterConfig.maxSuggestions
               };
               const params = Object.keys(finalPayload)
-                  .map(key => key + "=" + finalPayload[key])
+                  .map((key) => key + "=" + finalPayload[key])
                   .join("&");
               xhr.open("GET", url + params, true);
 

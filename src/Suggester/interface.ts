@@ -45,6 +45,18 @@ interface TOptions {
   noResultErrorMessage?: string;
 }
 
+interface TSugOptions{
+  inputElement: HTMLInputElement;
+  lisitingElement: HTMLElement;
+  displayElement: HTMLElement;
+  selectLimit?: number;
+  displayListOnFocus?: boolean;
+  displayDecorationList?: string[];
+  selectedDecorator: string;
+  noResultErrorMessage?: string;
+  sanitiseString?: boolean;
+  specialCharactersAllowedList: string[];
+}
 interface TSuggesterResponse {
   resultList: any;
 }
@@ -57,4 +69,4 @@ interface TResponse {
   any: any;
 }
 
-export { TData, TSubject, TState, TObserver, TOptions, TResponse, TSuggesterResponse, TPayload, TRecentSearchResponse };
+export { TData, TSubject, TState, TObserver, TOptions, TResponse, TSuggesterResponse, TPayload, TRecentSearchResponse, TSugOptions };
