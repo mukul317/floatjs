@@ -10,7 +10,7 @@ class Listing implements TObserver {
   public generateAndAppendList (newData: TState): HTMLElement {
       const ulElement: HTMLElement = document.createElement("UL");
 
-      newData.list.forEach(item => {
+      newData.list.forEach((item) => {
           const liElement: HTMLElement = document.createElement("LI");
           if (item && item.name && item.displayTextEn) {
               liElement.textContent = item.name || item.displayTextEn;

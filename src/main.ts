@@ -1,5 +1,7 @@
 import { TOptions } from "./Droope/interface";
+import { TSugOptions } from "./Suggester/interface";
 import droopeData from "./Droope/data";
+import suggesterData from "./Suggester/data";
 import Droope from "./Droope";
 import Suggester from "./Suggester";
 
@@ -28,7 +30,7 @@ import Suggester from "./Suggester";
     const lisitingElement: HTMLElement | null = document.querySelector(".suggester-select-box-listing");
     const displayElement: HTMLElement | null = document.querySelector(".suggester-select-box-display");
     if (inputElement && lisitingElement && displayElement) {
-        const options: TOptions = {
+        const options: TSugOptions = {
             inputElement,
             lisitingElement,
             displayElement,
@@ -36,9 +38,11 @@ import Suggester from "./Suggester";
             displayListOnFocus: true,
             displayDecorationList: ["chips"],
             noResultErrorMessage: "Sorry no result",
-            selectedDecorator: "chips"
+            selectedDecorator: "chips",
+            sanitiseString: false,
+            specialCharactersAllowedList: []
         };
-        const SuggesterInstance = Suggester(options, droopeData);
-        console.log(SuggesterInstance);
+        const SuggesterInstance = Suggester(options, suggesterData);
+        console.log("Suggester", SuggesterInstance);
     }
 })();

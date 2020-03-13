@@ -1,4 +1,4 @@
-import { TObserver, TData, TState, TSubject, TOptions, TSuggesterResponse, TRecentSearchResponse, TResponse } from "./interface";
+import { TObserver, TData, TState, TSubject, TSuggesterResponse, TRecentSearchResponse, TResponse, TSugOptions } from "./interface";
 import { Helper } from "./helper.suggester";
 import suggesterConfig from "./config.suggester";
 
@@ -65,38 +65,64 @@ class SelectBoxInput implements TSubject {
     private displayListOnFocus = false
 
     /**
+     * whitelistBoolean: Boolean flag for whitelisting Special Characters
+     */
+    private sanitiseString = false;
+
+    /**
+     * specialCharactersAllowedList: List of special characters to be send and allowed to be sent into the query
+     */
+    private specialCharactersAllowedList: string[] = []
+
+    /**
      * @method constructor : initiates the SelectBoxInput and set the inputElement, displayElement,listingElement,
      * selectLimit,displayListOnFocus
      * @param options
      */
-    constructor (options: TOptions) {
-        this.inputElement = options.inputElement;
-        this.displayElement = options.displayElement;
-        this.lisitingElement = options.lisitingElement;
-        this.selectLimit = options.selectLimit || 1;
-        this.displayListOnFocus = options.displayListOnFocus || false;
+    constructor (options: TSugOptions) {
+        try {
+            if (options) {
+                this.inputElement = options.inputElement;
+                this.displayElement = options.displayElement;
+                this.lisitingElement = options.lisitingElement;
+                this.selectLimit = options.selectLimit || 1;
+                this.displayListOnFocus = options.displayListOnFocus || false;
+                this.sanitiseString = options.sanitiseString || false;
+                if (this.sanitiseString) {
+                    if (options.specialCharactersAllowedList) {
+                        this.specialCharactersAllowedList = options.specialCharactersAllowedList;
+                    } else {
+                        throw new Error("Special Characters Allowed List is not passed");
+                    }
+                }
 
-        this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
-        this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
-        this.lisitingElement.addEventListener("click", (e) =>
-            this.handleSelect(e.target)
-        );
+                this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
+                this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
+                this.lisitingElement.addEventListener("click", (e) =>
+                    this.handleSelect(e.target)
+                );
 
-        if (this.displayListOnFocus === true) {
-            document.addEventListener("click", (e) => this.handleDocumentBlur(e));
-            this.inputElement.addEventListener("focus", (e) =>
-                this.handleListingDisplayStateOn(e.type)
-            );
+                if (this.displayListOnFocus === true) {
+                    document.addEventListener("click", (e) => this.handleDocumentBlur(e));
+                    this.inputElement.addEventListener("focus", (e) =>
+                        this.handleListingDisplayStateOn(e.type)
+                    );
 
-            // Close listing on initialization
-            this.handleListingDisplayStateOn("blur");
-        }
+                    // Close listing on initialization
+                    this.handleListingDisplayStateOn("blur");
+                }
 
-        if (options.noResultErrorMessage) {
-            this.noResultElement = document.createElement("P");
-            this.noResultElement.classList.add("no-result");
-            this.noResultElement.style.display = "none";
-            this.noResultElement.textContent = options.noResultErrorMessage || "";
+                if (options.noResultErrorMessage) {
+                    this.noResultElement = document.createElement("P");
+                    this.noResultElement.classList.add("no-result");
+                    this.noResultElement.style.display = "none";
+                    this.noResultElement.textContent = options.noResultErrorMessage || "";
+                }
+            } else {
+                throw new Error("Config not passed in Suggester");
+            }
+        } catch (e) {
+            console.log("Error while Subject initialisation", e);
         }
     }
 
@@ -237,8 +263,17 @@ class SelectBoxInput implements TSubject {
      * Sanitises the String By removing Special Characters by matching with regex
      * @param query : {String}
      */
-    public sanitiseQuery (query: string): void{
-        query.toString();
+    public sanitiseQuery (query: string): string {
+        try {
+            if (query) {
+                const patr = new RegExp("[^a-zA-Z0-9,\\s" + this.specialCharactersAllowedList + "]", "g");
+                return query.replace(patr, "");
+            } else {
+                throw new Error("Query not found that is to be sanitised");
+            }
+        } catch (e) {
+            console.log("Exception Occurred while Sanitising Query");
+        }
     }
 
     /**
@@ -371,7 +406,7 @@ class SelectBoxInput implements TSubject {
             if (resp && category) {
                 this.dataSet = resp.resultConcepts[category];
                 const emptyQuery = ""; // to disable filtering in case of rc selected
-                this.filterAndFillDataIntoListing(emptyQuery);
+                this.filterAndFillDataIntoListing(emptyQuery, category);
             } else {
                 throw new Error("resp and category not found - param not found");
             }
@@ -386,9 +421,9 @@ class SelectBoxInput implements TSubject {
      * @param query: {string} : Query of the input feild being entered in the suggester input
      * @returns {void}
      */
-    public filterAndFillDataIntoListing (query: string): void {
+    public filterAndFillDataIntoListing (query: string, category: string): void {
         try {
-            if (query) {
+            if (query || category) {
                 const filteredList = this.dataSet.filter((item: TData) => {
                     if (item && item.displayTextEn) {
                         item.name = item.displayTextEn;
@@ -407,6 +442,7 @@ class SelectBoxInput implements TSubject {
                     list: hasResults ? filteredList : this.dataSet,
                     selection: [...this.resultSet.selection]
                 };
+                console.log("result in here", result);
                 this.setData(result);
                 this.arrowCounter = -1;
                 this.showNoResultMessage(hasResults);
@@ -414,7 +450,7 @@ class SelectBoxInput implements TSubject {
                 throw new Error("param not found: query");
             }
         } catch (e) {
-            console.error("Error occurred while entering data into Listing");
+            console.log("Error occurred while entering data into Listing:", e.message);
         }
     }
 
