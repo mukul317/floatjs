@@ -10,16 +10,18 @@ class SelectDisplayDecorator {
       switch (type) {
       case "chips":
           return this.chips(view);
-      // case "makeItGlow" : return this.makeItGlow(view);
+      // case "text":
+      //     return this.textView(view);
+      // // case "makeItGlow" : return this.makeItGlow(view);
       default:
           return view;
       }
   }
 
-  // public makeItGlow(view: HTMLElement) : HTMLElement {
+  // public makeItGlow (view: HTMLElement): HTMLElement {
   //     const list = view.querySelectorAll("li");
 
-  //     list.forEach( (li: HTMLElement) => {
+  //     list.forEach((li: HTMLElement) => {
   //         li.style.boxShadow = "gold 0px 0px 10px 1px";
   //     });
 

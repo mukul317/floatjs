@@ -16,6 +16,7 @@ type TOptions = {
     expirationAbsolute?: any; // the datetime when the item should expire
     expirationSliding?: number; // an integer representing the seconds since the last cache access after which the item should expire
     priority?: number;
+    callback?: any;
 }|null;
 
 interface TLSItem{
@@ -46,7 +47,12 @@ class LocalStorageCacheStorage {
         this.maxSize = maxSize;
     };
 
-    private get (key: string) {
+    /**
+     * This method fetches the entire item object stored in local storage for a particular key in the namespace
+     * @method private
+     * @param key Name of the item stored in local storage
+     */
+    private get (key: string): null|TLSItem {
         const item = window.localStorage[this.prefix_ + key];
         if (item) return JSON.parse(item);
         return null;
@@ -67,7 +73,7 @@ class LocalStorageCacheStorage {
                 throw (err);
             }
             this.log_("Error adding item, purging and trying again: " + err.toString());
-            this.purge_();
+            this.purgeCache();
             this.addItem(item, true);
         }
     };
@@ -90,10 +96,6 @@ class LocalStorageCacheStorage {
         };
     };
 
-    private size (): number {
-        return this.keys().length;
-    };
-
     private remove (key: string) {
         const item = this.get(key);
         delete window.localStorage[this.prefix_ + key];
@@ -108,7 +110,10 @@ class LocalStorageCacheStorage {
         return ret;
     };
 
-    private purge_ () {
+    /**
+     * Removes expired items from the cache.
+     */
+    private purgeCache () {
         let tmparray = [];
         let purgeSize = Math.round(this.maxSize * this.fillFactor);
         if (this.maxSize < 0) { purgeSize = this.size() * this.fillFactor; }
@@ -118,7 +123,7 @@ class LocalStorageCacheStorage {
         for (let i = 0; i < keys.length; i++) {
             const key = keys[i];
             const item = this.get(key);
-            if (this.isExpired(item)) {
+            if (item && this.isExpired(item)) {
                 this.removeItem(key);
             } else {
                 tmparray.push(item);
@@ -164,7 +169,13 @@ class LocalStorageCacheStorage {
         return expired;
     };
 
-    public setItem (key: string, value: any, options: any = null): void {
+    /**
+     * This method is used set data in local storage.
+     * @param key : keyname corresponsing to which an entire item object is created and saved
+     * @param value : value to be saved
+     * @param options :
+     */
+    public setItem (key: string, value: string|Record<string, string>, options: TOptions = null): void {
         window.localStorage[this.prefix_ + key] = JSON.stringify(value);
         if (this.get(key) != null) {
             this.removeItem(key);
@@ -175,7 +186,7 @@ class LocalStorageCacheStorage {
 
         // if the cache is full, purge it
         if ((this.maxSize > 0) && (this.size() > this.maxSize)) {
-            setTimeout(() => this.purge_(), 0);
+            setTimeout(() => this.purgeCache(), 0);
         }
     };
 
@@ -207,41 +218,65 @@ class LocalStorageCacheStorage {
         return returnVal;
     };
 
-    public removeItem (key: string): TLSItem|null {
+    /**
+     * This method removes the item from the local storage
+     * @param key
+     */
+    public removeItem (key: string): TObject {
         const item = this.remove(key);
         // if there is a callback function, call it at the end of execution
         if (item && item.options && item.options.callback) {
             setTimeout(() => {
-                item.options.callback.call(null, item.key, item.value);
+                item.options && item.options.callback.call(null, item.key, item.value);
             }, 0);
         }
         return item ? item.value : null;
     };
+
+    /**
+     * This method returns the hits and misses on the cache.
+     */
+    public getStats (): Record<string, number> {
+        return this.stats_;
+    };
+
+    /**
+     * Returns the total no of items in the storage
+     */
+    public size (): number {
+        return this.keys().length;
+    };
 }
 
 class CacheFactory {
-    public static getCache (namespace: string) {
-        let cacheStore = null;
+    /**
+     * This method provides a wrapper over local storage methods.
+    *  Local Storage based persistant cache storage backend.
+    *  If a size of -1 is used, it will purge itself when localStorage
+    *  is filled. This is 5MB on Chrome/Safari.
+    *
+    *  WARNING: The amortized cost of this cache is very low, however,
+    *  when a the cache fills up all of localStorage, and a purge is required, it can
+    *  take a few seconds to fetch all the keys and values in storage.
+    *  Since localStorage doesn't have namespacing, this means that even if this
+    *  individual cache is small, it can take this time if there are lots of other
+    *  other keys in localStorage.
+    * @param {string} namespace A string to namespace the items in localStorage. Defaults to 'default'.
+    * */
+    public static getCache (namespace: string): null|LocalStorageCacheStorage {
         try {
             if (typeof namespace === "undefined" || parseInt(namespace) <= 0) {
                 throw new Error("Invalid app id or namespace: " + namespace);
             }
-            // storageType = storageType || "localStorage";
-            // const isOldIE = window.navigator.userAgent.match(/MSIE 7/);
-            // if (storageType === "localStorage") {
-            /** if (isOldIE) {
-                    cacheStore = new Cache.UserDataCacheStorage(String(appId));
-                } else**/ if (typeof window.localStorage !== "undefined") {
-                cacheStore = new LocalStorageCacheStorage(-1, false, String(namespace));
-            }
-            // }
-            if (cacheStore == null) {
+            if (typeof window.localStorage !== "undefined") {
+                return new LocalStorageCacheStorage(-1, false, String(namespace));
+            } else {
                 throw new Error("Unsupported storage type ");
             }
         } catch (e) {
-            console.error(e);
+            console.error(e.message);
+            return null;
         }
-        return cacheStore;
     }
 }
 

@@ -27,11 +27,11 @@ class SelectDisplay implements TObserver {
 
   public update (newData: any): void {
       const { selection } = newData;
+
       const view = this.buildView(selection);
       // this.displayDecorationList.map(decorationName => {
       //     view = this.decorator.add(view, decorationName);
       // });
-
       this.subject.displayElement.innerHTML = "";
       this.subject.displayElement.appendChild(view);
   }

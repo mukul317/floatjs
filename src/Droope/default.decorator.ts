@@ -48,7 +48,7 @@ class SelectDisplayDecorator {
                     const result: TState = {
                         hasListUpdated: false,
                         list: [...this.subject.resultSet.list],
-                        selection: [...this.subject.resultSet.selection.filter(item => parseInt(item.id, 10) !== parseInt(deleteId, 10))]
+                        selection: [...this.subject.resultSet.selection.filter((item) => parseInt(item.id, 10) !== parseInt(deleteId, 10))]
                     };
                     this.subject.setData(result);
                 }

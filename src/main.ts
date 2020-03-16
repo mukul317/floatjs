@@ -16,7 +16,8 @@ import { TOptions as SuggesToptions } from "./Suggester/interface";
             selectLimit: 3,
             displayListOnFocus: true,
             displayDecorationList: ["chips"],
-            noResultErrorMessage: "Sorry no result"
+            noResultErrorMessage: "Sorry no result",
+            selectedDecorator: "chips"
         };
         Droope(options, droopeData);
     }

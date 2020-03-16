@@ -1,352 +1,569 @@
-import { TObserver, TData, TState, TSubject, TOptions, TResponse } from "./interface";
+import { TObserver, TData, TState, TSubject, TOptions, TSuggesterResponse, TRecentSearchResponse, TResponse } from "./interface";
 import { Helper } from "./helper";
-import suggesterConfig from "./config";
+import suggesterConfig from "./config.suggester";
 
+/**
+ * @Class Select Box Input that acts as a subject for the Suggester
+ * Implements TSubject interface
+ *
+ *
+ */
 class SelectBoxInput implements TSubject {
-  public resultSet: TState = {
-      list: [],
-      selection: [],
-      hasListUpdated: true
-  }
+    /**
+     * @resultSet stores the state of the suggester
+     * has following items: list[], selection[], hasListUpdated
+     */
+    public resultSet: TState = {
+        list: [],
+        selection: [],
+        hasListUpdated: true
+    }
 
-  public lisitingElement: HTMLElement
-  public displayElement: HTMLElement
-  public arrowCounter = -1
-  public noResultElement: any
+    /**
+     * listingElement: Showing Listing of Suggester
+     */
+    public lisitingElement: HTMLElement
 
-  private inputElement: HTMLInputElement
-  private dataSet: TData[] = []
-  private selectLimit: number
-  private listObserverCollection: TObserver[] = []
-  private displayListOnFocus = false
+    /**
+     * DisplayElement: item where selected item is displayed
+     */
+    public displayElement: HTMLElement
 
-  constructor (options: TOptions) {
-      this.inputElement = options.inputElement;
-      this.displayElement = options.displayElement;
-      this.lisitingElement = options.lisitingElement;
-      this.selectLimit = options.selectLimit || 1;
-      this.displayListOnFocus = options.displayListOnFocus || false;
+    /**
+     * arrowCounter: shows the counter of the arrow
+     */
+    public arrowCounter = -1
 
-      this.inputElement.addEventListener("keydown", e => this.handleBackspace(e));
-      this.inputElement.addEventListener("keyup", e => this.onKeyUp(e));
-      this.lisitingElement.addEventListener("click", e =>
-          this.handleSelect(e.target)
-      );
+    /**
+     * Display noResultElement in case of Zero Items in Listing element
+     */
+    public noResultElement: any
 
-      if (this.displayListOnFocus === true) {
-          document.addEventListener("click", e => this.handleDocumentBlur(e));
-          this.inputElement.addEventListener("focus", e =>
-              this.handleListingDisplayStateOn(e.type)
-          );
+    /**
+     * inputElement: Feild input element For input feilds
+     */
+    private inputElement: HTMLInputElement
 
-          // Close listing on initialization
-          this.handleListingDisplayStateOn("blur");
-      }
+    /**
+     *
+     */
+    private dataSet: TData[] = []
 
-      if (options.noResultErrorMessage) {
-          this.noResultElement = document.createElement("P");
-          this.noResultElement.classList.add("no-result");
-          this.noResultElement.style.display = "none";
-          this.noResultElement.textContent = options.noResultErrorMessage || "";
-      }
+    /**
+     * selectLimit: limit for number of selections
+     */
+    private selectLimit: number
 
-      // Get version and prefetch data
-      if (options.isPrefetch) {
-          Helper.fetchVersion();
-          Helper.prefetchData();
-      }
-  }
+    /**
+     * listObserverCollection: List Of Observers for the Subject Select Box Input
+     */
+    private listObserverCollection: TObserver[] = []
 
-  public handleDocumentBlur (event: any): void {
-      const eventPath: HTMLElement[] = event.path;
-      const hasNotClickedOnListing =
-      eventPath.indexOf(this.lisitingElement) === -1;
-      const hasNotClickedOnInput = eventPath.indexOf(this.inputElement) === -1;
+    /**
+     * displayListOnFocus:
+     */
+    private displayListOnFocus = false
 
-      if (hasNotClickedOnListing && hasNotClickedOnInput) {
-          this.handleListingDisplayStateOn("blur");
-      }
-  }
+    /**
+     * @method constructor : initiates the SelectBoxInput and set the inputElement, displayElement,listingElement,
+     * selectLimit,displayListOnFocus
+     * @param options
+     */
+    constructor (options: TOptions) {
+        this.inputElement = options.inputElement;
+        this.displayElement = options.displayElement;
+        this.lisitingElement = options.lisitingElement;
+        this.selectLimit = options.selectLimit || 1;
+        this.displayListOnFocus = options.displayListOnFocus || false;
 
-  public handleListingDisplayStateOn (eventType: string): void {
-      this.lisitingElement.style.display =
-      eventType === "focus" ? "block" : "none";
-  }
+        this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
+        this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
+        this.lisitingElement.addEventListener("click", (e) =>
+            this.handleSelect(e.target)
+        );
 
-  public handleSelect (target: any): void {
-      try {
-          const selectedObj: any = JSON.parse(target.getAttribute("data-obj"));
-          if (selectedObj) {
-          // rishabh changes here
-              this.initRcs(selectedObj);
-              // rishabh changes here
+        if (this.displayListOnFocus === true) {
+            document.addEventListener("click", (e) => this.handleDocumentBlur(e));
+            this.inputElement.addEventListener("focus", (e) =>
+                this.handleListingDisplayStateOn(e.type)
+            );
 
-              const selectionLimitExceeded: boolean =
-        this.selectLimit > 1
-            ? this.resultSet.selection.length + 1 > this.selectLimit
-            : false;
-              const isLastSelectionNow: boolean =
-        this.resultSet.selection.length + 1 >= this.selectLimit;
-              const isDuplicate: boolean =
-        this.resultSet.selection.filter(item => item.id === selectedObj.id)
-            .length > 0;
+            // Close listing on initialization
+            this.handleListingDisplayStateOn("blur");
+        }
 
-              if (selectedObj && isDuplicate === false) {
-                  if (selectionLimitExceeded === false) {
-                      const selection =
-            this.selectLimit === 1
-                ? [selectedObj]
-                : [...this.resultSet.selection, selectedObj];
-                      const result: TState = {
-                          hasListUpdated: false,
-                          list: [...this.resultSet.list],
-                          selection
-                      };
-                      this.setData(result);
-                  }
-                  if (isLastSelectionNow) {
-                      this.handleListingDisplayStateOn("blur");
-                  }
-              }
-          }
-      } catch (e) {
-          throw new Error("Error in selecting target in here");
-      }
-  }
+        if (options.noResultErrorMessage) {
+            this.noResultElement = document.createElement("P");
+            this.noResultElement.classList.add("no-result");
+            this.noResultElement.style.display = "none";
+            this.noResultElement.textContent = options.noResultErrorMessage || "";
+        }
 
-  public handleBackspace (e: KeyboardEvent): void {
-      const which = e.which;
-      const query = (e.target as HTMLInputElement).value.trim();
-      const isQueryEmpty: boolean = query === "";
+        if (options.isPrefetch) {
+            Helper.prefetchData();
+        }
+    }
 
-      if (which === 8) {
-          const lastIndexOfSelection: number = this.resultSet.selection.length - 1;
-          const lastId: string | null =
-        lastIndexOfSelection >= 0
-            ? this.resultSet.selection[lastIndexOfSelection].id
-            : null;
-          if (isQueryEmpty === true && lastId !== null) {
-              this.deleteSelection(lastId);
-              this.handleListingDisplayStateOn("focus");
-          }
-      }
-  }
+    /**
+     * event handleDocumentBlur handling event for document blur on the blur of the document
+     * @param event
+     * @returns {void}
+     */
+    public handleDocumentBlur (event: any): void {
+        const eventPath: HTMLElement[] = event.path;
+        const hasNotClickedOnListing =
+            eventPath.indexOf(this.lisitingElement) === -1;
+        const hasNotClickedOnInput = eventPath.indexOf(this.inputElement) === -1;
 
-  public onKeyUp (e: KeyboardEvent): void {
-      const query: string =
-      e && e.target && (e.target as HTMLInputElement).value
-          ? (e.target as HTMLInputElement).value.trim()
-          : "";
-      const which: number = e.which;
-      const category = "top";
-      switch (which) {
-      case 9: // Tab pressed
-          this.handleListingDisplayStateOn("blur");
-          return;
-      case 8: // backspace pressed
-          this.handleBackspace(e);
-          return;
+        if (hasNotClickedOnListing && hasNotClickedOnInput) {
+            this.handleListingDisplayStateOn("blur");
+        }
+    }
 
-      case 13: // Enter
-          // eslint-disable-next-line no-case-declarations
-          const listItem = this.lisitingElement.querySelector(".active");
-          if (listItem) {
-              this.handleSelect(listItem);
-          }
-          return;
+    /**
+     * @method handleListingDisplayStateOn : controls listing display
+     * @param eventType
+     */
+    public handleListingDisplayStateOn (eventType: string): void {
+        this.lisitingElement.style.display =
+            eventType === "focus" ? "block" : "none";
+    }
 
-      case 38: // Up arrow
-          this.handleArrow("up");
-          return;
+    /**
+     * Handle Select set the selected object by picking the item from the data-obj attribute of the selected
+     * listing element.
+     * @param target
+     * @returns { void }
+     */
+    public handleSelect (target: any): void {
+        try {
+            const selectedObj: any = JSON.parse(target.getAttribute("data-obj"));
+            this.setSelectedValues(selectedObj);
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
-      case 40: // Down arrow
-          this.handleArrow("down");
-          return;
+    /**
+     * setSelectedValues:set the selected values from the resultset on the click of the listing element
+     * and sets the result set state for the Subject and the observer and updates the whole view
+     * @param selectedObj
+     * @returns void
+     */
+    public setSelectedValues (selectedObj: any): void {
+        try {
+            if (selectedObj) {
+                // rishabh changes here
+                this.initialisesRelatedSearch(selectedObj);
+                // rishabh changes here
 
-      default:
-          this.handleResponse(
-              Helper.sendXhr(suggesterConfig.urls.autoComplete, { query, category }),
-              category,
-              query,
-              "sug"
-          );
-      }
-  }
+                const selectionLimitExceeded: boolean =
+                    this.selectLimit > 1
+                        ? this.resultSet.selection.length >= this.selectLimit
+                        : false;
+                const isLastSelectionNow: boolean =
+                    this.resultSet.selection.length + 1 >= this.selectLimit;
+                const isDuplicate: boolean =
+                    this.resultSet.selection.filter((item) => item.name === selectedObj.name)
+                        .length > 0;
+                if (selectedObj && isDuplicate === false) {
+                    if (selectionLimitExceeded === false) {
+                        const selection =
+                            this.selectLimit === 1
+                                ? [selectedObj]
+                                : [...this.resultSet.selection, selectedObj];
+                        const result: TState = {
+                            hasListUpdated: false,
+                            list: [...this.resultSet.list],
+                            selection
+                        };
+                        this.emptyInputFeilds();
+                        this.setData(result);
+                    }
+                    if (isLastSelectionNow) {
+                        this.handleListingDisplayStateOn("blur");
+                    }
+                }
+            }
+        } catch (e) {
+            throw new Error("Error in selecting target in here" + e);
+        }
+    }
 
-  // rishabh code here starts
+    /**
+     * This empties the input feilds values
+     * @returns{void}
+     */
+    public emptyInputFeilds (): void {
+        try {
+            this.inputElement.value = "";
+        } catch (e) {
+            console.error("Emptying input feilds");
+        }
+    }
 
-  public initRcs (selectedObject: TData): void {
-      if (selectedObject && selectedObject.displayTextEn) {
-          try {
-              const query = selectedObject.displayTextEn.toLowerCase();
-              const category = "top";
+    /**
+     * Deletes the query on backspace and updates the query in the input feilds and also deletes the selected values
+     * and updates the lsiting element based on that.
+     * @param e : keyboardEvent
+     */
+    public handleBackspace (e: KeyboardEvent): void {
+        const which = e.which;
+        const query = (e.target as HTMLInputElement).value.trim();
+        const isQueryEmpty: boolean = query === "";
 
-              this.handleResponse(
-                  Helper.sendXhr(suggesterConfig.urls.relatedConcept, {
-                      query,
-                      category
-                  }),
-                  category,
-                  query,
-                  "rc"
-              );
-          } catch (e) {
-              throw new Error("selected item issue:" + e);
-          }
-      }
-  }
+        if (which === 8) {
+            const lastIndexOfSelection: number = this.resultSet.selection.length - 1;
+            const lastName: string | null = lastIndexOfSelection >= 0 ? this.resultSet.selection[lastIndexOfSelection].name : null;
+            if (isQueryEmpty === true && lastName !== null) {
+                this.deleteSelection(lastName);
+                this.handleListingDisplayStateOn("focus");
+            }
+        }
+    }
 
-  public handleRcData (resp: any, category: string, query: string): void {
-      this.dataSet = resp.resultConcepts[category];
-      this.fillDataIntoList(query);
-  }
+    /**
+     * Handles the keyUp event attached to the suggester input field.It does different functionalities
+     * when the event is being  done. Covers a lot of cases for different keys presses that are as follows:
+     * case 9: Tabs Pressed
+     * Handles the Listing Display State and sets to blur
+     * case 13: Enter pressed
+     * finds the current active listing element and then Selects that listing element into the display and
+     * pass the state on
+     * case 38: Up Arrow
+     * handles the UpArrow case by making the listing element above current active listing element as active
+     * case 40: Down Arrow
+     * handles the Down Arrow cases by the listing element below the current active listing element as active
+     * @param e : KeyBoardEvent
+     * @returns {void}
+     */
+    public onKeyUp (e: KeyboardEvent): void {
+        try {
+            const query: string =
+                e && e.target && (e.target as HTMLInputElement).value
+                    ? (e.target as HTMLInputElement).value.trim()
+                    : "";
+            const which: number = e.which;
+            const category = "top";
+            const selectedObj: any = {};
+            switch (which) {
+            case 9: // Tab pressed
+                this.handleListingDisplayStateOn("blur");
+                return;
 
-  public fillDataIntoList (query: string): void {
-      const filteredList = this.dataSet.filter(item => {
-          if (item && item.displayTextEn) {
-              item.name = item.displayTextEn;
-              const lowerItem = item.displayTextEn.toLowerCase();
-              const lowerQuery = query.toLowerCase();
-              const includesSupported = (Array.prototype as any).includes !== undefined;
-              return includesSupported
-                  ? lowerItem.includes(lowerQuery)
-                  : lowerItem.indexOf(lowerQuery) !== -1;
-          }
-      });
+            case 13: // Enter
+                // eslint-disable-next-line no-case-declarations
+                const listItem = this.lisitingElement.querySelector(".active");
+                if (listItem) {
+                    this.handleSelect(listItem);
+                }
+                return;
 
-      const hasResults = filteredList.length !== 0;
-      const result: TState = {
-          hasListUpdated: true,
-          list: hasResults ? filteredList : this.dataSet,
-          selection: [...this.resultSet.selection]
-      };
-      this.setData(result);
-      // Reset counter for arrow keys
-      this.arrowCounter = -1;
-      this.showNoResultMessage(hasResults);
-  }
+            case 38: // Up arrow
+                this.handleArrow("up");
+                return;
 
-  public handleSugData (resp: any, category: string, query: string): void {
-      this.dataSet = resp.resultList[category];
-      this.fillDataIntoList(query);
-  }
+            case 40: // Down arrow
+                this.handleArrow("down");
+                return;
+            case 188:
+                if (query.length > 1) {
+                    selectedObj.id = 0;
+                    selectedObj.name = query.split(",")[0];
 
-  public handleResponse (
-      promise: Promise<TResponse>,
-      category: string,
-      query: string,
-      resolvedData: string
-  ): void {
-      try {
-          promise.then((resp: any) => {
-              switch (resolvedData) {
-              case "rc":
-                  this.handleRcData(resp, category, query);
-                  break;
-              case "sug":
-                  this.handleSugData(resp, category, query);
-                  break;
-              }
-          });
-      } catch (e) {
-          throw new Error("Error occured in handle Response" + e);
-      }
-  }
+                    this.setSelectedValues(selectedObj);
+                }
+                return;
 
-  public hideNoResultMessage (hasResults: boolean): void {
-      this.noResultElement.style.display = hasResults ? "block" : "none";
-  }
+            default:
+                this.handlesApiResponse(
+                    Helper.sendXhr(suggesterConfig.urls.autoComplete, {
+                        query,
+                        category
+                    }),
+                    category,
+                    query,
+                    "sug"
+                );
+            }
+        } catch (e) {
+            console.error("Error found: " + e);
+        }
+    }
 
-  // rishabh code here ends
-  public showNoResultMessage (hasResults: boolean): void {
-      this.noResultElement.style.display = hasResults ? "none" : "block";
-  }
+    /**
+        * Initiates related search functionality that takes selectedObject selected by clicking on the listing
+        * element . The resposibility of this function is to fetch the selectedObject query and then send the
+        * ajax hit to get more related  searches .
+        * @param selectedObject: TData : Selected Object from the Listing element being clicked
+        * @returns {return}
+        * @throws {null}
+        *
+        */
+    public initialisesRelatedSearch (selectedObject: TData): void {
+        try {
+            if (selectedObject && selectedObject.displayTextEn) {
+                const query = selectedObject.displayTextEn.toLowerCase();
+                const category = "top";
 
-  public handleArrow (direction: string): void {
-      /** get list of all li items */
-      const listItems = this.lisitingElement.querySelectorAll("li");
+                this.handlesApiResponse(
+                    Helper.sendXhr(suggesterConfig.urls.relatedConcept, {
+                        query,
+                        category
+                    }),
+                    category,
+                    query,
+                    "rc"
+                );
+            } else {
+                throw Error("Error in the selectedObject");
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
-      /** determine the direction */
-      const isGoingUp = direction === "up";
-      const isGoingDown = direction === "down";
+    /**
+     * Handles the related Search results returned from the api .This function initiates the filtering and fill data
+     * into listing by calling the function filterAndFillDataIntoListing
+     * @param resp: TRecentSearchResponse : Related Search results returned from the related search api
+     * @param category: String : category of results for which suggester is visible
+     * @returns {void}
+     */
+    public handlesRelatedSearchResponseData (resp: TRecentSearchResponse, category: string): void {
+        try {
+            if (resp && category) {
+                this.dataSet = resp.resultConcepts[category];
+                const emptyQuery = ""; // to disable filtering in case of rc selected
+                this.filterAndFillDataIntoListing(emptyQuery);
+            } else {
+                throw new Error("resp and category not found - param not found");
+            }
+        } catch (e) {
+            console.error("Error occurred while handling RCData:" + e);
+        }
+    }
 
-      if (isGoingDown === true) {
-      /** counter is by default at -1 for first selection i.e. index 0 */
-          const currentElement: HTMLElement = listItems[this.arrowCounter + 1];
+    /**
+     * Fills the lisitng element by filtering the result set based on the query of the input feild. The result
+     * list is filtered first on the basis of the query and then the data is being set into the listing element.
+     * @param query: {string} : Query of the input feild being entered in the suggester input
+     * @returns {void}
+     */
+    public filterAndFillDataIntoListing (query: string): void {
+        try {
+            if (query) {
+                const filteredList = this.dataSet.filter((item: TData) => {
+                    if (item && item.displayTextEn) {
+                        item.name = item.displayTextEn;
+                        const lowerItem = item.displayTextEn.toLowerCase();
+                        const lowerQuery = query.toLowerCase();
+                        const includesSupported = (Array.prototype as any).includes !== undefined;
+                        return includesSupported
+                            ? lowerItem.includes(lowerQuery)
+                            : lowerItem.indexOf(lowerQuery) !== -1;
+                    }
+                    return false;
+                });
 
-          if (currentElement) {
-              // add active class to
-              currentElement.classList.add("active");
-              const prevElement = currentElement.previousElementSibling;
-              if (prevElement) {
-                  prevElement.classList.remove("active");
-              }
-          }
-          if (this.arrowCounter < listItems.length - 1) {
-              this.arrowCounter++;
-          }
-      }
+                const hasResults = filteredList.length !== 0;
+                const result: TState = {
+                    hasListUpdated: true,
+                    list: hasResults ? filteredList : this.dataSet,
+                    selection: [...this.resultSet.selection]
+                };
+                this.setData(result);
+                this.arrowCounter = -1;
+                this.showNoResultMessage(hasResults);
+            } else {
+                throw new Error("param not found: query");
+            }
+        } catch (e) {
+            console.error("Error occurred while entering data into Listing");
+        }
+    }
 
-      if (isGoingUp === true) {
-          const currentElement = listItems[this.arrowCounter];
-          if (currentElement) {
-              currentElement.classList.remove("active");
-              const prevElement = currentElement.previousElementSibling;
-              if (prevElement) {
-                  prevElement.classList.add("active");
-              }
-          }
-          if (this.arrowCounter > -1) {
-              this.arrowCounter--;
-          }
-      }
-  }
+    /**
+     * Handles the Suggester Search results returned from the api.This function initiates the filtering and fill data
+     * into listing by calling the function filterAndFillDataIntoListing
+     * @param resp: {TSuggesterResponse} : Response of Suggester Search api
+     * @param category: {String} : category of results for which the suggester is visible
+     * @param query: {String} : Query that is put inside the input feild
+     * @returns{void}
+     */
+    public handlesSuggesterResponseData (resp: TSuggesterResponse, category: string, query: string): void {
+        try {
+            if (resp && category && query) {
+                this.dataSet = resp.resultList[category];
+                this.filterAndFillDataIntoListing(query);
+            } else {
+                throw new Error("param not found: resp , category, query");
+            }
+        } catch (e) {
+            console.error("Error while handling Suggester respone data:" + e);
+        }
+    }
 
-  public setData (newData: any): void {
-      // This logic executes when SelectBox is provided with the data first time
-      // eslint-disable-next-line no-prototype-builtins
-      const isDataForFirstTime = newData.hasOwnProperty("construct");
-      if (isDataForFirstTime) {
-          this.dataSet = newData.list;
-          newData.hasListUpdated = true;
-      }
+    /**
+     * Handles API response returned from Suggester API and inititate the intended functionality for the suggester
+     * as well as related searches taken both together based on the listing type.
+     * @param promise :{TResponse} : promise returned from the suggester api hit function
+     * @param category :{String} : category of results for which the suggester is visible
+     * @param query : {String} : Query of the input feild
+     * @param listingType :{String} : Listing  type that can be recent search and suggester suggestions
+     * @returns {void}
+     */
+    public handlesApiResponse (
+        promise: Promise<TResponse>,
+        category: string,
+        query: string,
+        listingType: string
+    ): void {
+        try {
+            if (promise) {
+                promise.then((resp: any) => {
+                    if (resp) {
+                        if (listingType) {
+                            switch (listingType) {
+                            case "rc":
+                                this.handlesRelatedSearchResponseData(resp, category);
+                                break;
+                            case "sug":
+                                this.handlesSuggesterResponseData(resp, category, query);
+                                break;
+                            }
+                        } else {
+                            throw new Error("listingType not passed as a param");
+                        }
+                    } else {
+                        throw new Error("Promise resulted in Error - sendXHR-helper.ts");
+                    }
+                });
+            } else {
+                throw new Error("Promise expected as parameter - Not Found");
+            }
+        } catch (e) {
+            console.error("Error occured in handle Response" + e);
+        }
+    }
 
-      this.resultSet = {
-          list: newData.list || [],
-          selection: newData.selection || [],
-          hasListUpdated: newData.hasListUpdated
-      };
+    /**
+     * Hides the no result message present on the listing element
+     * when no results are there in the listing element
+     * @param {hasResults} : {boolean} : Boolean flag that checks whether results are there or not
+     * @returns: {void}
+     */
+    public hidesNoResultMessage (hasResults: boolean): void {
+        this.noResultElement.style.display = hasResults ? "block" : "none";
+    }
 
-      this.notifyObservers();
-  }
+    /**
+     * Shows the no result message present on the listing element
+     * when there are results in the listing element
+     * @param {hasResults} : {boolean}
+     * @returns: {void}
+     */
+    public showNoResultMessage (hasResults: boolean): void {
+        this.noResultElement.style.display = hasResults ? "none" : "block";
+    }
 
-  public registerObserver (o: TObserver): void {
-      this.listObserverCollection.push(o);
-  }
+    /***
+     *
+     */
+    public handleArrow (direction: string): void {
+        /** get list of all li items */
+        const listItems = this.lisitingElement.querySelectorAll("li");
 
-  public unregisterObserver (o: TObserver): void {
-      const index = this.listObserverCollection.indexOf(o);
-      this.listObserverCollection.splice(index, 1);
-  }
+        /** determine the direction */
+        const isGoingUp = direction === "up";
+        const isGoingDown = direction === "down";
 
-  public notifyObservers (): void {
-      for (const observer of this.listObserverCollection) {
-          observer.update(this.resultSet);
-      }
-  }
+        if (isGoingDown === true) {
+            /** counter is by default at -1 for first selection i.e. index 0 */
+            const currentElement: HTMLElement = listItems[this.arrowCounter + 1];
 
-  public deleteSelection (id: string): void {
-      const result: TState = {
-          hasListUpdated: false,
-          list: [...this.resultSet.list],
-          selection: [
-              ...this.resultSet.selection.filter(
-                  item => parseInt(item.id, 10) !== parseInt(id, 10)
-              )
-          ]
-      };
-      this.setData(result);
-  }
+            if (currentElement) {
+                // add active class to
+                currentElement.classList.add("active");
+                const prevElement = currentElement.previousElementSibling;
+                if (prevElement) {
+                    prevElement.classList.remove("active");
+                }
+            }
+            if (this.arrowCounter < listItems.length - 1) {
+                this.arrowCounter++;
+            }
+        }
+
+        if (isGoingUp === true) {
+            const currentElement = listItems[this.arrowCounter];
+            if (currentElement) {
+                currentElement.classList.remove("active");
+                const prevElement = currentElement.previousElementSibling;
+                if (prevElement) {
+                    prevElement.classList.add("active");
+                }
+            }
+            if (this.arrowCounter > -1) {
+                this.arrowCounter--;
+            }
+        }
+        console.log(this.arrowCounter);
+    }
+
+    public setData (newData: any): void {
+        // This logic executes when SelectBox is provided with the data first time
+        const isDataForFirstTime = newData.construct;
+        if (isDataForFirstTime) {
+            this.dataSet = newData.list;
+            newData.hasListUpdated = true;
+        }
+
+        this.resultSet = {
+            list: newData.list || [],
+            selection: newData.selection || [],
+            hasListUpdated: newData.hasListUpdated
+        };
+
+        this.notifyObservers();
+    }
+
+    public registerObserver (o: TObserver): void {
+        this.listObserverCollection.push(o);
+    }
+
+    public unregisterObserver (o: TObserver): void {
+        const index = this.listObserverCollection.indexOf(o);
+        this.listObserverCollection.splice(index, 1);
+    }
+
+    public notifyObservers (): void {
+        for (const observer of this.listObserverCollection) {
+            observer.update(this.resultSet);
+        }
+    }
+
+    public deleteSelection (name: string): void {
+        const result: TState = {
+            hasListUpdated: false,
+            list: [...this.resultSet.list],
+            selection: [
+                ...this.resultSet.selection.filter(
+                    (item) => item.name !== name
+                )
+            ]
+        };
+        this.setInputElement(name);
+        this.setData(result);
+    }
+
+    public setInputElement (name: string): void {
+        try {
+            this.inputElement.value = name;
+        } catch (e) {
+            throw new Error("Error occurred while prefilling data");
+        }
+    }
 }
 
 export default SelectBoxInput;

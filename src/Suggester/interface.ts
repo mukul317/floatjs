@@ -46,6 +46,16 @@ interface TOptions {
   isPrefetch?: boolean;
 }
 
-interface TResponse { any: any }
+interface TSuggesterResponse {
+  resultList: any;
+}
 
-export { TData, TSubject, TState, TObserver, TOptions, TResponse, TPayload };
+interface TRecentSearchResponse {
+  resultConcepts: any;
+}
+
+interface TResponse {
+  any: any;
+}
+
+export { TData, TSubject, TState, TObserver, TOptions, TResponse, TSuggesterResponse, TPayload, TRecentSearchResponse };

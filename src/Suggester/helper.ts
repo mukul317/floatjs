@@ -36,7 +36,7 @@ class Helper {
                   limit: suggesterConfig.maxSuggestions
               };
 
-              const params = Object.keys(finalPayload).map(key => key + "=" + finalPayload[key]).join("&");
+              const params = Object.keys(finalPayload).map((key) => key + "=" + finalPayload[key]).join("&");
               //   fetch(url + params).then(function (response) {
               //       if (response.status !== 200) {
               //           throw new Error("Looks like there was a problem. Status Code: " + response.status);
@@ -82,7 +82,7 @@ class Helper {
    */
   public static prefetchData = (): void => {
       const url = suggesterConfig.urls.prefetch + Math.random();
-      if (Helper.getFromStorage(suggesterConfig.storageKey.prefetchKey) !== null) { // todo:logic for when to fetch next
+      if (Helper.getFromStorage(suggesterConfig.storageKey.prefetchKey) === null) { // todo:logic for when to fetch next
           Helper.sendXhr(url, null).then(function (resp) {
               Helper.setInStorage(suggesterConfig.storageKey.prefetchKey, resp);
           });
@@ -100,8 +100,7 @@ class Helper {
   public static detectLang (query: string): string {
       if (!query) return "EN";
       const englishRegEx = /[A-Za-z0-9]/;
-      // eslint-disable-next-line no-useless-escape
-      const specialCharRegEx = /[\!\@\#\$\%\^\&\*\(\)\-\+\=\-\{\}\[\]\;\'\,\.\/\:\"\<\>\?\|\\\_]/;
+      const specialCharRegEx = /[\\!\\@\\#\\$\\%\\^\\&\\*\\(\\)\\-\\+\\=\\-\\{\\}\\[\\\]\\;\\'\\,\\.\\/\\:\\"\\<\\>\\?\\|\\_]/;
 
       return englishRegEx.test(query) ? "EN" : specialCharRegEx.test(query) ? "SC" : "AR";
   }
@@ -112,8 +111,8 @@ class Helper {
    */
   public static isSpecialCharacter (query: string): boolean {
       if (query) {
-          // eslint-disable-next-line no-useless-escape
-          const specialCharRegEx = /[\!\@\#\$\%\^\&\*\(\)\-\+\=\-\{\}\[\]\;\'\,\.\/\:\"\<\>\?\|\\\_]/;
+          // const specialCharRegEx = /[\!\@\#\$\%\^\&\*\(\)\-\+\=\-\{\}\[\]\;\'\,\.\/\:\"\<\>\?\|\\\_]/;
+          const specialCharRegEx = /[\\!\\@\\#\\$\\%\\^\\&\\*\\(\\)\\-\\+\\=\\-\\{\\}\\[\\\]\\;\\'\\,\\.\\/\\:\\"\\<\\>\\?\\|\\_]/;
           return specialCharRegEx.test(query);
       }
       return false;

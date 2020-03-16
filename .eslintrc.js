@@ -28,6 +28,7 @@ module.exports = {
     "no-new": 0,
     "semi": ["error", "always"],
     "indent": ["error", 4],
-    "quotes": ["error", "double"]
+    "quotes": ["error", "double"],
+    "arrow-parens": ["error", "always"]
   }
 }
