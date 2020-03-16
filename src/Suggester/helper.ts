@@ -69,8 +69,8 @@ class Helper {
    */
   public static fetchVersion = () => {
       const url = suggesterConfig.urls.checkVersion + Math.random();
-      Helper.sendXhr(url, null).then(function (response) {
-          Helper.setInStorage(suggesterConfig.storageKey.versionKey, response);
+      return Helper.sendXhr(url, null).then(function (response) {
+          //   Helper.setInStorage(suggesterConfig.storageKey.versionKey, response);
       // set response in LS
       });
   };
@@ -82,11 +82,15 @@ class Helper {
    */
   public static prefetchData = (): void => {
       const url = suggesterConfig.urls.prefetch + Math.random();
-      if (Helper.getFromStorage(suggesterConfig.storageKey.prefetchKey) === null) { // todo:logic for when to fetch next
-          Helper.sendXhr(url, null).then(function (resp) {
-              Helper.setInStorage(suggesterConfig.storageKey.prefetchKey, resp);
-          });
-      }
+      Helper.fetchVersion().then((response) => {
+          //   Helper.setInStorage(suggesterConfig.storageKey.versionKey, response);
+          console.log(response);
+          if (Helper.getFromStorage(suggesterConfig.storageKey.prefetchKey) === null) { // todo:logic for when to fetch next
+              Helper.sendXhr(url, null).then(function (resp) {
+                  Helper.setInStorage(suggesterConfig.storageKey.prefetchKey, resp);
+              });
+          }
+      });
   };
 
   /**

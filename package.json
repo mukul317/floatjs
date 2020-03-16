@@ -5,7 +5,8 @@
 	"main": "index.js",
 	"scripts": {
 		"compile": "npm run fix && tsc --extendedDiagnostics",
-		"dev": "webpack-dev-server --config=webpack.dev.server.js",
+		"dev": "webpack-dev-server -d --config=webpack.dev.server.js",
+		"website": "webpack --config=webpack.dev.server.js --debug --verbose",
 		"fix": "eslint --fix .\\src\\*",
 		"start": "webpack --config=webpack.dev.server.js && http-server ./public"
 	},

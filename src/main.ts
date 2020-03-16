@@ -1,8 +1,9 @@
 import { TOptions } from "./Droope/interface";
+import { TSugOptions } from "./Suggester/interface";
 import droopeData from "./Droope/data";
+import suggesterData from "./Suggester/data";
 import Droope from "./Droope";
 import Suggester from "./Suggester";
-import { TOptions as SuggesToptions } from "./Suggester/interface";
 
 ((): void => {
     const inputElement: HTMLInputElement | null = document.querySelector(".select-box-input");
@@ -19,7 +20,8 @@ import { TOptions as SuggesToptions } from "./Suggester/interface";
             noResultErrorMessage: "Sorry no result",
             selectedDecorator: "chips"
         };
-        Droope(options, droopeData);
+        const DroopeInstance = Droope(options, droopeData);
+        console.log(DroopeInstance);
     }
 })();
 
@@ -28,17 +30,19 @@ import { TOptions as SuggesToptions } from "./Suggester/interface";
     const lisitingElement: HTMLElement | null = document.querySelector(".suggester-select-box-listing");
     const displayElement: HTMLElement | null = document.querySelector(".suggester-select-box-display");
     if (inputElement && lisitingElement && displayElement) {
-        const options: SuggesToptions = {
+        const options: TSugOptions = {
             inputElement,
             lisitingElement,
             displayElement,
-            selectLimit: 3,
+            selectLimit: 4,
             displayListOnFocus: true,
             displayDecorationList: ["chips"],
             noResultErrorMessage: "Sorry no result",
-            isPrefetch: true
-
+            selectedDecorator: "chips",
+            sanitiseString: false,
+            specialCharactersAllowedList: []
         };
-        Suggester(options, droopeData);
+        const SuggesterInstance = Suggester(options, suggesterData);
+        console.log("Suggester", SuggesterInstance);
     }
 })();
