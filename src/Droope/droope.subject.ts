@@ -25,7 +25,6 @@ class SelectBoxInput implements TSubject {
     public config: TDroopeConfig = defaultConfig;
 
     private dataSet: TData[] = [];
-    private selectLimit: number | undefined = defaultConfig.selectLimit;
     private listObserverCollection: TObserver[] = [];
     private displayListOnFocus = false;
 
@@ -129,7 +128,7 @@ class SelectBoxInput implements TSubject {
 
             if (selectedObj && isDuplicate === false) {
                 if (selectionLimitExceeded === false) {
-                    const selection = this.selectLimit === 1 ? [selectedObj] : [...this.resultSet.selection, selectedObj];
+                    const selection = config.selectLimit === 1 ? [selectedObj] : [...this.resultSet.selection, selectedObj];
                     const result: TState = {
                         hasListUpdated: false,
                         list: [...this.resultSet.list],
