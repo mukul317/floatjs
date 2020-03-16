@@ -52,7 +52,7 @@ class SelectBoxInput implements TSubject {
     /**
      * selectLimit: limit for number of selections
      */
-    private selectLimit: number
+    private selectLimit = 0;
 
     /**
      * listObserverCollection: List Of Observers for the Subject Select Box Input
@@ -80,49 +80,41 @@ class SelectBoxInput implements TSubject {
      * @param options
      */
     constructor (options: TSugOptions) {
-        try {
-            if (options) {
-                this.inputElement = options.inputElement;
-                this.displayElement = options.displayElement;
-                this.lisitingElement = options.lisitingElement;
-                this.selectLimit = options.selectLimit || 1;
-                this.displayListOnFocus = options.displayListOnFocus || false;
-                this.sanitiseString = options.sanitiseString || false;
-                if (this.sanitiseString) {
-                    if (options.specialCharactersAllowedList) {
-                        this.specialCharactersAllowedList = options.specialCharactersAllowedList;
-                    } else {
-                        throw new Error("Special Characters Allowed List is not passed");
-                    }
-                }
-
-                this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
-                this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
-                this.lisitingElement.addEventListener("click", (e) =>
-                    this.handleSelect(e.target)
-                );
-
-                if (this.displayListOnFocus === true) {
-                    document.addEventListener("click", (e) => this.handleDocumentBlur(e));
-                    this.inputElement.addEventListener("focus", (e) =>
-                        this.handleListingDisplayStateOn(e.type)
-                    );
-
-                    // Close listing on initialization
-                    this.handleListingDisplayStateOn("blur");
-                }
-
-                if (options.noResultErrorMessage) {
-                    this.noResultElement = document.createElement("P");
-                    this.noResultElement.classList.add("no-result");
-                    this.noResultElement.style.display = "none";
-                    this.noResultElement.textContent = options.noResultErrorMessage || "";
-                }
+        this.inputElement = options.inputElement;
+        this.displayElement = options.displayElement;
+        this.lisitingElement = options.lisitingElement;
+        this.selectLimit = options.selectLimit || 1;
+        this.displayListOnFocus = options.displayListOnFocus || false;
+        this.sanitiseString = options.sanitiseString || false;
+        if (this.sanitiseString) {
+            if (options.specialCharactersAllowedList) {
+                this.specialCharactersAllowedList = options.specialCharactersAllowedList;
             } else {
-                throw new Error("Config not passed in Suggester");
+                throw new Error("Special Characters Allowed List is not passed");
             }
-        } catch (e) {
-            console.log("Error while Subject initialisation", e);
+        }
+
+        this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
+        this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
+        this.lisitingElement.addEventListener("click", (e) =>
+            this.handleSelect(e.target)
+        );
+
+        if (this.displayListOnFocus === true) {
+            document.addEventListener("click", (e) => this.handleDocumentBlur(e));
+            this.inputElement.addEventListener("focus", (e) =>
+                this.handleListingDisplayStateOn(e.type)
+            );
+
+            // Close listing on initialization
+            this.handleListingDisplayStateOn("blur");
+        }
+
+        if (options.noResultErrorMessage) {
+            this.noResultElement = document.createElement("P");
+            this.noResultElement.classList.add("no-result");
+            this.noResultElement.style.display = "none";
+            this.noResultElement.textContent = options.noResultErrorMessage || "";
         }
     }
 
@@ -263,7 +255,7 @@ class SelectBoxInput implements TSubject {
      * Sanitises the String By removing Special Characters by matching with regex
      * @param query : {String}
      */
-    public sanitiseQuery (query: string): string {
+    public sanitiseQuery (query: string): string|void {
         try {
             if (query) {
                 const patr = new RegExp("[^a-zA-Z0-9,\\s" + this.specialCharactersAllowedList + "]", "g");
@@ -466,7 +458,7 @@ class SelectBoxInput implements TSubject {
         try {
             if (resp && category && query) {
                 this.dataSet = resp.resultList[category];
-                this.filterAndFillDataIntoListing(query);
+                this.filterAndFillDataIntoListing(query, category);
             } else {
                 throw new Error("param not found: resp , category, query");
             }
