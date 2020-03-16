@@ -5,6 +5,7 @@ class Listing implements TObserver {
     constructor (subject: TSubject) {
         this.subject = subject;
         this.subject.registerObserver(this);
+        console.log(this.subject);
     }
 
     public generateAndAppendList (newData: TState): HTMLElement {

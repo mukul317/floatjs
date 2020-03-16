@@ -4,9 +4,9 @@ interface TData {
 }
 
 interface TSubject {
-    lisitingElement: HTMLElement;
-    displayElement: HTMLElement;
-    noResultElement: HTMLElement;
+    lisitingElement: HTMLElement | null;
+    displayElement: HTMLElement | null;
+    noResultElement: HTMLElement | null;
     arrowCounter: number;
     resultSet: TState;
     registerObserver(o: TObserver): void;

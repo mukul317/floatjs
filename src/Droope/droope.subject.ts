@@ -1,8 +1,17 @@
 import { TObserver, TData, TState, TSubject, TOptions } from "./interface";
-
 interface TSetState extends TState {
     construct?: boolean;
 }
+
+const defaultConfig: TOptions = {
+    inputElement: null,
+    lisitingElement: null,
+    displayElement: null,
+    selectLimit: 3,
+    displayListOnFocus: true,
+    displayDecorationList: ["chips"],
+    noResultErrorMessage: "Sorry no result"
+};
 class SelectBoxInput implements TSubject {
     public resultSet: TState = {
         list: [],
@@ -10,45 +19,70 @@ class SelectBoxInput implements TSubject {
         hasListUpdated: true
     };
 
-    public lisitingElement: HTMLElement;
-    public displayElement: HTMLElement;
-    public arrowCounter = -1;
+    public lisitingElement: HTMLElement | null = defaultConfig.inputElement;
+    public displayElement: HTMLElement | null = null;
     public noResultElement: HTMLElement = document.createElement("p");
+    public arrowCounter: number = -1;
 
-    private inputElement: HTMLInputElement;
+    private inputElement: HTMLInputElement | null = null;
     private dataSet: TData[] = [];
-    private selectLimit: number;
+    private selectLimit: number = 1;
     private listObserverCollection: TObserver[] = [];
     private displayListOnFocus = false;
 
     constructor (options: TOptions) {
-        this.inputElement = options.inputElement;
-        this.displayElement = options.displayElement;
-        this.lisitingElement = options.lisitingElement;
-        this.selectLimit = options.selectLimit || 1;
-        this.displayListOnFocus = options.displayListOnFocus || false;
+        try {
+            this.inputElement = options.inputElement;
+            this.displayElement = options.displayElement;
+            this.lisitingElement = options.lisitingElement;
+            this.selectLimit = options.selectLimit || 1;
+            this.displayListOnFocus = options.displayListOnFocus || false;
 
-        this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
-        this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
-        this.lisitingElement.addEventListener("click", (e: MouseEvent) => {
-            const target: HTMLElement | null = (e.target as HTMLElement);
-            if (target) {
-                this.handleSelect(target);
+            if (options.noResultErrorMessage) {
+                this.noResultElement.classList.add("no-result");
+                this.noResultElement.style.display = "none";
+                this.noResultElement.textContent = options.noResultErrorMessage || "";
             }
-        });
 
-        if (this.displayListOnFocus === true) {
-            document.addEventListener("click", (e) => this.handleDocumentBlur(e));
-            this.inputElement.addEventListener("focus", (e) => this.handleListingDisplayStateOn(e.type));
-
-            // Close listing on initialization
-            this.handleListingDisplayStateOn("blur");
+            this.registerListEvents();
+            this.registerInputEvents();
+        } catch (err) {
+            console.warn(err.message);
         }
+    }
 
-        if (options.noResultErrorMessage) {
-            this.noResultElement.classList.add("no-result");
-            this.noResultElement.style.display = "none";
-            this.noResultElement.textContent = options.noResultErrorMessage || "";
+    public registerInputEvents (): void {
+        try {
+            if (this.inputElement) {
+                this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
+                this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
+                if (this.displayListOnFocus === true) {
+                    document.addEventListener("click", (e) => this.handleDocumentBlur(e));
+                    this.inputElement.addEventListener("focus", (e) => this.handleListingDisplayStateOn(e.type));
+
+                    // Close listing on initialization
+                    this.handleListingDisplayStateOn("blur");
+                }
+            }
+            throw new Error("Droope input element undefine");
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    public registerListEvents (): void {
+        try {
+            if (this.lisitingElement) {
+                this.lisitingElement.addEventListener("click", (e: MouseEvent) => {
+                    const target: HTMLElement | null = (e.target as HTMLElement);
+                    if (target) {
+                        this.handleSelect(target);
+                    }
+                });
+            }
+            throw new Error("Droope List element undefine");
+        } catch (err) {
+            console.warn(err.message);
         }
     }
 
