@@ -15,7 +15,7 @@ enum Priority {
 type TOptions = {
     expirationAbsolute?: any; // the datetime when the item should expire
     expirationSliding?: number; // an integer representing the seconds since the last cache access after which the item should expire
-    priority?: number;
+    priority: number;
     callback?: any;
 }|null;
 
@@ -48,9 +48,10 @@ class LocalStorageCacheStorage {
     };
 
     /**
-     * This method fetches the entire item object stored in local storage for a particular key in the namespace
+     * This method fetches the entire item object stored in local storage for a
+     * particular key in the namespace
      * @method private
-     * @param key Name of the item stored in local storage
+     * @param key : name of the item stored in local storage
      */
     private get (key: string): null|TLSItem {
         const item = window.localStorage[this.prefix_ + key];
@@ -64,7 +65,15 @@ class LocalStorageCacheStorage {
         }
     };
 
-    private addItem (key: string, item: any, attemptedAlready = false): void {
+    /**
+     * This method actually adds item in the storage.
+     * It stores an object (refer type TItem).
+     * @param key : name of the item stored in local storage
+     * @param item :object of the item to save
+     * @param attemptedAlready : this is false by default;it is passed as true if
+     * re attempt is done to stor the item in the storage
+     */
+    private addItem (key: string, item: TLSItem, attemptedAlready = false): void {
         try {
             window.localStorage[this.prefix_ + key] = JSON.stringify(item);
         } catch (err) {
@@ -73,33 +82,35 @@ class LocalStorageCacheStorage {
                 throw (err);
             }
             this.log_("Error adding item, purging and trying again: " + err.toString());
-            this.purgeCache();
-            this.addItem(item, true);
+            this.purge_();
+            this.addItem(key, item, true);
         }
     };
 
+    /**
+     * This method creates an object of type TLSItem which is required to store in storage
+     * @method private
+     * @param key : name of the item stored in local storage
+     * @param value : value to be stored
+     * @param options contains options(including data about expiration) for the item to be stored
+     */
     private _CacheItem (key: string, value: any, options: TOptions): TLSItem {
         if (!key) {
             throw new Error("Key cannot be null or empty");
         }
-        options = options || {};
+
+        const priority = options && options.priority ? options.priority : Priority.NORMAL;
+        options = options || { priority };
         if (options.expirationAbsolute) {
             options.expirationAbsolute = options.expirationAbsolute.getTime();
         }
 
-        options.priority = options.priority ? options.priority : Priority.NORMAL;
         return {
             key,
             value,
             options,
             lastAccessed: new Date().getTime()
         };
-    };
-
-    private remove (key: string) {
-        const item = this.get(key);
-        delete window.localStorage[this.prefix_ + key];
-        return item;
     };
 
     private keys (): string[] {
@@ -111,9 +122,10 @@ class LocalStorageCacheStorage {
     };
 
     /**
-     * Removes expired items from the cache.
+     * This removes expired items from the cache.
+     * @method : private
      */
-    private purgeCache () {
+    private purge_ (): void {
         let tmparray = [];
         let purgeSize = Math.round(this.maxSize * this.fillFactor);
         if (this.maxSize < 0) { purgeSize = this.size() * this.fillFactor; }
@@ -133,16 +145,19 @@ class LocalStorageCacheStorage {
         if (tmparray.length > purgeSize) {
             // sort this array based on cache priority and the last accessed date
             tmparray = tmparray.sort(function (a, b) {
-                if (a.options.priority !== b.options.priority) {
-                    return b.options.priority - a.options.priority;
-                } else {
-                    return b.lastAccessed - a.lastAccessed;
+                if (a && a.options && b && b.options) {
+                    if (a.options.priority !== b.options.priority) {
+                        return b.options.priority - a.options.priority;
+                    } else {
+                        return b.lastAccessed - a.lastAccessed;
+                    }
                 }
+                return 1;
             });
             // remove items from the end of the array
             while (tmparray.length > purgeSize) {
                 const ritem = tmparray.pop();
-                this.removeItem(ritem.key);
+                ritem && this.removeItem(ritem.key);
             }
         }
         this.log_("Purged cached");
@@ -156,11 +171,11 @@ class LocalStorageCacheStorage {
         const now = new Date().getTime();
         let expired = false;
         if (item.options && item.options.expirationAbsolute && (item.options.expirationAbsolute < now)) {
-            // if the absolute expiration has passed, expire the item
+        // if the absolute expiration has passed, expire the item
             expired = true;
         }
         if (!expired && item.options && item.options.expirationSliding) {
-            // if the sliding expiration has passed, expire the item
+        // if the sliding expiration has passed, expire the item
             const lastAccess = item.lastAccessed + (item.options.expirationSliding * 1000);
             if (lastAccess < now) {
                 expired = true;
@@ -171,9 +186,9 @@ class LocalStorageCacheStorage {
 
     /**
      * This method is used set data in local storage.
-     * @param key : keyname corresponsing to which an entire item object is created and saved
+     * @param key : name of the item stored in local storage
      * @param value : value to be saved
-     * @param options :
+     * @param options : contains options(including data about expiration) for the item to be stored
      */
     public setItem (key: string, value: string|Record<string, string>, options: TOptions = null): void {
         window.localStorage[this.prefix_ + key] = JSON.stringify(value);
@@ -186,21 +201,26 @@ class LocalStorageCacheStorage {
 
         // if the cache is full, purge it
         if ((this.maxSize > 0) && (this.size() > this.maxSize)) {
-            setTimeout(() => this.purgeCache(), 0);
+            setTimeout(() => this.purge_(), 0);
         }
     };
 
-    public getItem (key: string) {
-        // retrieve the item from the cache
+    /**
+     * This fetches the value from the item object, if present, in the local storage
+     * stored for a key.
+     * @param key : an identifier for which the object is to be fetched in local storage
+     */
+    public getItem (key: string): TObject|null {
+    // retrieve the item from the cache
         let item = this.get(key);
 
         if (item != null) {
             if (!this.isExpired(item)) {
-                // if the item is not expired
-                // update its last accessed date
+            // if the item is not expired
+            // update its last accessed date
                 item.lastAccessed = new Date().getTime();
             } else {
-                // if the item is expired, remove it from the cache
+            // if the item is expired, remove it from the cache
                 this.removeItem(key);
                 item = null;
             }
@@ -219,11 +239,12 @@ class LocalStorageCacheStorage {
     };
 
     /**
-     * This method removes the item from the local storage
-     * @param key
+     * This method removes the item(if present) from the local storage
+     * @param key:an identifier for which the object is to be fetched in local storage
      */
-    public removeItem (key: string): TObject {
-        const item = this.remove(key);
+    public removeItem (key: string): TObject|null {
+        const item = this.get(key);
+        delete window.localStorage[this.prefix_ + key];
         // if there is a callback function, call it at the end of execution
         if (item && item.options && item.options.callback) {
             setTimeout(() => {
@@ -234,18 +255,30 @@ class LocalStorageCacheStorage {
     };
 
     /**
+    * Removes all items from the cache.
+    */
+   public clear=(): void => {
+       // loop through each item in the cache and remove it
+       const keys = this.keys();
+       for (let i = 0; i < keys.length; i++) {
+           this.removeItem(keys[i]);
+       }
+       this.log_("Cache cleared");
+   };
+
+   /**
      * This method returns the hits and misses on the cache.
      */
-    public getStats (): Record<string, number> {
-        return this.stats_;
-    };
+   public getStats (): Record<string, number> {
+       return this.stats_;
+   };
 
-    /**
+   /**
      * Returns the total no of items in the storage
      */
-    public size (): number {
-        return this.keys().length;
-    };
+   public size (): number {
+       return this.keys().length;
+   };
 }
 
 class CacheFactory {
