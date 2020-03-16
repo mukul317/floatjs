@@ -1,4 +1,4 @@
-import { TOptions } from "./Droope/interface";
+import { TDroopeConfig } from "./Droope/interface";
 import droopeData from "./Droope/data";
 import Droope from "./Droope";
 import "./Suggester";
@@ -8,7 +8,7 @@ import "./Suggester";
     const lisitingElement: HTMLElement | null = document.querySelector(".select-box-listing");
     const displayElement: HTMLElement | null = document.querySelector(".select-box-display");
     if (inputElement && lisitingElement && displayElement) {
-        const options: TOptions = {
+        const options: TDroopeConfig = {
             inputElement,
             lisitingElement,
             displayElement,

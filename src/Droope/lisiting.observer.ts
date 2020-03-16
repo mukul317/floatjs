@@ -5,12 +5,12 @@ class Listing implements TObserver {
     constructor (subject: TSubject) {
         this.subject = subject;
         this.subject.registerObserver(this);
-        console.log(this.subject);
     }
 
     public generateAndAppendList (newData: TState): HTMLElement {
         const ulElement: HTMLElement = document.createElement("UL");
-
+        const { noResultElement, config } = this.subject;
+        const { lisitingElement } = config;
         newData.list.forEach((item) => {
             const liElement: HTMLElement = document.createElement("LI");
             liElement.textContent = item.name;
@@ -19,10 +19,10 @@ class Listing implements TObserver {
             ulElement.appendChild(liElement);
         });
 
-        if (this.subject.lisitingElement) {
-            this.subject.lisitingElement.innerHTML = "";
-            this.subject.lisitingElement.appendChild(this.subject.noResultElement);
-            this.subject.lisitingElement.appendChild(ulElement);
+        if (lisitingElement) {
+            lisitingElement.innerHTML = "";
+            lisitingElement.appendChild(noResultElement);
+            lisitingElement.appendChild(ulElement);
         }
 
         return ulElement;

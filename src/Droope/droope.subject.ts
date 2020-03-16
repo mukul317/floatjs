@@ -1,13 +1,13 @@
-import { TObserver, TData, TState, TSubject, TOptions } from "./interface";
+import { TObserver, TData, TState, TSubject, TDroopeConfig } from "./interface";
 interface TSetState extends TState {
     construct?: boolean;
 }
 
-const defaultConfig: TOptions = {
+const defaultConfig: TDroopeConfig = {
     inputElement: null,
     lisitingElement: null,
     displayElement: null,
-    selectLimit: 3,
+    selectLimit: 1,
     displayListOnFocus: true,
     displayDecorationList: ["chips"],
     noResultErrorMessage: "Sorry no result"
@@ -19,33 +19,23 @@ class SelectBoxInput implements TSubject {
         hasListUpdated: true
     };
 
-    public lisitingElement: HTMLElement | null = defaultConfig.inputElement;
-    public displayElement: HTMLElement | null = null;
+    public noResultErrorMessage: boolean = true;
     public noResultElement: HTMLElement = document.createElement("p");
     public arrowCounter: number = -1;
+    public config: TDroopeConfig = defaultConfig;
 
-    private inputElement: HTMLInputElement | null = null;
     private dataSet: TData[] = [];
-    private selectLimit: number = 1;
+    private selectLimit: number | undefined = defaultConfig.selectLimit;
     private listObserverCollection: TObserver[] = [];
     private displayListOnFocus = false;
 
-    constructor (options: TOptions) {
+    constructor (options: TDroopeConfig) {
         try {
-            this.inputElement = options.inputElement;
-            this.displayElement = options.displayElement;
-            this.lisitingElement = options.lisitingElement;
-            this.selectLimit = options.selectLimit || 1;
-            this.displayListOnFocus = options.displayListOnFocus || false;
-
-            if (options.noResultErrorMessage) {
-                this.noResultElement.classList.add("no-result");
-                this.noResultElement.style.display = "none";
-                this.noResultElement.textContent = options.noResultErrorMessage || "";
-            }
+            this.config = { ...this.config, ...options };
 
             this.registerListEvents();
             this.registerInputEvents();
+            this.registerNoResultElement();
         } catch (err) {
             console.warn(err.message);
         }
@@ -53,13 +43,13 @@ class SelectBoxInput implements TSubject {
 
     public registerInputEvents (): void {
         try {
-            if (this.inputElement) {
-                this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
-                this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
+            const { config } = this;
+            if (config.inputElement) {
+                config.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
+                config.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
                 if (this.displayListOnFocus === true) {
                     document.addEventListener("click", (e) => this.handleDocumentBlur(e));
-                    this.inputElement.addEventListener("focus", (e) => this.handleListingDisplayStateOn(e.type));
-
+                    config.inputElement.addEventListener("focus", (e) => this.handleListingDisplayStateOn(e.type));
                     // Close listing on initialization
                     this.handleListingDisplayStateOn("blur");
                 }
@@ -72,8 +62,9 @@ class SelectBoxInput implements TSubject {
 
     public registerListEvents (): void {
         try {
-            if (this.lisitingElement) {
-                this.lisitingElement.addEventListener("click", (e: MouseEvent) => {
+            const { config } = this;
+            if (config.lisitingElement) {
+                config.lisitingElement.addEventListener("click", (e: MouseEvent) => {
                     const target: HTMLElement | null = (e.target as HTMLElement);
                     if (target) {
                         this.handleSelect(target);
@@ -86,11 +77,25 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    public registerNoResultElement (): void {
+        try {
+            const { config } = this;
+            if (config.noResultErrorMessage) {
+                this.noResultElement.classList.add("no-result");
+                this.noResultElement.style.display = "none";
+                this.noResultElement.textContent = config.noResultErrorMessage || "";
+            }
+        } catch (error) {
+            console.warn(error.message);
+        }
+    }
+
     public handleDocumentBlur (e: MouseEvent): void {
         try {
             const target: HTMLElement = (e.target as HTMLElement);
             if (target) {
-                const hasClickedOnInput: boolean = this.inputElement === target;
+                const { config } = this;
+                const hasClickedOnInput: boolean = config.inputElement === target;
                 const hasClickedOnListItem: boolean = target.classList ? target.classList.contains("list-item") : false;
 
                 if (hasClickedOnListItem === false && hasClickedOnInput === false) {
@@ -103,15 +108,23 @@ class SelectBoxInput implements TSubject {
     }
 
     public handleListingDisplayStateOn (eventType: string): void {
-        this.lisitingElement.style.display = eventType === "focus" ? "block" : "none";
+        try {
+            const { config } = this;
+            if (config.lisitingElement) {
+                config.lisitingElement.style.display = eventType === "focus" ? "block" : "none";
+            }
+        } catch (err) {
+            console.warn(err.message);
+        }
     }
 
     public handleSelect (target: HTMLElement): void {
+        const { config } = this;
         const selectedObjStr: string = target.getAttribute("data-obj") || "";
         const selectedObj: TData = JSON.parse(selectedObjStr);
-        if (selectedObj) {
-            const selectionLimitExceeded: boolean = this.selectLimit > 1 ? this.resultSet.selection.length + 1 > this.selectLimit : false;
-            const isLastSelectionNow: boolean = this.resultSet.selection.length + 1 >= this.selectLimit;
+        if (selectedObj && config.selectLimit) {
+            const selectionLimitExceeded: boolean = config.selectLimit > 1 ? this.resultSet.selection.length + 1 > config.selectLimit : false;
+            const isLastSelectionNow: boolean = this.resultSet.selection.length + 1 >= config.selectLimit;
             const isDuplicate: boolean = this.resultSet.selection.filter((item) => item.id === selectedObj.id).length > 0;
 
             if (selectedObj && isDuplicate === false) {
@@ -157,7 +170,8 @@ class SelectBoxInput implements TSubject {
         }
         // ENter
         case 13: {
-            const listItem: HTMLElement|null = this.lisitingElement.querySelector(".active");
+            const { config } = this;
+            const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
             if (listItem) {
                 this.handleSelect(listItem);
             }
@@ -208,18 +222,19 @@ class SelectBoxInput implements TSubject {
     public handleArrow (direction: string): void {
         try {
             /** get list of all li items */
-            const listItems = this.lisitingElement.querySelectorAll("li");
+            const { config } = this;
+            const listItems = config.lisitingElement ? config.lisitingElement.querySelectorAll("li") : null;
 
             /** determine the direction */
             const isGoingUp = direction === "up";
             const isGoingDown = direction === "down";
 
-            if (isGoingDown === true) {
-            /** counter is by default at -1 for first selection i.e. index 0 */
+            if (isGoingDown === true && listItems) {
+                /** counter is by default at -1 for first selection i.e. index 0 */
                 const currentElement: HTMLElement = listItems[this.arrowCounter + 1];
 
                 if (currentElement) {
-                // add active class to
+                    // add active class to
                     currentElement.classList.add("active");
                     const prevElement = currentElement.previousElementSibling;
                     if (prevElement) {
@@ -231,7 +246,7 @@ class SelectBoxInput implements TSubject {
                 }
             }
 
-            if (isGoingUp === true) {
+            if (isGoingUp === true && listItems) {
                 const currentElement = listItems[this.arrowCounter];
                 if (currentElement) {
                     currentElement.classList.remove("active");

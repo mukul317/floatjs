@@ -31,9 +31,11 @@ class SelectDisplay implements TObserver {
         // this.displayDecorationList.map(decorationName => {
         //     view = this.decorator.add(view, decorationName);
         // });
-
-        this.subject.displayElement.innerHTML = "";
-        this.subject.displayElement.appendChild(view);
+        const { displayElement } = this.subject.config;
+        if (displayElement) {
+            displayElement.innerHTML = "";
+            displayElement.appendChild(view);
+        }
     }
 }
 

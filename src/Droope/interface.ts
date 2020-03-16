@@ -4,11 +4,10 @@ interface TData {
 }
 
 interface TSubject {
-    lisitingElement: HTMLElement | null;
-    displayElement: HTMLElement | null;
-    noResultElement: HTMLElement | null;
+    config: TDroopeConfig;
     arrowCounter: number;
     resultSet: TState;
+    noResultElement: HTMLElement;
     registerObserver(o: TObserver): void;
     unregisterObserver(o: TObserver): void;
     notifyObservers(): void;
@@ -25,11 +24,10 @@ interface TState {
 interface TObserver {
     update(arrayOfObjects: TState): void;
 }
-
-interface TOptions {
-    inputElement: HTMLInputElement;
-    lisitingElement: HTMLElement;
-    displayElement: HTMLElement;
+interface TDroopeConfig {
+    inputElement: HTMLInputElement | null;
+    lisitingElement: HTMLElement | null;
+    displayElement: HTMLElement | null;
     selectLimit?: number;
     displayListOnFocus?: boolean;
     displayDecorationList?: string[];
@@ -41,5 +39,5 @@ export {
     TSubject,
     TState,
     TObserver,
-    TOptions
+    TDroopeConfig
 };
