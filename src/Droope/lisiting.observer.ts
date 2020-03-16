@@ -7,29 +7,40 @@ class Listing implements TObserver {
         this.subject.registerObserver(this);
     }
 
-    public generateAndAppendList (newData: TState): HTMLElement {
-        const ulElement: HTMLElement = document.createElement("UL");
-
+    public generateList (newData: TState): HTMLElement {
+        const list: HTMLElement = document.createElement("UL");
         newData.list.forEach((item) => {
             const liElement: HTMLElement = document.createElement("LI");
             liElement.textContent = item.name;
             liElement.classList.add("list-item");
             liElement.setAttribute("data-obj", JSON.stringify(item));
-            ulElement.appendChild(liElement);
+            list.appendChild(liElement);
         });
-
-        if (this.subject.lisitingElement) {
-            this.subject.lisitingElement.innerHTML = "";
-            this.subject.lisitingElement.appendChild(this.subject.noResultElement);
-            this.subject.lisitingElement.appendChild(ulElement);
-        }
-
-        return ulElement;
+        return list;
     }
 
-    public update (newData: TState): void{
-        if (newData.hasListUpdated) {
-            this.generateAndAppendList(newData);
+    public appendList (list: HTMLElement): void {
+        try {
+            const { noResultElement } = this.subject;
+            const { lisitingElement } = this.subject.config;
+            if (lisitingElement) {
+                lisitingElement.innerHTML = "";
+                lisitingElement.appendChild(noResultElement);
+                lisitingElement.appendChild(list);
+            }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    public update (newData: TState): void {
+        try {
+            if (newData.hasListUpdated) {
+                const list: HTMLElement = this.generateList(newData);
+                this.appendList(list);
+            }
+        } catch (err) {
+            console.warn(err.message);
         }
     }
 }

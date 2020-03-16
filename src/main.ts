@@ -1,7 +1,6 @@
 import { TOptions } from "./Droope/interface";
 import { TSugOptions } from "./Suggester/interface";
 import droopeData from "./Droope/data";
-import suggesterData from "./Suggester/data";
 import Droope from "./Droope";
 import Suggester from "./Suggester";
 
@@ -10,15 +9,15 @@ import Suggester from "./Suggester";
     const lisitingElement: HTMLElement | null = document.querySelector(".select-box-listing");
     const displayElement: HTMLElement | null = document.querySelector(".select-box-display");
     if (inputElement && lisitingElement && displayElement) {
-        const options: TOptions = {
+        const options: TDroopeConfig = {
             inputElement,
             lisitingElement,
             displayElement,
             selectLimit: 3,
             displayListOnFocus: true,
-            displayDecorationList: ["chips"],
+            displayDecorationList: [],
             noResultErrorMessage: "Sorry no result",
-            selectedDecorator: "chips"
+            tagSelectedValues: true
         };
         const DroopeInstance = Droope(options, droopeData);
         console.log(DroopeInstance);
