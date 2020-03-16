@@ -2,11 +2,10 @@ interface TData {
     id: string;
     name: string;
 }
-
 interface TSubject {
     config: TDroopeConfig;
     arrowCounter: number;
-    resultSet: TState;
+    state: TState;
     noResultElement: HTMLElement;
     registerObserver(o: TObserver): void;
     unregisterObserver(o: TObserver): void;
@@ -32,6 +31,7 @@ interface TDroopeConfig {
     displayListOnFocus?: boolean;
     displayDecorationList?: string[];
     noResultErrorMessage?: string;
+    tagSelectedValues: boolean;
 }
 
 export {

@@ -26,6 +26,6 @@ module.exports = {
 		compress: true,
 		port: 1234,
 		open: true,
-		hotOnly: true,
+		hotOnly: false
 	}
 };

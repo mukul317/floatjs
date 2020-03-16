@@ -10,10 +10,11 @@ const defaultConfig: TDroopeConfig = {
     selectLimit: 1,
     displayListOnFocus: true,
     displayDecorationList: ["chips"],
-    noResultErrorMessage: "Sorry no result"
+    noResultErrorMessage: "Sorry no result",
+    tagSelectedValues: false
 };
 class SelectBoxInput implements TSubject {
-    public resultSet: TState = {
+    public state: TState = {
         list: [],
         selection: [],
         hasListUpdated: true
@@ -84,8 +85,8 @@ class SelectBoxInput implements TSubject {
                 this.noResultElement.style.display = "none";
                 this.noResultElement.textContent = config.noResultErrorMessage || "";
             }
-        } catch (error) {
-            console.warn(error.message);
+        } catch (err) {
+            console.warn(err.message);
         }
     }
 
@@ -122,16 +123,16 @@ class SelectBoxInput implements TSubject {
         const selectedObjStr: string = target.getAttribute("data-obj") || "";
         const selectedObj: TData = JSON.parse(selectedObjStr);
         if (selectedObj && config.selectLimit) {
-            const selectionLimitExceeded: boolean = config.selectLimit > 1 ? this.resultSet.selection.length + 1 > config.selectLimit : false;
-            const isLastSelectionNow: boolean = this.resultSet.selection.length + 1 >= config.selectLimit;
-            const isDuplicate: boolean = this.resultSet.selection.filter((item) => item.id === selectedObj.id).length > 0;
+            const selectionLimitExceeded: boolean = config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
+            const isLastSelectionNow: boolean = this.state.selection.length + 1 >= config.selectLimit;
+            const isDuplicate: boolean = this.state.selection.filter((item) => item.id === selectedObj.id).length > 0;
 
             if (selectedObj && isDuplicate === false) {
                 if (selectionLimitExceeded === false) {
-                    const selection = config.selectLimit === 1 ? [selectedObj] : [...this.resultSet.selection, selectedObj];
+                    const selection = config.selectLimit === 1 ? [selectedObj] : [...this.state.selection, selectedObj];
                     const result: TState = {
                         hasListUpdated: false,
-                        list: [...this.resultSet.list],
+                        list: [...this.state.list],
                         selection
                     };
                     this.setData(result);
@@ -149,8 +150,8 @@ class SelectBoxInput implements TSubject {
         const isQueryEmpty: boolean = query === "";
 
         if (which === 8) {
-            const lastIndexOfSelection: number = this.resultSet.selection.length - 1;
-            const lastId: string | null = lastIndexOfSelection >= 0 ? this.resultSet.selection[lastIndexOfSelection].id : null;
+            const lastIndexOfSelection: number = this.state.selection.length - 1;
+            const lastId: string | null = lastIndexOfSelection >= 0 ? this.state.selection[lastIndexOfSelection].id : null;
             if (isQueryEmpty === true && lastId !== null) {
                 this.deleteSelection(lastId);
                 this.handleListingDisplayStateOn("focus");
@@ -200,7 +201,7 @@ class SelectBoxInput implements TSubject {
             const result: TState = {
                 hasListUpdated: true,
                 list: hasResults ? filteredList : this.dataSet,
-                selection: [...this.resultSet.selection]
+                selection: [...this.state.selection]
             };
             this.setData(result);
             // Reset counter for arrow keys
@@ -273,7 +274,7 @@ class SelectBoxInput implements TSubject {
                 newData.hasListUpdated = true;
             }
 
-            this.resultSet = {
+            this.state = {
                 list: newData.list || [],
                 selection: newData.selection || [],
                 hasListUpdated: newData.hasListUpdated
@@ -305,7 +306,7 @@ class SelectBoxInput implements TSubject {
     public notifyObservers (): void {
         try {
             for (const observer of this.listObserverCollection) {
-                observer.update(this.resultSet);
+                observer.update(this.state);
             }
         } catch (err) {
             console.warn(err.message);
@@ -315,8 +316,8 @@ class SelectBoxInput implements TSubject {
     public deleteSelection (id: string): void {
         const result: TState = {
             hasListUpdated: false,
-            list: [...this.resultSet.list],
-            selection: [...this.resultSet.selection.filter((item) => parseInt(item.id, 10) !== parseInt(id, 10))]
+            list: [...this.state.list],
+            selection: [...this.state.selection.filter((item) => parseInt(item.id, 10) !== parseInt(id, 10))]
         };
         this.setData(result);
     }

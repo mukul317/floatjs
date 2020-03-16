@@ -14,8 +14,9 @@ import "./Suggester";
             displayElement,
             selectLimit: 3,
             displayListOnFocus: true,
-            displayDecorationList: ["chips"],
-            noResultErrorMessage: "Sorry no result"
+            displayDecorationList: [],
+            noResultErrorMessage: "Sorry no result",
+            tagSelectedValues: true
         };
         const DroopeInstance = Droope(options, droopeData);
         console.log(DroopeInstance);
