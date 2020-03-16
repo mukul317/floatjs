@@ -43,6 +43,7 @@ interface TOptions {
   displayListOnFocus?: boolean;
   displayDecorationList?: string[];
   noResultErrorMessage?: string;
+  isPrefetch?: boolean;
 }
 
 interface TSugOptions{
@@ -56,6 +57,7 @@ interface TSugOptions{
   noResultErrorMessage?: string;
   sanitiseString?: boolean;
   specialCharactersAllowedList: string[];
+  isPrefetch?: boolean;
 }
 interface TSuggesterResponse {
   resultList: any;
@@ -69,4 +71,15 @@ interface TResponse {
   any: any;
 }
 
-export { TData, TSubject, TState, TObserver, TOptions, TResponse, TSuggesterResponse, TPayload, TRecentSearchResponse, TSugOptions };
+export {
+    TData,
+    TSubject,
+    TState,
+    TObserver,
+    TOptions,
+    TResponse,
+    TSuggesterResponse,
+    TPayload,
+    TRecentSearchResponse,
+    TSugOptions
+};
