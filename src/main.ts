@@ -9,6 +9,7 @@ import "./Suggester";
     const displayElement: HTMLElement | null = document.querySelector(".select-box-display");
     if (inputElement && lisitingElement && displayElement) {
         const options: TDroopeConfig = {
+            domId: "demoDroope",
             inputElement,
             lisitingElement,
             displayElement,

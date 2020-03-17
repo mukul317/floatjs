@@ -24,6 +24,7 @@ interface TObserver {
     update(arrayOfObjects: TState): void;
 }
 interface TDroopeConfig {
+    domId: string;
     inputElement: HTMLInputElement | null;
     lisitingElement: HTMLElement | null;
     displayElement: HTMLElement | null;
@@ -33,6 +34,7 @@ interface TDroopeConfig {
     noResultErrorMessage?: string;
     tagSelectedValues: boolean;
     listLimit?: number;
+    checkboxes?: boolean;
 }
 
 export {

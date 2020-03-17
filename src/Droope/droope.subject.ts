@@ -4,6 +4,7 @@ interface TSetState extends TState {
 }
 
 const defaultConfig: TDroopeConfig = {
+    domId: "",
     inputElement: null,
     lisitingElement: null,
     displayElement: null,
@@ -11,8 +12,9 @@ const defaultConfig: TDroopeConfig = {
     selectLimit: 1,
     displayListOnFocus: true,
     displayDecorationList: ["chips"],
-    noResultErrorMessage: "Sorry no result",
-    tagSelectedValues: false
+    noResultErrorMessage: "No result for your query",
+    tagSelectedValues: false,
+    checkboxes: true
 };
 class SelectBoxInput implements TSubject {
     public state: TState = {
