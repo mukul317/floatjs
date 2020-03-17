@@ -29,8 +29,8 @@ module.exports = {
   ],
   rules: {
     "no-new": 0,
-    "semi": ["error", "always"],
     "indent": ["error", 4],
+    "semi": ["error", "always"],
     "quotes": ["error", "double"],
     "arrow-parens": ["error", "always"],
     "@typescript-eslint/no-explicit-any": "warn",
@@ -45,7 +45,7 @@ module.exports = {
     "@typescript-eslint/member-delimiter-style": "error",
     "no-array-constructor": "off",
     "@typescript-eslint/no-array-constructor": "error",
-    "no-empty-function": "off",
+    "no-empty-function": "error",
     "@typescript-eslint/no-empty-function": "error",
     "@typescript-eslint/no-empty-interface": "error",
     "@typescript-eslint/no-inferrable-types": "off",
@@ -53,7 +53,7 @@ module.exports = {
     "@typescript-eslint/no-namespace": "error",
     "@typescript-eslint/no-non-null-assertion": "warn",
     "@typescript-eslint/no-this-alias": "error",
-    "no-unused-vars": "off",
+    "no-unused-vars": "error",
     "@typescript-eslint/no-unused-vars": "warn",
     "no-use-before-define": "off",
     "@typescript-eslint/no-use-before-define": "error",
@@ -64,6 +64,7 @@ module.exports = {
     "no-var": "error",
     "prefer-const": "error",
     "prefer-rest-params": "error",
-    "prefer-spread": "error"
+    "prefer-spread": "error",
+    "space-before-function-paren": 0
   }
 }

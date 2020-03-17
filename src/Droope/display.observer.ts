@@ -3,12 +3,12 @@ import { TSubject, TObserver, TData, TState } from "./interface";
 class SelectDisplay implements TObserver {
     public subject: TSubject;
 
-    constructor (subject: TSubject) {
+    constructor(subject: TSubject) {
         this.subject = subject;
         this.subject.registerObserver(this);
     }
 
-    public generateDisplayHtml (selectedValues: TData[]): HTMLElement {
+    public generateDisplayHtml(selectedValues: TData[]): HTMLElement {
         const view: HTMLElement = document.createElement("UL");
         const { tagSelectedValues } = this.subject.config;
         try {
@@ -29,7 +29,7 @@ class SelectDisplay implements TObserver {
         }
     }
 
-    public appendDisplayHtml (selectedHtml: HTMLElement): void {
+    public appendDisplayHtml(selectedHtml: HTMLElement): void {
         try {
             const { displayElement } = this.subject.config;
             if (displayElement) {
@@ -41,7 +41,7 @@ class SelectDisplay implements TObserver {
         }
     }
 
-    public update (state: TState): void {
+    public update(state: TState): void {
         try {
             const { selection } = state;
             const selectedHtml: HTMLElement = this.generateDisplayHtml(selection);
@@ -51,7 +51,7 @@ class SelectDisplay implements TObserver {
         }
     }
 
-    public tagDecorator (listItem: HTMLElement): HTMLElement {
+    public tagDecorator(listItem: HTMLElement): HTMLElement {
         if (listItem) {
             const chipJsonString = listItem.getAttribute("data-obj");
             const chipJSON = chipJsonString ? JSON.parse(chipJsonString) : {};

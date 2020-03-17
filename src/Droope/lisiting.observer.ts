@@ -2,24 +2,30 @@ import { TSubject, TObserver, TState } from "./interface";
 class Listing implements TObserver {
     private subject: TSubject;
 
-    constructor (subject: TSubject) {
+    constructor(subject: TSubject) {
         this.subject = subject;
         this.subject.registerObserver(this);
     }
 
-    public generateList (newData: TState): HTMLElement {
+    public generateList(newData: TState): HTMLElement {
         const list: HTMLElement = document.createElement("UL");
-        newData.list.forEach((item) => {
+        const listLimit: number | undefined = this.subject.config.listLimit;
+        let index: number = 1;
+        for (const item of newData.list) {
             const liElement: HTMLElement = document.createElement("LI");
             liElement.textContent = item.name;
             liElement.classList.add("list-item");
             liElement.setAttribute("data-obj", JSON.stringify(item));
             list.appendChild(liElement);
-        });
+            if (listLimit && index >= listLimit) {
+                break;
+            }
+            ++index;
+        }
         return list;
     }
 
-    public appendList (list: HTMLElement): void {
+    public appendList(list: HTMLElement): void {
         try {
             const { noResultElement } = this.subject;
             const { lisitingElement } = this.subject.config;
@@ -33,7 +39,7 @@ class Listing implements TObserver {
         }
     }
 
-    public update (newData: TState): void {
+    public update(newData: TState): void {
         try {
             if (newData.hasListUpdated) {
                 const list: HTMLElement = this.generateList(newData);

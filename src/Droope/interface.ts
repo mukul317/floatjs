@@ -32,6 +32,7 @@ interface TDroopeConfig {
     displayDecorationList?: string[];
     noResultErrorMessage?: string;
     tagSelectedValues: boolean;
+    listLimit?: number;
 }
 
 export {

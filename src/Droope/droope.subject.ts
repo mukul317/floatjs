@@ -7,6 +7,7 @@ const defaultConfig: TDroopeConfig = {
     inputElement: null,
     lisitingElement: null,
     displayElement: null,
+    listLimit: 10,
     selectLimit: 1,
     displayListOnFocus: true,
     displayDecorationList: ["chips"],
@@ -27,9 +28,8 @@ class SelectBoxInput implements TSubject {
 
     private dataSet: TData[] = [];
     private listObserverCollection: TObserver[] = [];
-    private displayListOnFocus = false;
 
-    constructor (options: TDroopeConfig) {
+    constructor(options: TDroopeConfig) {
         try {
             this.config = { ...this.config, ...options };
 
@@ -41,26 +41,27 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public registerInputEvents (): void {
+    public registerInputEvents(): void {
         try {
             const { config } = this;
             if (config.inputElement) {
                 config.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
                 config.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
-                if (this.displayListOnFocus === true) {
+                if (config.displayListOnFocus === true) {
                     document.addEventListener("click", (e) => this.handleDocumentBlur(e));
                     config.inputElement.addEventListener("focus", (e) => this.handleListingDisplayStateOn(e.type));
                     // Close listing on initialization
                     this.handleListingDisplayStateOn("blur");
                 }
+            } else {
+                throw new Error("Droope input element undefined");
             }
-            throw new Error("Droope input element undefine");
         } catch (err) {
             console.warn(err.message);
         }
     }
 
-    public registerListEvents (): void {
+    public registerListEvents(): void {
         try {
             const { config } = this;
             if (config.lisitingElement) {
@@ -70,14 +71,15 @@ class SelectBoxInput implements TSubject {
                         this.handleSelect(target);
                     }
                 });
+            } else {
+                throw new Error("Droope list element undefined");
             }
-            throw new Error("Droope List element undefine");
         } catch (err) {
             console.warn(err.message);
         }
     }
 
-    public registerNoResultElement (): void {
+    public registerNoResultElement(): void {
         try {
             const { config } = this;
             if (config.noResultErrorMessage) {
@@ -90,14 +92,13 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleDocumentBlur (e: MouseEvent): void {
+    public handleDocumentBlur(e: MouseEvent): void {
         try {
             const target: HTMLElement = (e.target as HTMLElement);
             if (target) {
                 const { config } = this;
                 const hasClickedOnInput: boolean = config.inputElement === target;
                 const hasClickedOnListItem: boolean = target.classList ? target.classList.contains("list-item") : false;
-
                 if (hasClickedOnListItem === false && hasClickedOnInput === false) {
                     this.handleListingDisplayStateOn("blur");
                 }
@@ -107,7 +108,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleListingDisplayStateOn (eventType: string): void {
+    public handleListingDisplayStateOn(eventType: string): void {
         try {
             const { config } = this;
             if (config.lisitingElement) {
@@ -118,100 +119,112 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleSelect (target: HTMLElement): void {
-        const { config } = this;
-        const selectedObjStr: string = target.getAttribute("data-obj") || "";
-        const selectedObj: TData = JSON.parse(selectedObjStr);
-        if (selectedObj && config.selectLimit) {
-            const selectionLimitExceeded: boolean = config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
-            const isLastSelectionNow: boolean = this.state.selection.length + 1 >= config.selectLimit;
-            const isDuplicate: boolean = this.state.selection.filter((item) => item.id === selectedObj.id).length > 0;
-
-            if (selectedObj && isDuplicate === false) {
-                if (selectionLimitExceeded === false) {
-                    const selection = config.selectLimit === 1 ? [selectedObj] : [...this.state.selection, selectedObj];
-                    const result: TState = {
-                        hasListUpdated: false,
-                        list: [...this.state.list],
-                        selection
-                    };
-                    this.setData(result);
-                }
-                if (isLastSelectionNow) {
-                    this.handleListingDisplayStateOn("blur");
-                }
-            }
-        }
-    }
-
-    public handleBackspace (e: KeyboardEvent): void {
-        const which = e.which;
-        const query = (e.target as HTMLInputElement).value.trim();
-        const isQueryEmpty: boolean = query === "";
-
-        if (which === 8) {
-            const lastIndexOfSelection: number = this.state.selection.length - 1;
-            const lastId: string | null = lastIndexOfSelection >= 0 ? this.state.selection[lastIndexOfSelection].id : null;
-            if (isQueryEmpty === true && lastId !== null) {
-                this.deleteSelection(lastId);
-                this.handleListingDisplayStateOn("focus");
-            }
-        }
-    }
-
-    public onKeyUp (e: KeyboardEvent): void {
-        const query: string = e && e.target && (e.target as HTMLInputElement).value ? (e.target as HTMLInputElement).value.trim() : "";
-        const which: number = e.which;
-
-        switch (which) {
-        case 9: { // Tab pressed
-            this.handleListingDisplayStateOn("blur");
-            return;
-        }
-        // ENter
-        case 13: {
+    public handleSelect(target: HTMLElement): void {
+        try {
             const { config } = this;
-            const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
-            if (listItem) {
-                this.handleSelect(listItem);
+            const selectedObjStr: string = target.getAttribute("data-obj") || "";
+            const selectedObj: TData = JSON.parse(selectedObjStr);
+            if (selectedObj && config.selectLimit) {
+                const selectionLimitExceeded: boolean = config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
+                const isLastSelectionNow: boolean = this.state.selection.length + 1 >= config.selectLimit;
+                const isDuplicate: boolean = this.state.selection.filter((item) => item.id === selectedObj.id).length > 0;
+
+                if (selectedObj && isDuplicate === false) {
+                    if (selectionLimitExceeded === false) {
+                        const selection = config.selectLimit === 1 ? [selectedObj] : [...this.state.selection, selectedObj];
+                        const result: TState = {
+                            hasListUpdated: false,
+                            list: [...this.state.list],
+                            selection
+                        };
+                        this.setData(result);
+                    }
+                    if (isLastSelectionNow) {
+                        this.handleListingDisplayStateOn("blur");
+                    }
+                }
             }
-            return;
-        }
-
-        case 38: // Up arrow
-            this.handleArrow("up");
-            return;
-
-        case 40: {
-            // Down arrow
-            this.handleArrow("down");
-            return;
-        }
-
-        default: {
-            // Default filtering logic
-            const filteredList = this.dataSet.filter((item) => {
-                const lowerItem = item.name.toLowerCase();
-                const lowerQuery = query.toLowerCase();
-                const includesSupported = Array.prototype.includes !== undefined;
-                return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
-            });
-
-            const hasResults = filteredList.length !== 0;
-            const result: TState = {
-                hasListUpdated: true,
-                list: hasResults ? filteredList : this.dataSet,
-                selection: [...this.state.selection]
-            };
-            this.setData(result);
-            // Reset counter for arrow keys
-            this.arrowCounter = -1;
-            this.showNoResultMessage(hasResults);
-        }
+        } catch (err) {
+            console.warn(err.message);
         }
     }
 
-    public showNoResultMessage (hasResults: boolean): void {
+    public handleBackspace(e: KeyboardEvent): void {
+        try {
+            const which = e.which;
+            const query = (e.target as HTMLInputElement).value.trim();
+            const isQueryEmpty: boolean = query === "";
+
+            if (which === 8) {
+                const lastIndexOfSelection: number = this.state.selection.length - 1;
+                const lastId: string | null = lastIndexOfSelection >= 0 ? this.state.selection[lastIndexOfSelection].id : null;
+                if (isQueryEmpty === true && lastId !== null) {
+                    this.deleteSelection(lastId);
+                    this.handleListingDisplayStateOn("focus");
+                }
+            }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    public onKeyUp(e: KeyboardEvent): void {
+        try {
+            const query: string = e && e.target && (e.target as HTMLInputElement).value ? (e.target as HTMLInputElement).value.trim() : "";
+            const which: number = e.which;
+
+            switch (which) {
+            case 9: { // Tab pressed
+                this.handleListingDisplayStateOn("blur");
+                return;
+            }
+            // ENter
+            case 13: {
+                const { config } = this;
+                const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
+                if (listItem) {
+                    this.handleSelect(listItem);
+                }
+                return;
+            }
+
+            case 38: // Up arrow
+                this.handleArrow("up");
+                return;
+
+            case 40: {
+                // Down arrow
+                this.handleArrow("down");
+                return;
+            }
+
+            default: {
+                // Default filtering logic
+                const filteredList = this.dataSet.filter((item) => {
+                    const lowerItem = item.name.toLowerCase();
+                    const lowerQuery = query.toLowerCase();
+                    const includesSupported = Array.prototype.includes !== undefined;
+                    return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
+                });
+
+                const hasResults = filteredList.length !== 0;
+                const result: TState = {
+                    hasListUpdated: true,
+                    list: hasResults ? filteredList : this.dataSet,
+                    selection: [...this.state.selection]
+                };
+                this.setData(result);
+                // Reset counter for arrow keys
+                this.arrowCounter = -1;
+                this.showNoResultMessage(hasResults);
+            }
+            }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    public showNoResultMessage(hasResults: boolean): void {
         try {
             this.noResultElement.style.display = hasResults ? "none" : "block";
         } catch (err) {
@@ -219,7 +232,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleArrow (direction: string): void {
+    public handleArrow(direction: string): void {
         try {
             /** get list of all li items */
             const { config } = this;
@@ -265,7 +278,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public setData (newData: TSetState): void {
+    public setData(newData: TSetState): void {
         try {
             // This logic executes when SelectBox is provided with the data first time
             const isDataForFirstTime = newData.construct;
@@ -286,7 +299,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public registerObserver (o: TObserver): void {
+    public registerObserver(o: TObserver): void {
         try {
             this.listObserverCollection.push(o);
         } catch (err) {
@@ -294,7 +307,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public unregisterObserver (o: TObserver): void {
+    public unregisterObserver(o: TObserver): void {
         try {
             const index = this.listObserverCollection.indexOf(o);
             this.listObserverCollection.splice(index, 1);
@@ -303,7 +316,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public notifyObservers (): void {
+    public notifyObservers(): void {
         try {
             for (const observer of this.listObserverCollection) {
                 observer.update(this.state);
@@ -313,7 +326,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public deleteSelection (id: string): void {
+    public deleteSelection(id: string): void {
         const result: TState = {
             hasListUpdated: false,
             list: [...this.state.list],
