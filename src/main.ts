@@ -40,7 +40,8 @@ import Suggester from "./Suggester";
             noResultErrorMessage: "Sorry no result",
             selectedDecorator: "chips",
             sanitiseString: false,
-            specialCharactersAllowedList: []
+            specialCharactersAllowedList: [],
+            isPrefetch: true
         };
         const SuggesterInstance = Suggester(options, suggesterData);
         console.log("Suggester", SuggesterInstance);

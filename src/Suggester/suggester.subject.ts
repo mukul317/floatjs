@@ -103,7 +103,7 @@ class SelectBoxInput implements TSubject {
                 );
 
                 if (options.isPrefetch) {
-                    Helper.prefetchData();
+                    Helper.prefetchData({ options });
                 }
 
                 if (this.displayListOnFocus === true) {

@@ -46,7 +46,7 @@ interface TOptions {
   isPrefetch?: boolean;
 }
 
-interface TSugOptions{
+interface TSugOptions {
   inputElement: HTMLInputElement;
   lisitingElement: HTMLElement;
   displayElement: HTMLElement;
@@ -57,6 +57,9 @@ interface TSugOptions{
   noResultErrorMessage?: string;
   sanitiseString?: boolean;
   specialCharactersAllowedList: string[];
+  isPrefetch?: boolean;
+  // titleForSingleBucket: string;
+  // showTitleForSingleBucket: false;
 }
 interface TSuggesterResponse {
   resultList: any;
@@ -70,4 +73,19 @@ interface TResponse {
   any: any;
 }
 
-export { TData, TSubject, TState, TObserver, TOptions, TResponse, TSuggesterResponse, TPayload, TRecentSearchResponse, TSugOptions };
+interface TVersionResponse {
+  "suggester_v": string;
+  "prefetch_v": string;
+  "autocorrect_v": string;
+  "relatedconcepts_v": string;
+}
+
+export {
+    TData,
+    TSubject,
+    TState,
+    TObserver,
+    TOptions,
+    TResponse, TSuggesterResponse, TPayload, TRecentSearchResponse, TSugOptions,
+    TVersionResponse
+};
