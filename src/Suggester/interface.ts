@@ -21,6 +21,7 @@ interface TState {
   list: TData[];
   selection: TData[];
   hasListUpdated: boolean;
+  construct?: boolean;
 }
 
 interface TObserver {
@@ -59,16 +60,18 @@ interface TSugOptions{
   specialCharactersAllowedList: string[];
   isPrefetch?: boolean;
 }
-interface TSuggesterResponse {
+interface TSuggesterResponse extends TResponse {
   resultList: any;
 }
 
-interface TRecentSearchResponse {
+interface TRecentSearchResponse extends TResponse {
   resultConcepts: any;
 }
 
 interface TResponse {
-  any: any;
+  [key: string]: any;
+  resultConcepts: any;
+  resultList: any;
 }
 
 export {

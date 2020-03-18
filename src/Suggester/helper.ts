@@ -69,7 +69,7 @@ class Helper {
    */
   public static fetchVersion = () => {
       const url = suggesterConfig.urls.checkVersion + Math.random();
-      return Helper.sendXhr(url, null).then(function (response) {
+      return Helper.sendXhr(url, null).then(function () {
           //   Helper.setInStorage(suggesterConfig.storageKey.versionKey, response);
       // set response in LS
       });

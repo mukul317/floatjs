@@ -37,7 +37,7 @@ class SelectBoxInput implements TSubject {
     /**
      * Display noResultElement in case of Zero Items in Listing element
      */
-    public noResultElement: any
+    public noResultElement: HTMLElement
 
     /**
      * inputElement: Feild input element For input feilds
@@ -96,9 +96,12 @@ class SelectBoxInput implements TSubject {
 
         this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
         this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
-        this.lisitingElement.addEventListener("click", (e) =>
-            this.handleSelect(e.target)
-        );
+        this.lisitingElement.addEventListener("click", (e: MouseEvent) => {
+            const target: HTMLElement | null = e.target as HTMLElement;
+            if (target) {
+                this.handleSelect(target);
+            }
+        });
 
         if (options.isPrefetch) {
             Helper.prefetchData();
@@ -114,9 +117,9 @@ class SelectBoxInput implements TSubject {
             this.handleListingDisplayStateOn("blur");
         }
 
+        this.noResultElement = document.createElement("P");
+        this.noResultElement.classList.add("no-result");
         if (options.noResultErrorMessage) {
-            this.noResultElement = document.createElement("P");
-            this.noResultElement.classList.add("no-result");
             this.noResultElement.style.display = "none";
             this.noResultElement.textContent = options.noResultErrorMessage || "";
         }
@@ -127,14 +130,19 @@ class SelectBoxInput implements TSubject {
      * @param event
      * @returns {void}
      */
-    public handleDocumentBlur (event: any): void {
-        const eventPath: HTMLElement[] = event.path;
-        const hasNotClickedOnListing =
-            eventPath.indexOf(this.lisitingElement) === -1;
-        const hasNotClickedOnInput = eventPath.indexOf(this.inputElement) === -1;
+    public handleDocumentBlur (event: MouseEvent): void {
+        try {
+            const target: HTMLElement = (event.target as HTMLElement);
+            if (target) {
+                const hasClickedOnInput: boolean = this.inputElement === target;
+                const hasClickedOnListItem: boolean = target.classList ? target.classList.contains("list-item") : false;
 
-        if (hasNotClickedOnListing && hasNotClickedOnInput) {
-            this.handleListingDisplayStateOn("blur");
+                if (hasClickedOnListItem === false && hasClickedOnInput === false) {
+                    this.handleListingDisplayStateOn("blur");
+                }
+            }
+        } catch (err) {
+            console.warn(err.message);
         }
     }
 
@@ -153,9 +161,10 @@ class SelectBoxInput implements TSubject {
      * @param target
      * @returns { void }
      */
-    public handleSelect (target: any): void {
+    public handleSelect (target: HTMLElement): void {
         try {
-            const selectedObj: any = JSON.parse(target.getAttribute("data-obj"));
+            const selectedObjStr: string = target.getAttribute("data-obj") || "";
+            const selectedObj: TData = JSON.parse(selectedObjStr);
             this.setSelectedValues(selectedObj);
         } catch (e) {
             console.error(e);
@@ -168,7 +177,7 @@ class SelectBoxInput implements TSubject {
      * @param selectedObj
      * @returns void
      */
-    public setSelectedValues (selectedObj: any): void {
+    public setSelectedValues (selectedObj: TData): void {
         try {
             if (selectedObj) {
                 // rishabh changes here
@@ -244,11 +253,15 @@ class SelectBoxInput implements TSubject {
      * Handles the Enter key Press on the list item
      * @param e : { keyboardEvent }: Event passed
      */
-    public handleEnter (e: KeyboardEvent): void {
+    public handleEnter (event: KeyboardEvent): void {
         try {
-            const listItem = this.lisitingElement.querySelector(".active");
-            if (listItem) {
-                this.handleSelect(listItem);
+            if (event) {
+                const listItem: HTMLElement | null = this.lisitingElement.querySelector(".active");
+                if (listItem) {
+                    this.handleSelect(listItem);
+                }
+            } else {
+                throw new Error("Event not happened or passed into function :" + event);
             }
         } catch (e) {
             console.log("Exception occurred while Pressing Enter:" + e);
@@ -259,7 +272,7 @@ class SelectBoxInput implements TSubject {
      * Sanitises the String By removing Special Characters by matching with regex
      * @param query : {String}
      */
-    public sanitiseQuery (query: string): string|void {
+    public sanitiseQuery (query: string): string | void {
         try {
             if (query) {
                 const patr = new RegExp("[^a-zA-Z0-9,\\s" + this.specialCharactersAllowedList + "]", "g");
@@ -278,11 +291,13 @@ class SelectBoxInput implements TSubject {
      * @param selectedObj : {TData}:Selected Object being Selected by clicking on the Listing element
      */
 
-    public handleComma (query: string, selectedObj: TData): void{
+    public handleComma (query: string): void {
         try {
+            const selectedObj: TData = { id: 0, name: "", displayTextEn: "" };
             if (query.length > 1) {
                 selectedObj.id = 0;
                 selectedObj.name = query.split(",")[0];
+                selectedObj.displayTextEn = selectedObj.name;
 
                 this.setSelectedValues(selectedObj);
             } else {
@@ -312,43 +327,42 @@ class SelectBoxInput implements TSubject {
         try {
             if (e) {
                 const query: string =
-                e && e.target && (e.target as HTMLInputElement).value
-                    ? (e.target as HTMLInputElement).value.trim()
-                    : "";
+                    e && e.target && (e.target as HTMLInputElement).value
+                        ? (e.target as HTMLInputElement).value.trim()
+                        : "";
                 const which: number = e.which;
                 const category = "top";
-                const selectedObj: any = {};
                 switch (which) {
-                case 9: // Tab pressed
-                    this.handleListingDisplayStateOn("blur");
-                    return;
+                    case 9: // Tab pressed
+                        this.handleListingDisplayStateOn("blur");
+                        return;
 
-                case 13: // Enter
-                // eslint-disable-next-line no-case-declarations
-                    this.handleEnter(e);
-                    return;
+                    case 13: // Enter
+                        // eslint-disable-next-line no-case-declarations
+                        this.handleEnter(e);
+                        return;
 
-                case 38: // Up arrow
-                    this.handleArrow("up");
-                    return;
+                    case 38: // Up arrow
+                        this.handleArrow("up");
+                        return;
 
-                case 40: // Down arrow
-                    this.handleArrow("down");
-                    return;
-                case 188:
-                    this.handleComma(query, selectedObj);
-                    return;
+                    case 40: // Down arrow
+                        this.handleArrow("down");
+                        return;
+                    case 188:
+                        this.handleComma(query);
+                        return;
 
-                default:
-                    this.handlesApiResponse(
-                        Helper.sendXhr(suggesterConfig.urls.autoComplete, {
+                    default:
+                        this.handlesApiResponse(
+                            Helper.sendXhr(suggesterConfig.urls.autoComplete, {
+                                query,
+                                category
+                            }),
+                            category,
                             query,
-                            category
-                        }),
-                        category,
-                        query,
-                        "sug"
-                    );
+                            "sug"
+                        );
                 }
             } else {
                 throw new Error("Event not happened Event Object Missing");
@@ -420,7 +434,7 @@ class SelectBoxInput implements TSubject {
     public filterAndFillDataIntoListing (query: string, category: string): void {
         try {
             if (query || category) {
-                const filteredList = this.dataSet.filter((item: TData) => {
+                const filteredList = this.dataSet.filter((item: TData): boolean | void => {
                     if (item && item.displayTextEn) {
                         item.name = item.displayTextEn;
                         const lowerItem = item.displayTextEn.toLowerCase();
@@ -488,16 +502,16 @@ class SelectBoxInput implements TSubject {
     ): void {
         try {
             if (promise) {
-                promise.then((resp: any) => {
+                promise.then((resp: TRecentSearchResponse | TSuggesterResponse) => {
                     if (resp) {
                         if (listingType) {
                             switch (listingType) {
-                            case "rc":
-                                this.handlesRelatedSearchResponseData(resp, category);
-                                break;
-                            case "sug":
-                                this.handlesSuggesterResponseData(resp, category, query);
-                                break;
+                                case "rc":
+                                    this.handlesRelatedSearchResponseData(resp, category);
+                                    break;
+                                case "sug":
+                                    this.handlesSuggesterResponseData(resp, category, query);
+                                    break;
                             }
                         } else {
                             throw new Error("listingType not passed as a param");
@@ -578,7 +592,7 @@ class SelectBoxInput implements TSubject {
         console.log(this.arrowCounter);
     }
 
-    public setData (newData: any): void {
+    public setData (newData: TState): void {
         // This logic executes when SelectBox is provided with the data first time
         const isDataForFirstTime = newData.construct;
         if (isDataForFirstTime) {

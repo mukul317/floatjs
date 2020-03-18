@@ -1,6 +1,7 @@
-import { TOptions } from "./Droope/interface";
+import { TDroopeConfig } from "./Droope/interface";
 import { TSugOptions } from "./Suggester/interface";
 import droopeData from "./Droope/data";
+import suggesterData from "./Suggester/data";
 import Droope from "./Droope";
 import Suggester from "./Suggester";
 

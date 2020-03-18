@@ -30,7 +30,7 @@ module.exports = {
   rules: {
     "no-new": 0,
     "semi": ["error", "always"],
-    "indent": ["error", 4],
+    "indent": "off",
     "quotes": ["error", "double"],
     "arrow-parens": ["error", "always"],
     "@typescript-eslint/no-explicit-any": "warn",

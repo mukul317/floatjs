@@ -8,7 +8,7 @@ class Helper {
    * @param payload : Contains an Object for paramets to be passed in the url
    */
   static sendXhr = (url: string, payload: TPayload | null): Promise<TResponse> => {
-      return new Promise((resolve: any, reject: any) => {
+      return new Promise((resolve: Function, reject: Function) => {
           const xhr: XMLHttpRequest = new XMLHttpRequest();
           try {
               if (!payload || !url) {

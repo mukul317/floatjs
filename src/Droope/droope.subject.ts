@@ -29,7 +29,7 @@ class SelectBoxInput implements TSubject {
     private listObserverCollection: TObserver[] = [];
     private displayListOnFocus = false;
 
-    constructor (options: TDroopeConfig) {
+    constructor(options: TDroopeConfig) {
         try {
             this.config = { ...this.config, ...options };
 
@@ -41,7 +41,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public registerInputEvents (): void {
+    public registerInputEvents(): void {
         try {
             const { config } = this;
             if (config.inputElement) {
@@ -60,7 +60,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public registerListEvents (): void {
+    public registerListEvents(): void {
         try {
             const { config } = this;
             if (config.lisitingElement) {
@@ -77,7 +77,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public registerNoResultElement (): void {
+    public registerNoResultElement(): void {
         try {
             const { config } = this;
             if (config.noResultErrorMessage) {
@@ -90,7 +90,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleDocumentBlur (e: MouseEvent): void {
+    public handleDocumentBlur(e: MouseEvent): void {
         try {
             const target: HTMLElement = (e.target as HTMLElement);
             if (target) {
@@ -107,7 +107,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleListingDisplayStateOn (eventType: string): void {
+    public handleListingDisplayStateOn(eventType: string): void {
         try {
             const { config } = this;
             if (config.lisitingElement) {
@@ -118,7 +118,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleSelect (target: HTMLElement): void {
+    public handleSelect(target: HTMLElement): void {
         const { config } = this;
         const selectedObjStr: string = target.getAttribute("data-obj") || "";
         const selectedObj: TData = JSON.parse(selectedObjStr);
@@ -144,7 +144,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleBackspace (e: KeyboardEvent): void {
+    public handleBackspace(e: KeyboardEvent): void {
         const which = e.which;
         const query = (e.target as HTMLInputElement).value.trim();
         const isQueryEmpty: boolean = query === "";
@@ -159,59 +159,59 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public onKeyUp (e: KeyboardEvent): void {
+    public onKeyUp(e: KeyboardEvent): void {
         const query: string = e && e.target && (e.target as HTMLInputElement).value ? (e.target as HTMLInputElement).value.trim() : "";
         const which: number = e.which;
 
         switch (which) {
-        case 9: { // Tab pressed
-            this.handleListingDisplayStateOn("blur");
-            return;
-        }
-        // ENter
-        case 13: {
-            const { config } = this;
-            const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
-            if (listItem) {
-                this.handleSelect(listItem);
+            case 9: { // Tab pressed
+                this.handleListingDisplayStateOn("blur");
+                return;
             }
-            return;
-        }
+            // ENter
+            case 13: {
+                const { config } = this;
+                const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
+                if (listItem) {
+                    this.handleSelect(listItem);
+                }
+                return;
+            }
 
-        case 38: // Up arrow
-            this.handleArrow("up");
-            return;
+            case 38: // Up arrow
+                this.handleArrow("up");
+                return;
 
-        case 40: {
-            // Down arrow
-            this.handleArrow("down");
-            return;
-        }
+            case 40: {
+                // Down arrow
+                this.handleArrow("down");
+                return;
+            }
 
-        default: {
-            // Default filtering logic
-            const filteredList = this.dataSet.filter((item) => {
-                const lowerItem = item.name.toLowerCase();
-                const lowerQuery = query.toLowerCase();
-                const includesSupported = Array.prototype.includes !== undefined;
-                return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
-            });
+            default: {
+                // Default filtering logic
+                const filteredList = this.dataSet.filter((item) => {
+                    const lowerItem = item.name.toLowerCase();
+                    const lowerQuery = query.toLowerCase();
+                    const includesSupported = Array.prototype.includes !== undefined;
+                    return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
+                });
 
-            const hasResults = filteredList.length !== 0;
-            const result: TState = {
-                hasListUpdated: true,
-                list: hasResults ? filteredList : this.dataSet,
-                selection: [...this.state.selection]
-            };
-            this.setData(result);
-            // Reset counter for arrow keys
-            this.arrowCounter = -1;
-            this.showNoResultMessage(hasResults);
-        }
+                const hasResults = filteredList.length !== 0;
+                const result: TState = {
+                    hasListUpdated: true,
+                    list: hasResults ? filteredList : this.dataSet,
+                    selection: [...this.state.selection]
+                };
+                this.setData(result);
+                // Reset counter for arrow keys
+                this.arrowCounter = -1;
+                this.showNoResultMessage(hasResults);
+            }
         }
     }
 
-    public showNoResultMessage (hasResults: boolean): void {
+    public showNoResultMessage(hasResults: boolean): void {
         try {
             this.noResultElement.style.display = hasResults ? "none" : "block";
         } catch (err) {
@@ -219,7 +219,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleArrow (direction: string): void {
+    public handleArrow(direction: string): void {
         try {
             /** get list of all li items */
             const { config } = this;
@@ -265,7 +265,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public setData (newData: TSetState): void {
+    public setData(newData: TSetState): void {
         try {
             // This logic executes when SelectBox is provided with the data first time
             const isDataForFirstTime = newData.construct;
@@ -286,7 +286,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public registerObserver (o: TObserver): void {
+    public registerObserver(o: TObserver): void {
         try {
             this.listObserverCollection.push(o);
         } catch (err) {
@@ -294,7 +294,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public unregisterObserver (o: TObserver): void {
+    public unregisterObserver(o: TObserver): void {
         try {
             const index = this.listObserverCollection.indexOf(o);
             this.listObserverCollection.splice(index, 1);
@@ -303,7 +303,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public notifyObservers (): void {
+    public notifyObservers(): void {
         try {
             for (const observer of this.listObserverCollection) {
                 observer.update(this.state);
@@ -313,7 +313,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public deleteSelection (id: string): void {
+    public deleteSelection(id: string): void {
         const result: TState = {
             hasListUpdated: false,
             list: [...this.state.list],
