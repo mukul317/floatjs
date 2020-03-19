@@ -20,7 +20,8 @@ class SelectBoxInput implements TSubject {
     public state: TState = {
         list: [],
         selection: [],
-        hasListUpdated: true
+        hasListUpdated: false,
+        hasSelectionUpdated: false
     };
 
     public noResultErrorMessage: boolean = true;
@@ -200,6 +201,7 @@ class SelectBoxInput implements TSubject {
 
                 const hasResults = filteredList.length !== 0;
                 const result: TState = {
+                    hasSelectionUpdated: false,
                     hasListUpdated: true,
                     list: hasResults ? filteredList : this.dataSet,
                     selection: [...this.state.selection]
@@ -291,7 +293,8 @@ class SelectBoxInput implements TSubject {
             this.state = {
                 list: newData.list || [],
                 selection: newData.selection || [],
-                hasListUpdated: newData.hasListUpdated
+                hasListUpdated: newData.hasListUpdated,
+                hasSelectionUpdated: newData.hasSelectionUpdated
             };
 
             this.notifyObservers();
@@ -359,7 +362,8 @@ class SelectBoxInput implements TSubject {
             const result: TState = {
                 hasListUpdated: true,
                 list: newList,
-                selection: this.state.selection
+                selection: this.state.selection,
+                hasSelectionUpdated: false
             };
             this.setData(result);
         } catch (err) {
@@ -380,7 +384,8 @@ class SelectBoxInput implements TSubject {
             const result: TState = {
                 hasListUpdated: true,
                 list: [...this.state.list, ...newList],
-                selection: this.state.selection
+                selection: this.state.selection,
+                hasSelectionUpdated: false
             };
             this.setData(result);
         } catch (err) {
@@ -400,6 +405,7 @@ class SelectBoxInput implements TSubject {
         try {
             const result: TState = {
                 hasListUpdated: false,
+                hasSelectionUpdated: true,
                 list: this.state.list,
                 selection: [...this.state.selection.filter((item) => parseInt(item.id, 10) !== parseInt(id, 10))]
             };
@@ -423,6 +429,7 @@ class SelectBoxInput implements TSubject {
             const selection = this.config.selectLimit === 1 ? [selectedObj] : [...this.state.selection, selectedObj];
             const result: TState = {
                 hasListUpdated: false,
+                hasSelectionUpdated: true,
                 list: this.state.list,
                 selection
             };

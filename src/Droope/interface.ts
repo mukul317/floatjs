@@ -18,6 +18,7 @@ interface TState {
     list: TData[];
     selection: TData[];
     hasListUpdated: boolean;
+    hasSelectionUpdated: boolean;
 }
 
 interface TObserver {

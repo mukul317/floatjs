@@ -50,11 +50,13 @@ class SelectDisplay implements TObserver {
 
     public update(state: TState): void {
         try {
-            const { selection } = state;
-            const selectedHtml: HTMLElement = this.generateDisplayHtml(selection);
-            this.appendMarkup(selectedHtml);
+            const { selection, hasSelectionUpdated } = state;
+            if (hasSelectionUpdated === true) {
+                const selectedHtml: HTMLElement = this.generateDisplayHtml(selection);
+                this.appendMarkup(selectedHtml);
 
-            console.info("[Notified]: Droope Select Observer");
+                console.info("[Notified]: Droope Select Observer with UPDATE");
+            }
         } catch (err) {
             console.warn(err.message);
         }
