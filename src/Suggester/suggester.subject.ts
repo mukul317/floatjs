@@ -25,6 +25,11 @@ class SelectBoxInput implements TSubject {
     public listingElement: HTMLElement
 
     /**
+     * displayListStyle: Showing listing style
+     */
+    public displayListStyle: string
+
+    /**
      * heading Element: For showing the heading of suggestions
      */
     public headingElement: HTMLElement
@@ -32,7 +37,7 @@ class SelectBoxInput implements TSubject {
     /**
      * Debounce timer variable used for debouncing the user input
      */
-    public debounceTimer: number | null = null;
+    public debounceTimer: NodeJS.Timeout | null = null;
 
     /**
      * DisplayElement: item where selected item is displayed
@@ -95,6 +100,7 @@ class SelectBoxInput implements TSubject {
         this.listingElement = options.listingElement;
         this.selectLimit = options.selectLimit || 1;
         this.displayListOnFocus = options.displayListOnFocus || false;
+        this.displayListStyle = options.displayListStyle || "";
         this.sanitiseString = options.sanitiseString || false;
         if (this.sanitiseString) {
             if (options.specialCharactersAllowedList) {
@@ -286,10 +292,10 @@ class SelectBoxInput implements TSubject {
     public debounceRequest (debounceInterval: number): Promise<void> {
             if (this.debounceTimer) { clearTimeout(this.debounceTimer); }
           return new Promise((resolve: Function): void => {
-            this.debounceTimer = Number(setTimeout(
+            this.debounceTimer = setTimeout(
               (): void => resolve(),
               debounceInterval
-            ));
+            );
           });
       }
 
@@ -409,6 +415,10 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Sets the heading element based on the current listing that is being shown.
+     * @param listingType : type of listing that is being shown if its suggester or related searches
+     */
     public setHeadingElement (listingType: string): void{
       try {
           if (listingType) {

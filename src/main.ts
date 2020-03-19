@@ -39,6 +39,7 @@ import Suggester from "./Suggester";
             displayDecorationList: ["chips"],
             noResultErrorMessage: "Sorry no result",
             selectedDecorator: "chips",
+            displayListStyle: "",
             sanitiseString: false,
             specialCharactersAllowedList: [";"]
         };
