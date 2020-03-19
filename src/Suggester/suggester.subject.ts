@@ -22,7 +22,17 @@ class SelectBoxInput implements TSubject {
     /**
      * listingElement: Showing Listing of Suggester
      */
-    public lisitingElement: HTMLElement
+    public listingElement: HTMLElement
+
+    /**
+     * heading Element: For showing the heading of suggestions
+     */
+    public headingElement: HTMLElement
+
+    /**
+     * Debounce timer variable used for debouncing the user input
+     */
+    public debounceTimer: number | null = null;
 
     /**
      * DisplayElement: item where selected item is displayed
@@ -82,7 +92,7 @@ class SelectBoxInput implements TSubject {
     constructor (options: TSugOptions) {
         this.inputElement = options.inputElement;
         this.displayElement = options.displayElement;
-        this.lisitingElement = options.lisitingElement;
+        this.listingElement = options.listingElement;
         this.selectLimit = options.selectLimit || 1;
         this.displayListOnFocus = options.displayListOnFocus || false;
         this.sanitiseString = options.sanitiseString || false;
@@ -96,10 +106,10 @@ class SelectBoxInput implements TSubject {
 
         this.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
         this.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
-        this.lisitingElement.addEventListener("click", (e: MouseEvent) => {
+        this.listingElement.addEventListener("click", (e: MouseEvent) => {
             const target: HTMLElement | null = e.target as HTMLElement;
             if (target) {
-                this.handleSelect(target);
+                this.onSelect(target);
             }
         });
 
@@ -123,6 +133,19 @@ class SelectBoxInput implements TSubject {
             this.noResultElement.style.display = "none";
             this.noResultElement.textContent = options.noResultErrorMessage || "";
         }
+        this.headingElement = document.createElement("P");
+        this.headingElement.classList.add("no-result");
+
+      //  this.initialiseHeadingElement();
+    }
+
+    public initialiseHeadingElement (): void {
+        this.headingElement = document.createElement("P");
+        try {
+         this.headingElement.classList.add("no-result");
+     } catch (e) {
+         console.warn("Errors occurred while initialising heading element");
+     }
     }
 
     /**
@@ -151,7 +174,7 @@ class SelectBoxInput implements TSubject {
      * @param eventType
      */
     public handleListingDisplayStateOn (eventType: string): void {
-        this.lisitingElement.style.display =
+        this.listingElement.style.display =
             eventType === "focus" ? "block" : "none";
     }
 
@@ -161,7 +184,7 @@ class SelectBoxInput implements TSubject {
      * @param target
      * @returns { void }
      */
-    public handleSelect (target: HTMLElement): void {
+    public onSelect (target: HTMLElement): void {
         try {
             const selectedObjStr: string = target.getAttribute("data-obj") || "";
             const selectedObj: TData = JSON.parse(selectedObjStr);
@@ -181,7 +204,7 @@ class SelectBoxInput implements TSubject {
         try {
             if (selectedObj) {
                 // rishabh changes here
-                this.initialisesRelatedSearch(selectedObj);
+                this.sendRelatedSearchRequest(selectedObj);
                 // rishabh changes here
 
                 const selectionLimitExceeded: boolean =
@@ -239,7 +262,7 @@ class SelectBoxInput implements TSubject {
         const query = (e.target as HTMLInputElement).value.trim();
         const isQueryEmpty: boolean = query === "";
 
-        if (which === 8) {
+        if (which === 8 && this.resultSet.selection) {
             const lastIndexOfSelection: number = this.resultSet.selection.length - 1;
             const lastName: string | null = lastIndexOfSelection >= 0 ? this.resultSet.selection[lastIndexOfSelection].name : null;
             if (isQueryEmpty === true && lastName !== null) {
@@ -250,15 +273,36 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
+     * Debouncing Request for avoiding multiple requests being hit repetitively as user types quickly.
+     * When user types quickly then at the same instant multiple requests are being fired. To avoid those
+     * multiple requests we have added debouncing so that once user is done typing the query then only hit
+     * for the suggestions will go for the suggestions. This avoid multiple hits on the server on the same
+     * time. Here we define timeout of debouncing i.e. if in this time user types again then the previous
+     * request will not be fired and it will be fired only when user does not type during that interval.
+     * @param requestFunction : Function on which debouncing is to be done
+     * @param debounceInterval : Interval of debouncing after which request should be done
+     */
+
+    public debounceRequest (debounceInterval: number): Promise<void> {
+            if (this.debounceTimer) { clearTimeout(this.debounceTimer); }
+          return new Promise((resolve: Function): void => {
+            this.debounceTimer = Number(setTimeout(
+              (): void => resolve(),
+              debounceInterval
+            ));
+          });
+      }
+
+    /**
      * Handles the Enter key Press on the list item
      * @param e : { keyboardEvent }: Event passed
      */
     public handleEnter (event: KeyboardEvent): void {
         try {
             if (event) {
-                const listItem: HTMLElement | null = this.lisitingElement.querySelector(".active");
+                const listItem: HTMLElement | null = this.listingElement.querySelector(".active");
                 if (listItem) {
-                    this.handleSelect(listItem);
+                    this.onSelect(listItem);
                 }
             } else {
                 throw new Error("Event not happened or passed into function :" + event);
@@ -272,7 +316,7 @@ class SelectBoxInput implements TSubject {
      * Sanitises the String By removing Special Characters by matching with regex
      * @param query : {String}
      */
-    public sanitiseQuery (query: string): string | void {
+    public sanitiseQuery (query: string): string {
         try {
             if (query) {
                 const patr = new RegExp("[^a-zA-Z0-9,\\s" + this.specialCharactersAllowedList + "]", "g");
@@ -283,6 +327,7 @@ class SelectBoxInput implements TSubject {
         } catch (e) {
             console.log("Exception Occurred while Sanitising Query");
         }
+        return "";
     }
 
     /**
@@ -291,7 +336,7 @@ class SelectBoxInput implements TSubject {
      * @param selectedObj : {TData}:Selected Object being Selected by clicking on the Listing element
      */
 
-    public handleComma (query: string): void {
+    public initialiseRelatedSearch (query: string): void {
         try {
             const selectedObj: TData = { id: 0, name: "", displayTextEn: "" };
             if (query.length > 1) {
@@ -328,7 +373,7 @@ class SelectBoxInput implements TSubject {
             if (e) {
                 const query: string =
                     e && e.target && (e.target as HTMLInputElement).value
-                        ? (e.target as HTMLInputElement).value.trim()
+                        ? this.sanitiseQuery((e.target as HTMLInputElement).value.trim())
                         : "";
                 const which: number = e.which;
                 const category = "top";
@@ -350,19 +395,11 @@ class SelectBoxInput implements TSubject {
                         this.handleArrow("down");
                         return;
                     case 188:
-                        this.handleComma(query);
+                        this.initialiseRelatedSearch(query);
                         return;
 
                     default:
-                        this.handlesApiResponse(
-                            Helper.sendXhr(suggesterConfig.urls.autoComplete, {
-                                query,
-                                category
-                            }),
-                            category,
-                            query,
-                            "sug"
-                        );
+                        this.debounceRequest(500).then(() => { this.sendSuggesterRequest(query, category); });
                 }
             } else {
                 throw new Error("Event not happened Event Object Missing");
@@ -372,22 +409,64 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    public setHeadingElement (listingType: string): void{
+      try {
+          if (listingType) {
+          switch (listingType) {
+              case "rc":
+                  this.headingElement.style.display = "block";
+                  this.headingElement.textContent = "Related Searches";
+                  break;
+              case "sug":
+                  this.headingElement.style.display = "block";
+                  this.headingElement.textContent = "Suggestions";
+                  break;
+          }
+        } else {
+            throw new Error("Listing type is not available");
+            }
+      } catch (e) {
+          console.warn("Error occurred while setting heading element");
+      }
+    }
+
+    public sendSuggesterRequest (query: string, category: string): void {
+        try {
+            console.log("query in here", query);
+            if (query) {
+            this.handleApiResponse(
+                Helper.sendXhr(suggesterConfig.urls.autoComplete, {
+                    query,
+                    category
+                }),
+                category,
+                query,
+                "sug"
+            );
+            } else {
+                throw new Error("Query is not passed into the function");
+            }
+        } catch (e) {
+            console.warn("Suggester Request function resulted in an issue", e);
+        }
+    }
+
     /**
         * Initiates related search functionality that takes selectedObject selected by clicking on the listing
         * element . The resposibility of this function is to fetch the selectedObject query and then send the
-        * ajax hit to get more related  searches .
+        * ajax request to get more related  searches .
         * @param selectedObject: TData : Selected Object from the Listing element being clicked
         * @returns {return}
         * @throws {null}
         *
         */
-    public initialisesRelatedSearch (selectedObject: TData): void {
+    public sendRelatedSearchRequest (selectedObject: TData): void {
         try {
             if (selectedObject && selectedObject.displayTextEn) {
                 const query = selectedObject.displayTextEn.toLowerCase();
                 const category = "top";
 
-                this.handlesApiResponse(
+                this.handleApiResponse(
                     Helper.sendXhr(suggesterConfig.urls.relatedConcept, {
                         query,
                         category
@@ -411,12 +490,12 @@ class SelectBoxInput implements TSubject {
      * @param category: String : category of results for which suggester is visible
      * @returns {void}
      */
-    public handlesRelatedSearchResponseData (resp: TRecentSearchResponse, category: string): void {
+    public handleRelatedSearchResponseData (resp: TRecentSearchResponse, category: string): void {
         try {
             if (resp && category) {
                 this.dataSet = resp.resultConcepts[category];
                 const emptyQuery = ""; // to disable filtering in case of rc selected
-                this.filterAndFillDataIntoListing(emptyQuery, category);
+                this.filterAndFillDataIntoListing(emptyQuery, category, "rc");
             } else {
                 throw new Error("resp and category not found - param not found");
             }
@@ -431,7 +510,7 @@ class SelectBoxInput implements TSubject {
      * @param query: {string} : Query of the input feild being entered in the suggester input
      * @returns {void}
      */
-    public filterAndFillDataIntoListing (query: string, category: string): void {
+    public filterAndFillDataIntoListing (query: string, category: string, listingType: string): void {
         try {
             if (query || category) {
                 const filteredList = this.dataSet.filter((item: TData): boolean | void => {
@@ -452,8 +531,9 @@ class SelectBoxInput implements TSubject {
                     list: hasResults ? filteredList : this.dataSet,
                     selection: [...this.resultSet.selection]
                 };
-                console.log("result in here", result);
+                this.setHeadingElement(listingType);
                 this.setData(result);
+
                 this.arrowCounter = -1;
                 this.showNoResultMessage(hasResults);
             } else {
@@ -472,11 +552,11 @@ class SelectBoxInput implements TSubject {
      * @param query: {String} : Query that is put inside the input feild
      * @returns{void}
      */
-    public handlesSuggesterResponseData (resp: TSuggesterResponse, category: string, query: string): void {
+    public handleSuggesterResponseData (resp: TSuggesterResponse, category: string, query: string): void {
         try {
             if (resp && category && query) {
                 this.dataSet = resp.resultList[category];
-                this.filterAndFillDataIntoListing(query, category);
+                this.filterAndFillDataIntoListing(query, category, "sug");
             } else {
                 throw new Error("param not found: resp , category, query");
             }
@@ -494,7 +574,7 @@ class SelectBoxInput implements TSubject {
      * @param listingType :{String} : Listing  type that can be recent search and suggester suggestions
      * @returns {void}
      */
-    public handlesApiResponse (
+    public handleApiResponse (
         promise: Promise<TResponse>,
         category: string,
         query: string,
@@ -507,10 +587,10 @@ class SelectBoxInput implements TSubject {
                         if (listingType) {
                             switch (listingType) {
                                 case "rc":
-                                    this.handlesRelatedSearchResponseData(resp, category);
+                                    this.handleRelatedSearchResponseData(resp, category);
                                     break;
                                 case "sug":
-                                    this.handlesSuggesterResponseData(resp, category, query);
+                                    this.handleSuggesterResponseData(resp, category, query);
                                     break;
                             }
                         } else {
@@ -553,7 +633,7 @@ class SelectBoxInput implements TSubject {
      */
     public handleArrow (direction: string): void {
         /** get list of all li items */
-        const listItems = this.lisitingElement.querySelectorAll("li");
+        const listItems = this.listingElement.querySelectorAll("li");
 
         /** determine the direction */
         const isGoingUp = direction === "up";
@@ -589,14 +669,13 @@ class SelectBoxInput implements TSubject {
                 this.arrowCounter--;
             }
         }
-        console.log(this.arrowCounter);
     }
 
     public setData (newData: TState): void {
         // This logic executes when SelectBox is provided with the data first time
         const isDataForFirstTime = newData.construct;
         if (isDataForFirstTime) {
-            this.dataSet = newData.list;
+            this.dataSet = newData.list ? newData.list : [];
             newData.hasListUpdated = true;
         }
 
@@ -625,6 +704,8 @@ class SelectBoxInput implements TSubject {
     }
 
     public deleteSelection (name: string): void {
+        try {
+        if (this.resultSet.selection) {
         const result: TState = {
             hasListUpdated: false,
             list: [...this.resultSet.list],
@@ -634,8 +715,13 @@ class SelectBoxInput implements TSubject {
                 )
             ]
         };
+
         this.setInputElement(name);
         this.setData(result);
+    }
+} catch (e) {
+    console.warn("Error occurred while deletion of selected String", e);
+    }
     }
 
     public setInputElement (name: string): void {

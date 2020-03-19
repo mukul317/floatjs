@@ -5,9 +5,10 @@ interface TData {
 }
 
 interface TSubject {
-  lisitingElement: HTMLElement;
+  listingElement: HTMLElement;
   displayElement: HTMLElement;
   noResultElement: HTMLElement;
+  headingElement: HTMLElement;
   arrowCounter: number;
   resultSet: TState;
   registerObserver(o: TObserver): void;
@@ -36,20 +37,9 @@ interface TPayload {
   edge?: number;
 }
 
-interface TOptions {
-  inputElement: HTMLInputElement;
-  lisitingElement: HTMLElement;
-  displayElement: HTMLElement;
-  selectLimit?: number;
-  displayListOnFocus?: boolean;
-  displayDecorationList?: string[];
-  noResultErrorMessage?: string;
-  isPrefetch?: boolean;
-}
-
 interface TSugOptions{
   inputElement: HTMLInputElement;
-  lisitingElement: HTMLElement;
+  listingElement: HTMLElement;
   displayElement: HTMLElement;
   selectLimit?: number;
   displayListOnFocus?: boolean;
@@ -79,7 +69,6 @@ export {
     TSubject,
     TState,
     TObserver,
-    TOptions,
     TResponse,
     TSuggesterResponse,
     TPayload,

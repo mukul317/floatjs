@@ -27,20 +27,20 @@ import Suggester from "./Suggester";
 
 ((): void => {
     const inputElement: HTMLInputElement | null = document.querySelector(".suggester-select-box-input");
-    const lisitingElement: HTMLElement | null = document.querySelector(".suggester-select-box-listing");
+    const listingElement: HTMLElement | null = document.querySelector(".suggester-select-box-listing");
     const displayElement: HTMLElement | null = document.querySelector(".suggester-select-box-display");
-    if (inputElement && lisitingElement && displayElement) {
+    if (inputElement && listingElement && displayElement) {
         const options: TSugOptions = {
             inputElement,
-            lisitingElement,
+            listingElement,
             displayElement,
             selectLimit: 4,
-            displayListOnFocus: true,
+            displayListOnFocus: false,
             displayDecorationList: ["chips"],
             noResultErrorMessage: "Sorry no result",
             selectedDecorator: "chips",
             sanitiseString: false,
-            specialCharactersAllowedList: []
+            specialCharactersAllowedList: [";"]
         };
         const SuggesterInstance = Suggester(options, suggesterData);
         console.log("Suggester", SuggesterInstance);
