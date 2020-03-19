@@ -47,13 +47,13 @@ class SelectBoxInput implements TSubject {
         try {
             const { config } = this;
             if (config.inputElement) {
-                config.inputElement.addEventListener("keydown", (e) => this.handleBackspace(e));
+                config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e));
                 config.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
                 if (config.displayListOnFocus === true) {
                     document.addEventListener("click", (e) => this.handleDocumentBlur(e));
-                    config.inputElement.addEventListener("focus", (e) => this.handleListingDisplayStateOn(e.type));
+                    config.inputElement.addEventListener("focus", (e) => this.emulateEventOnListObserver(e.type));
                     // Close listing on initialization
-                    this.handleListingDisplayStateOn("blur");
+                    this.emulateEventOnListObserver("focusout");
                 }
             } else {
                 throw new Error("Droope input element undefined");
@@ -70,7 +70,7 @@ class SelectBoxInput implements TSubject {
                 config.lisitingElement.addEventListener("click", (e: MouseEvent) => {
                     const target: HTMLElement | null = (e.target as HTMLElement);
                     if (target) {
-                        this.handleSelect(target);
+                        this.onSelect(target);
                     }
                 });
             } else {
@@ -102,7 +102,7 @@ class SelectBoxInput implements TSubject {
                 const hasClickedOnInput: boolean = config.inputElement === target;
                 const hasClickedOnListItem: boolean = target.classList ? target.classList.contains("list-item") : false;
                 if (hasClickedOnListItem === false && hasClickedOnInput === false) {
-                    this.handleListingDisplayStateOn("blur");
+                    this.emulateEventOnListObserver("focusout");
                 }
             }
         } catch (err) {
@@ -110,7 +110,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleListingDisplayStateOn(eventType: string): void {
+    public emulateEventOnListObserver(eventType: string): void {
         try {
             const { config } = this;
             if (config.lisitingElement) {
@@ -121,37 +121,39 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleSelect(target: HTMLElement): void {
+    public onSelect(target: HTMLElement): void {
         try {
             const { config } = this;
-            const selectedObjStr: string = target.getAttribute("data-obj") || "";
-            const selectedObj: TData = JSON.parse(selectedObjStr);
+            const dataObjFromDom: string | null = target.getAttribute("data-obj");
+            const parentOfTarget: HTMLElement | null = target.parentElement;
+            const selectedObjStr: string | null = dataObjFromDom || (parentOfTarget ? parentOfTarget.getAttribute("data-obj") : null);
+            const selectedObj: TData = selectedObjStr ? JSON.parse(selectedObjStr) : null;
+
             if (selectedObj && config.selectLimit) {
                 const selectionLimitExceeded: boolean = config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
-                const isLastSelectionNow: boolean = this.state.selection.length + 1 >= config.selectLimit;
                 const isDuplicate: boolean = this.state.selection.filter((item) => item.id === selectedObj.id).length > 0;
 
-                if (selectedObj && isDuplicate === false) {
-                    if (selectionLimitExceeded === false) {
-                        const selection = config.selectLimit === 1 ? [selectedObj] : [...this.state.selection, selectedObj];
-                        const result: TState = {
-                            hasListUpdated: false,
-                            list: [...this.state.list],
-                            selection
-                        };
-                        this.setData(result);
+                if (isDuplicate === true) {
+                    if (config.checkboxes === true) {
+                        this.deleteSelection(selectedObj.id);
                     }
-                    if (isLastSelectionNow) {
-                        this.handleListingDisplayStateOn("blur");
+                } else {
+                    this.onLastSelection();
+                    if (selectionLimitExceeded === true) {
+                        throw new Error(`Maximum select limit reached. Configured limit droope id "${config.domId}" is ${config.selectLimit}`);
+                    } else {
+                        this.addSelection(selectedObj);
                     }
                 }
+            } else {
+                throw new Error("On select callback trigged. No selection json found. Making no update");
             }
         } catch (err) {
             console.warn(err.message);
         }
     }
 
-    public handleBackspace(e: KeyboardEvent): void {
+    public onBackspace(e: KeyboardEvent): void {
         try {
             const which = e.which;
             const query = (e.target as HTMLInputElement).value.trim();
@@ -162,7 +164,7 @@ class SelectBoxInput implements TSubject {
                 const lastId: string | null = lastIndexOfSelection >= 0 ? this.state.selection[lastIndexOfSelection].id : null;
                 if (isQueryEmpty === true && lastId !== null) {
                     this.deleteSelection(lastId);
-                    this.handleListingDisplayStateOn("focus");
+                    this.emulateEventOnListObserver("focus");
                 }
             }
         } catch (err) {
@@ -177,7 +179,7 @@ class SelectBoxInput implements TSubject {
 
             switch (which) {
             case 9: { // Tab pressed
-                this.handleListingDisplayStateOn("blur");
+                this.emulateEventOnListObserver("focusout");
                 return;
             }
             // ENter
@@ -185,18 +187,18 @@ class SelectBoxInput implements TSubject {
                 const { config } = this;
                 const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
                 if (listItem) {
-                    this.handleSelect(listItem);
+                    this.onSelect(listItem);
                 }
                 return;
             }
 
             case 38: // Up arrow
-                this.handleArrow("up");
+                this.onArrowPress("up");
                 return;
 
             case 40: {
                 // Down arrow
-                this.handleArrow("down");
+                this.onArrowPress("down");
                 return;
             }
 
@@ -234,7 +236,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public handleArrow(direction: string): void {
+    public onArrowPress(direction: string): void {
         try {
             /** get list of all li items */
             const { config } = this;
@@ -329,12 +331,44 @@ class SelectBoxInput implements TSubject {
     }
 
     public deleteSelection(id: string): void {
-        const result: TState = {
-            hasListUpdated: false,
-            list: [...this.state.list],
-            selection: [...this.state.selection.filter((item) => parseInt(item.id, 10) !== parseInt(id, 10))]
-        };
-        this.setData(result);
+        try {
+            const result: TState = {
+                hasListUpdated: false,
+                list: [...this.state.list],
+                selection: [...this.state.selection.filter((item) => parseInt(item.id, 10) !== parseInt(id, 10))]
+            };
+            this.setData(result);
+        } catch (err) {
+            console.warn(`Could not delete the select id: ${id}`);
+            console.warn(err.message);
+        }
+    }
+
+    public addSelection(selectedObj: TData): void {
+        try {
+            const selection = this.config.selectLimit === 1 ? [selectedObj] : [...this.state.selection, selectedObj];
+            const result: TState = {
+                hasListUpdated: false,
+                list: [...this.state.list],
+                selection
+            };
+            this.setData(result);
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    public onLastSelection(): void {
+        try {
+            if (this.config.selectLimit) {
+                const isLastSelectionNow: boolean = this.state.selection.length + 1 >= this.config.selectLimit;
+                if (isLastSelectionNow) {
+                    this.emulateEventOnListObserver("focusout");
+                }
+            }
+        } catch (err) {
+            console.warn(err.message);
+        }
     }
 }
 

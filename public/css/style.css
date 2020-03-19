@@ -71,7 +71,7 @@ blockquote {
 
 #droope .select-box-listing li {
     list-style: none;
-    margin-bottom: 5px;
+    padding-bottom: 5px;
 }
 
 #droope .select-box-listing li:hover {
