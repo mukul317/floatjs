@@ -2,16 +2,23 @@ import { TSubject, TObserver, TData, TState } from "./interface";
 
 class SelectDisplay implements TObserver {
     public subject: TSubject;
+    private view: HTMLElement;
 
     constructor(subject: TSubject) {
         this.subject = subject;
         this.subject.registerObserver(this);
+        this.view = document.createElement("UL");
+
+        if (this.subject.config.tagSelectedValues) {
+            this.onCrossClick();
+        }
     }
 
     public generateDisplayHtml(selectedValues: TData[]): HTMLElement {
-        const view: HTMLElement = document.createElement("UL");
         const { tagSelectedValues } = this.subject.config;
         try {
+            /** @todo: Object vs DOM difffing */
+            this.view.innerHTML = "";
             selectedValues.forEach((item: TData) => {
                 const listItem: HTMLElement = document.createElement("LI");
                 listItem.textContent = item.name;
@@ -20,16 +27,16 @@ class SelectDisplay implements TObserver {
                 if (tagSelectedValues) {
                     this.tagDecorator(listItem);
                 }
-                view.appendChild(listItem);
+                this.view.appendChild(listItem);
             });
-            return view;
+            return this.view;
         } catch (err) {
             console.warn(err);
-            return view;
+            return this.view;
         }
     }
 
-    public appendDisplayHtml(selectedHtml: HTMLElement): void {
+    public appendMarkup(selectedHtml: HTMLElement): void {
         try {
             const { displayElement } = this.subject.config;
             if (displayElement) {
@@ -45,41 +52,51 @@ class SelectDisplay implements TObserver {
         try {
             const { selection } = state;
             const selectedHtml: HTMLElement = this.generateDisplayHtml(selection);
-            this.appendDisplayHtml(selectedHtml);
+            this.appendMarkup(selectedHtml);
+
+            console.info("[Notified]: Droope Select Observer");
         } catch (err) {
             console.warn(err.message);
         }
     }
 
     public tagDecorator(listItem: HTMLElement): HTMLElement {
-        if (listItem) {
+        try {
             const chipJsonString = listItem.getAttribute("data-obj");
             const chipJSON = chipJsonString ? JSON.parse(chipJsonString) : {};
-
             const crossIcon: HTMLElement = document.createElement("SPAN");
+
             crossIcon.textContent = "clear";
             crossIcon.classList.add("material-icons");
             crossIcon.classList.add("list-cross");
             crossIcon.setAttribute("data-id", chipJSON.id);
+            listItem.classList.add("tag");
             listItem.appendChild(crossIcon);
+
+            return listItem;
+        } catch (err) {
+            console.warn(err.message);
+            return listItem;
         }
+    }
 
-        /** TODO */
-        listItem.addEventListener("click", (e: MouseEvent) => {
-            if (e.target) {
-                const deleteId = (e.target as HTMLElement).getAttribute("data-id");
-                if (deleteId) {
-                    const result: TState = {
-                        hasListUpdated: false,
-                        list: [...this.subject.state.list],
-                        selection: [...this.subject.state.selection.filter((item) => parseInt(item.id, 10) !== parseInt(deleteId, 10))]
-                    };
-                    this.subject.setData(result);
+    public onCrossClick(): void {
+        try {
+            this.view.addEventListener("click", (e: MouseEvent) => {
+                if (e.target) {
+                    try {
+                        const toBeDeletedId = (e.target as HTMLElement).getAttribute("data-id");
+                        if (toBeDeletedId && toBeDeletedId !== "") {
+                            this.subject.removeSelection(toBeDeletedId);
+                        }
+                    } catch (err) {
+                        console.warn(err.message);
+                    }
                 }
-            }
-        });
-
-        return listItem;
+            });
+        } catch (err) {
+            console.warn(err);
+        }
     }
 }
 

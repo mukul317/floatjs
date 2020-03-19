@@ -37,7 +37,7 @@ class SelectBoxInput implements TSubject {
 
             this.registerListEvents();
             this.registerInputEvents();
-            this.registerNoResultElement();
+            this.createNoResultFragment();
         } catch (err) {
             console.warn(err.message);
         }
@@ -75,19 +75,6 @@ class SelectBoxInput implements TSubject {
                 });
             } else {
                 throw new Error("Droope list element undefined");
-            }
-        } catch (err) {
-            console.warn(err.message);
-        }
-    }
-
-    public registerNoResultElement(): void {
-        try {
-            const { config } = this;
-            if (config.noResultErrorMessage) {
-                this.noResultElement.classList.add("no-result");
-                this.noResultElement.style.display = "none";
-                this.noResultElement.textContent = config.noResultErrorMessage || "";
             }
         } catch (err) {
             console.warn(err.message);
@@ -135,7 +122,7 @@ class SelectBoxInput implements TSubject {
 
                 if (isDuplicate === true) {
                     if (config.checkboxes === true) {
-                        this.deleteSelection(selectedObj.id);
+                        this.removeSelection(selectedObj.id);
                     }
                 } else {
                     this.onLastSelection();
@@ -146,7 +133,7 @@ class SelectBoxInput implements TSubject {
                     }
                 }
             } else {
-                throw new Error("On select callback trigged. No selection json found. Making no update");
+                throw new Error("On select callback trigged. No selection json found. No mutation in state possible");
             }
         } catch (err) {
             console.warn(err.message);
@@ -163,7 +150,7 @@ class SelectBoxInput implements TSubject {
                 const lastIndexOfSelection: number = this.state.selection.length - 1;
                 const lastId: string | null = lastIndexOfSelection >= 0 ? this.state.selection[lastIndexOfSelection].id : null;
                 if (isQueryEmpty === true && lastId !== null) {
-                    this.deleteSelection(lastId);
+                    this.removeSelection(lastId);
                     this.emulateEventOnListObserver("focus");
                 }
             }
@@ -228,14 +215,6 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public showNoResultMessage(hasResults: boolean): void {
-        try {
-            this.noResultElement.style.display = hasResults ? "none" : "block";
-        } catch (err) {
-            console.warn(err.message);
-        }
-    }
-
     public onArrowPress(direction: string): void {
         try {
             /** get list of all li items */
@@ -282,6 +261,24 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Controls the state of subject. This is pivot function for notifying observers.
+     * Fn `notifyObservers` can be invoked directly. However, `setData` acts as a controller
+     * to manipulate state before notifying observers.
+     *
+     * It is also responsible for constructing the droope after every observer is registered.
+     * It consumes addtional parameter in `TSetState` i.e. `construct: {boolean}`
+     * that notifies the oberveres for the first time. 'construct` param is primarily required
+     * to populate `List Observer`.
+     *
+     * Can act as developer API to update state. However that is not recommended.
+     * Methods like `addSelection`, `removeSelection`, `replaceListing` and `updateLisiting`
+     * are recommended
+     *
+     * @access{public}
+     * @returns {void}
+     * @param newData {TSetState}
+     */
     public setData(newData: TSetState): void {
         try {
             // This logic executes when SelectBox is provided with the data first time
@@ -303,6 +300,12 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Registers an observer to updates of subject state
+     *
+     * @returns {void}
+     * @param o {TObserver}
+     */
     public registerObserver(o: TObserver): void {
         try {
             this.listObserverCollection.push(o);
@@ -311,6 +314,12 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Removes an observer from the updates of subject state
+     *
+     * @returns {void}
+     * @param o {TObserver}
+     */
     public unregisterObserver(o: TObserver): void {
         try {
             const index = this.listObserverCollection.indexOf(o);
@@ -320,6 +329,13 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Iterates over the list of observers
+     * and notifies them with the new state of subject
+     *
+     * @access public
+     * @returns {void}
+     */
     public notifyObservers(): void {
         try {
             for (const observer of this.listObserverCollection) {
@@ -330,11 +346,61 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public deleteSelection(id: string): void {
+    /**
+     * replaces old list elements in the droope by mutating the state object.
+     * Every replacement in listing shall be driven by this function acting as a developer API
+     *
+     * @access public
+     * @param selectedObj {TData}
+     * @returns {void}
+     */
+    public replaceListing(newList: TData[]): void {
+        try {
+            const result: TState = {
+                hasListUpdated: true,
+                list: newList,
+                selection: this.state.selection
+            };
+            this.setData(result);
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    /**
+     * Adds new list elemts in the droope by mutating the state object.
+     * Every addition in listing shall be driven by this function acting as a developer API
+     *
+     * @access public
+     * @param selectedObj {TData}
+     * @returns {void}
+     */
+    public updateLising(newList: TData[]): void {
+        try {
+            const result: TState = {
+                hasListUpdated: true,
+                list: [...this.state.list, ...newList],
+                selection: this.state.selection
+            };
+            this.setData(result);
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    /**
+     * Removes an item from the droope by mutating the state object.
+     * Every removal shall be driven by this function acting as a developer API
+     *
+     * @access public
+     * @param id {string}
+     * @returns {void}
+     */
+    public removeSelection(id: string): void {
         try {
             const result: TState = {
                 hasListUpdated: false,
-                list: [...this.state.list],
+                list: this.state.list,
                 selection: [...this.state.selection.filter((item) => parseInt(item.id, 10) !== parseInt(id, 10))]
             };
             this.setData(result);
@@ -344,12 +410,20 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Adds new item in the droope by mutating the state object.
+     * Every addition shall be driven by this function acting as a developer API
+     *
+     * @access public
+     * @param selectedObj {TData}
+     * @returns {void}
+     */
     public addSelection(selectedObj: TData): void {
         try {
             const selection = this.config.selectLimit === 1 ? [selectedObj] : [...this.state.selection, selectedObj];
             const result: TState = {
                 hasListUpdated: false,
-                list: [...this.state.list],
+                list: this.state.list,
                 selection
             };
             this.setData(result);
@@ -358,7 +432,15 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public onLastSelection(): void {
+    /**
+     * Emulates focusout when last selection is made.
+     * Last selection is determined by `selectLimit` configuration.
+     * This function acts as a listener when `onSelect` executes
+     *
+     * @access protected
+     * @returns {void}
+     */
+    protected onLastSelection(): void {
         try {
             if (this.config.selectLimit) {
                 const isLastSelectionNow: boolean = this.state.selection.length + 1 >= this.config.selectLimit;
@@ -368,6 +450,57 @@ class SelectBoxInput implements TSubject {
             }
         } catch (err) {
             console.warn(err.message);
+        }
+    }
+
+    /**
+     * Creates markup for no result message
+     * @returns {void}
+     */
+    public createNoResultFragment(): void {
+        try {
+            const { config } = this;
+            if (config.noResultErrorMessage) {
+                this.noResultElement.classList.add("no-result");
+                this.noResultElement.style.display = "none";
+                this.noResultElement.textContent = config.noResultErrorMessage;
+            }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    /**
+     * Enables a banner when there in no result on user's query.
+     * The no result message is based on config provided. This Fn
+     * acts as a listener when filtering is executed.
+     *
+     * @param hasResults {boolean}
+     * @returns {void}
+     */
+    public showNoResultMessage(hasResults: boolean): void {
+        try {
+            this.noResultElement.style.display = hasResults ? "none" : "block";
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    /**
+     * Devloper's API to access full internal state of Droope i.e including `LIST`.
+     * For individual access to state properties like selection. Recommended way is to
+     * access `DroopeInstance.state.selection`
+     *
+     * @access public
+     * @returns {TState | null}
+     * @returns {void}
+     */
+    public getCompleteState(): TState | null {
+        try {
+            return this.state;
+        } catch (err) {
+            console.warn(err.message);
+            return null;
         }
     }
 }

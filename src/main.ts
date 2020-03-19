@@ -13,11 +13,12 @@ import "./Suggester";
             inputElement,
             lisitingElement,
             displayElement,
-            selectLimit: 3,
+            selectLimit: 2,
             displayListOnFocus: true,
             displayDecorationList: [],
             noResultErrorMessage: "Sorry no result",
-            tagSelectedValues: true
+            tagSelectedValues: true,
+            checkboxes: true
         };
         const DroopeInstance = Droope(options, droopeData);
         console.log(DroopeInstance);

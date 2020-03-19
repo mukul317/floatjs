@@ -98,7 +98,7 @@ blockquote {
     margin: 0;
 }
 
-#droope .selection-item {
+#droope .selection-item.tag {
     display: inline-block;
     list-style: none;
     margin-right: 5px;

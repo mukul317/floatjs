@@ -1,7 +1,7 @@
 import { TSubject, TObserver, TState, TData } from "./interface";
 class Listing implements TObserver {
     private subject: TSubject;
-    private hasCheckboxes: boolean | undefined ;
+    private hasCheckboxes: boolean | undefined;
     private listId: string;
 
     constructor(subject: TSubject) {
@@ -98,7 +98,7 @@ class Listing implements TObserver {
                     this.updateTicks(newData.selection);
                 }
             }
-            console.info("List observer received new props");
+            console.info("[Notified]: Droope Lisiting Observer");
         } catch (err) {
             console.warn(err.message);
         }
