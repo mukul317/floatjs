@@ -11,14 +11,16 @@ import Suggester from "./SuggesterBeta";
     const displayElement: HTMLElement | null = document.querySelector(".select-box-display");
     if (inputElement && lisitingElement && displayElement) {
         const options: TDroopeConfig = {
+            domId: "demoDroope",
             inputElement,
             lisitingElement,
             displayElement,
-            selectLimit: 3,
+            selectLimit: 2,
             displayListOnFocus: true,
             displayDecorationList: [],
             noResultErrorMessage: "Sorry no result",
-            tagSelectedValues: true
+            tagSelectedValues: true,
+            checkboxes: true
         };
         const DroopeInstance = Droope(options, droopeData);
         console.log(DroopeInstance);

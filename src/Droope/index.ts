@@ -7,7 +7,13 @@ const Droope = (options: TDroopeConfig, data: TData[]): TSubject => {
     const SelectBox = new DroopeSubject(options);
     new ListObserver(SelectBox);
     new DisplayObserver(SelectBox);
-    SelectBox.setData({ list: data, construct: true, hasListUpdated: false, selection: [] });
+    SelectBox.setData({
+        hasSelectionUpdated: false,
+        hasListUpdated: false,
+        construct: true,
+        selection: [],
+        list: data
+    });
     return SelectBox;
 };
 
