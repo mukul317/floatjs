@@ -5,9 +5,10 @@ interface TData {
 }
 
 interface TSubject {
-  lisitingElement: HTMLElement;
+  listingElement: HTMLElement;
   displayElement: HTMLElement;
   noResultElement: HTMLElement;
+  headingElement: HTMLElement;
   arrowCounter: number;
   resultSet: TState;
   registerObserver(o: TObserver): void;
@@ -21,6 +22,7 @@ interface TState {
   list: TData[];
   selection: TData[];
   hasListUpdated: boolean;
+  construct?: boolean;
 }
 
 interface TObserver {
@@ -35,20 +37,9 @@ interface TPayload {
   edge?: number;
 }
 
-interface TOptions {
+interface TSugOptions{
   inputElement: HTMLInputElement;
-  lisitingElement: HTMLElement;
-  displayElement: HTMLElement;
-  selectLimit?: number;
-  displayListOnFocus?: boolean;
-  displayDecorationList?: string[];
-  noResultErrorMessage?: string;
-  isPrefetch?: boolean;
-}
-
-interface TSugOptions {
-  inputElement: HTMLInputElement;
-  lisitingElement: HTMLElement;
+  listingElement: HTMLElement;
   displayElement: HTMLElement;
   selectLimit?: number;
   displayListOnFocus?: boolean;
@@ -58,20 +49,22 @@ interface TSugOptions {
   sanitiseString?: boolean;
   specialCharactersAllowedList: string[];
   isPrefetch?: boolean;
-  // titleForSingleBucket: string;
-  // showTitleForSingleBucket: false;
 }
-interface TSuggesterResponse {
+interface TSuggesterResponse extends TResponse {
   resultList: any;
 }
 
-interface TRecentSearchResponse {
+interface TRecentSearchResponse extends TResponse {
   resultConcepts: any;
 }
 
 interface TResponse {
-  any: any;
+  [key: string]: any;
+  resultConcepts: any;
+  resultList: any;
 }
+
+type TObject = Record<string, string>
 
 interface TVersionResponse {
   "suggester_v": string;
@@ -85,7 +78,11 @@ export {
     TSubject,
     TState,
     TObserver,
-    TOptions,
-    TResponse, TSuggesterResponse, TPayload, TRecentSearchResponse, TSugOptions,
-    TVersionResponse
+    TResponse,
+    TSuggesterResponse,
+    TPayload,
+    TRecentSearchResponse,
+    TSugOptions,
+    TVersionResponse,
+    TObject
 };

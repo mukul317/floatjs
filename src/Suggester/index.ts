@@ -7,7 +7,7 @@ const Suggester = (options: TSugOptions, data: TData[]): TSubject => {
     const SelectBox = new SuggesterSubject(options);
     new ListObserver(SelectBox);
     new DisplayObserver(SelectBox, options.displayDecorationList);
-    SelectBox.setData({ list: data, construct: false });
+    SelectBox.setData({ list: data, construct: false, selection: [], hasListUpdated: false });
     return SelectBox;
 };
 

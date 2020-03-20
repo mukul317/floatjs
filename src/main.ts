@@ -1,4 +1,4 @@
-import { TOptions } from "./Droope/interface";
+import { TDroopeConfig } from "./Droope/interface";
 import { TSugOptions } from "./Suggester/interface";
 import droopeData from "./Droope/data";
 import suggesterData from "./Suggester/data";
@@ -10,15 +10,15 @@ import Suggester from "./Suggester";
     const lisitingElement: HTMLElement | null = document.querySelector(".select-box-listing");
     const displayElement: HTMLElement | null = document.querySelector(".select-box-display");
     if (inputElement && lisitingElement && displayElement) {
-        const options: TOptions = {
+        const options: TDroopeConfig = {
             inputElement,
             lisitingElement,
             displayElement,
             selectLimit: 3,
             displayListOnFocus: true,
-            displayDecorationList: ["chips"],
+            displayDecorationList: [],
             noResultErrorMessage: "Sorry no result",
-            selectedDecorator: "chips"
+            tagSelectedValues: true
         };
         const DroopeInstance = Droope(options, droopeData);
         console.log(DroopeInstance);
@@ -27,21 +27,20 @@ import Suggester from "./Suggester";
 
 ((): void => {
     const inputElement: HTMLInputElement | null = document.querySelector(".suggester-select-box-input");
-    const lisitingElement: HTMLElement | null = document.querySelector(".suggester-select-box-listing");
+    const listingElement: HTMLElement | null = document.querySelector(".suggester-select-box-listing");
     const displayElement: HTMLElement | null = document.querySelector(".suggester-select-box-display");
-    if (inputElement && lisitingElement && displayElement) {
+    if (inputElement && listingElement && displayElement) {
         const options: TSugOptions = {
             inputElement,
-            lisitingElement,
+            listingElement,
             displayElement,
             selectLimit: 4,
-            displayListOnFocus: true,
+            displayListOnFocus: false,
             displayDecorationList: ["chips"],
             noResultErrorMessage: "Sorry no result",
             selectedDecorator: "chips",
             sanitiseString: false,
-            specialCharactersAllowedList: [],
-            isPrefetch: true
+            specialCharactersAllowedList: [";"]
         };
         const SuggesterInstance = Suggester(options, suggesterData);
         console.log("Suggester", SuggesterInstance);

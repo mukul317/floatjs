@@ -6,12 +6,12 @@ const domain = "http://suggest.naukrigulf.com/";
 
 const suggesterConfig = {
     urls: {
-        autoComplete: domain + "/suggest/autosuggest?invoker=ng&",
-        caching: domain + "/suggest/prefetch?invoker=ng&",
+        autoComplete: domain + "/suggest/autosuggest?",
+        caching: domain + "/suggest/prefetch?",
         checkVersion: domain + "/suggest/v?",
-        relatedConcept: domain + "/suggest/autoconcepts?invoker=ng&",
-        prefetch: domain + "/suggest/prefetch?invoker=ng&",
-        trackingURL: domain + "//suggestlg.naukrigulf.com/logger/log?invoker=ng&"
+        relatedConcept: domain + "/suggest/autoconcepts?",
+        prefetch: domain + "/suggest/prefetch?",
+        trackingURL: domain + "//suggestlg.naukrigulf.com/logger/log?"
     },
     appId: 2050,
     version: "1.2.0",

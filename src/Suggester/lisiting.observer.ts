@@ -18,13 +18,24 @@ class Listing implements TObserver {
           liElement.setAttribute("data-obj", JSON.stringify(item));
           ulElement.appendChild(liElement);
       });
-      if (this.subject.lisitingElement) {
-          this.subject.lisitingElement.innerHTML = "";
-          this.subject.lisitingElement.appendChild(this.subject.noResultElement);
-          this.subject.lisitingElement.appendChild(ulElement);
-      }
+      this.appendListingItems(this.subject.listingElement, ulElement);
 
       return ulElement;
+  }
+
+  public appendListingItems (listingElement: HTMLElement, ulElement: HTMLElement): void {
+    try {
+       if (listingElement) {
+          listingElement.innerHTML = "";
+          listingElement.appendChild(this.subject.noResultElement);
+          listingElement.appendChild(this.subject.headingElement);
+          listingElement.appendChild(ulElement);
+        } else {
+            throw new Error("Listing element not being passed in the function");
+        }
+    } catch (e) {
+        console.warn("Listing item not being passed in the function:", e);
+    }
   }
 
   public update (newData: TState): void {

@@ -7,6 +7,8 @@ module.exports = {
   },
   extends: [
     "standard",
+    'eslint:recommended',
+    'plugin:@typescript-eslint/eslint-recommended',
     'plugin:@typescript-eslint/recommended'
   ],
   globals: {
@@ -28,7 +30,7 @@ module.exports = {
   rules: {
     "no-new": 0,
     "semi": ["error", "always"],
-    "indent": ["error", 4],
+    "indent": "off",
     "quotes": ["error", "double"],
     "arrow-parens": ["error", "always"],
     "@typescript-eslint/no-explicit-any": "warn",
@@ -46,7 +48,7 @@ module.exports = {
     "no-empty-function": "off",
     "@typescript-eslint/no-empty-function": "error",
     "@typescript-eslint/no-empty-interface": "error",
-    "@typescript-eslint/no-inferrable-types": "error",
+    "@typescript-eslint/no-inferrable-types": "off",
     "@typescript-eslint/no-misused-new": "error",
     "@typescript-eslint/no-namespace": "error",
     "@typescript-eslint/no-non-null-assertion": "warn",
