@@ -9,6 +9,7 @@ interface TSubject {
   displayElement: HTMLElement;
   noResultElement: HTMLElement;
   headingElement: HTMLElement;
+  displayListStyle: string;
   arrowCounter: number;
   resultSet: TState;
   registerObserver(o: TObserver): void;
@@ -46,6 +47,7 @@ interface TSugOptions{
   displayDecorationList?: string[];
   selectedDecorator: string;
   noResultErrorMessage?: string;
+  displayListStyle?: string;
   sanitiseString?: boolean;
   specialCharactersAllowedList: string[];
   isPrefetch?: boolean;

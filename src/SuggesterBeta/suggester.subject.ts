@@ -25,6 +25,11 @@ class SelectBoxInput implements TSubject {
     public listingElement: HTMLElement
 
     /**
+     * displayListStyle: Showing listing style
+     */
+    public displayListStyle: string
+
+    /**
      * heading Element: For showing the heading of suggestions
      */
     public headingElement: HTMLElement
@@ -32,7 +37,7 @@ class SelectBoxInput implements TSubject {
     /**
      * Debounce timer variable used for debouncing the user input
      */
-    public debounceTimer: number | null = null;
+    public debounceTimer: NodeJS.Timeout | null = null;
 
     /**
      * DisplayElement: item where selected item is displayed
@@ -94,12 +99,13 @@ class SelectBoxInput implements TSubject {
      * selectLimit,displayListOnFocus
      * @param options
      */
-    constructor (options: TSugOptions) {
+    constructor(options: TSugOptions) {
         this.inputElement = options.inputElement;
         this.displayElement = options.displayElement;
         this.listingElement = options.listingElement;
         this.selectLimit = options.selectLimit || 1;
         this.displayListOnFocus = options.displayListOnFocus || false;
+        this.displayListStyle = options.displayListStyle || "";
         this.sanitiseString = options.sanitiseString || false;
         this.isPrefetch = options.isPrefetch || false;
         if (this.sanitiseString) {
@@ -142,16 +148,16 @@ class SelectBoxInput implements TSubject {
         this.headingElement = document.createElement("P");
         this.headingElement.classList.add("no-result");
 
-      //  this.initialiseHeadingElement();
+        //  this.initialiseHeadingElement();
     }
 
-    public initialiseHeadingElement (): void {
+    public initialiseHeadingElement(): void {
         this.headingElement = document.createElement("P");
         try {
-         this.headingElement.classList.add("no-result");
-     } catch (e) {
-         console.warn("Errors occurred while initialising heading element");
-     }
+            this.headingElement.classList.add("no-result");
+        } catch (e) {
+            console.warn("Errors occurred while initialising heading element");
+        }
     }
 
     /**
@@ -159,7 +165,7 @@ class SelectBoxInput implements TSubject {
      * @param event
      * @returns {void}
      */
-    public handleDocumentBlur (event: MouseEvent): void {
+    public handleDocumentBlur(event: MouseEvent): void {
         try {
             const target: HTMLElement = (event.target as HTMLElement);
             if (target) {
@@ -179,7 +185,7 @@ class SelectBoxInput implements TSubject {
      * @method handleListingDisplayStateOn : controls listing display
      * @param eventType
      */
-    public handleListingDisplayStateOn (eventType: string): void {
+    public handleListingDisplayStateOn(eventType: string): void {
         this.listingElement.style.display =
             eventType === "focus" ? "block" : "none";
     }
@@ -190,7 +196,7 @@ class SelectBoxInput implements TSubject {
      * @param target
      * @returns { void }
      */
-    public onSelect (target: HTMLElement): void {
+    public onSelect(target: HTMLElement): void {
         try {
             const selectedObjStr: string = target.getAttribute("data-obj") || "";
             const selectedObj: TData = JSON.parse(selectedObjStr);
@@ -201,12 +207,12 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * setSelectedValues:set the selected values from the resultset on the click of the listing element
-     * and sets the result set state for the Subject and the observer and updates the whole view
+     * This sets the selected object values into the result set
+     * @access public
      * @param selectedObj
      * @returns void
      */
-    public setSelectedValues (selectedObj: TData): void {
+    public setSelectedValues(selectedObj: TData): void {
         try {
             if (selectedObj) {
                 // rishabh changes here
@@ -250,7 +256,7 @@ class SelectBoxInput implements TSubject {
      * This empties the input feilds values
      * @returns{void}
      */
-    public emptyInputFeilds (): void {
+    public emptyInputFeilds(): void {
         try {
             this.inputElement.value = "";
         } catch (e) {
@@ -261,9 +267,11 @@ class SelectBoxInput implements TSubject {
     /**
      * Deletes the query on backspace and updates the query in the input feilds and also deletes the selected values
      * and updates the lsiting element based on that.
+     * @access public
      * @param e : keyboardEvent
+     * @returns void
      */
-    public handleBackspace (e: KeyboardEvent): void {
+    public handleBackspace(e: KeyboardEvent): void {
         const which = e.which;
         const query = (e.target as HTMLInputElement).value.trim();
         const isQueryEmpty: boolean = query === "";
@@ -278,7 +286,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    /**
+    /*
      * Debouncing Request for avoiding multiple requests being hit repetitively as user types quickly.
      * When user types quickly then at the same instant multiple requests are being fired. To avoid those
      * multiple requests we have added debouncing so that once user is done typing the query then only hit
@@ -287,23 +295,27 @@ class SelectBoxInput implements TSubject {
      * request will not be fired and it will be fired only when user does not type during that interval.
      * @param requestFunction : Function on which debouncing is to be done
      * @param debounceInterval : Interval of debouncing after which request should be done
+     * @access public
+     * @returns Promise<void>
      */
 
-    public debounceRequest (debounceInterval: number): Promise<void> {
-            if (this.debounceTimer) { clearTimeout(this.debounceTimer); }
-          return new Promise((resolve: Function): void => {
-            this.debounceTimer = Number(setTimeout(
-              (): void => resolve(),
-              debounceInterval
-            ));
-          });
-      }
+    public debounceRequest(debounceInterval: number): Promise<void> {
+        if (this.debounceTimer) { clearTimeout(this.debounceTimer); }
+        return new Promise((resolve: Function): void => {
+            this.debounceTimer = setTimeout(
+                (): void => resolve(),
+                debounceInterval
+            );
+        });
+    }
 
     /**
      * Handles the Enter key Press on the list item
      * @param e : { keyboardEvent }: Event passed
+     * @access public
+     * @returns void
      */
-    public handleEnter (event: KeyboardEvent): void {
+    public handleEnter(event: KeyboardEvent): void {
         try {
             if (event) {
                 const listItem: HTMLElement | null = this.listingElement.querySelector(".active");
@@ -319,10 +331,14 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * Sanitises the String By removing Special Characters by matching with regex
+     * Sanitises the String By removing Special Characters by matching with regex that is passed for
+     * whitelisting the special characters as well. This custom characters whitelisting is being provided
+     * by passing a specialcharacterallowedlist into the config.
      * @param query : {String}
+     * @access public
+     * @returns string
      */
-    public sanitiseQuery (query: string): string {
+    public sanitiseQuery(query: string): string {
         try {
             if (query) {
                 const patr = new RegExp("[^a-zA-Z0-9,\\s" + this.specialCharactersAllowedList + "]", "g");
@@ -342,7 +358,7 @@ class SelectBoxInput implements TSubject {
      * @param selectedObj : {TData}:Selected Object being Selected by clicking on the Listing element
      */
 
-    public initialiseRelatedSearch (query: string): void {
+    public initialiseRelatedSearch(query: string): void {
         try {
             const selectedObj: TData = { id: 0, name: "", displayTextEn: "" };
             if (query.length > 1) {
@@ -374,7 +390,7 @@ class SelectBoxInput implements TSubject {
      * @param e : KeyBoardEvent
      * @returns {void}
      */
-    public onKeyUp (e: KeyboardEvent): void {
+    public onKeyUp(e: KeyboardEvent): void {
         try {
             if (e) {
                 const query: string =
@@ -384,28 +400,28 @@ class SelectBoxInput implements TSubject {
                 const which: number = e.which;
                 const category = "top";
                 switch (which) {
-                    case 9: // Tab pressed
-                        this.handleListingDisplayStateOn("blur");
-                        return;
+                case 9: // Tab pressed
+                    this.handleListingDisplayStateOn("blur");
+                    return;
 
-                    case 13: // Enter
-                        // eslint-disable-next-line no-case-declarations
-                        this.handleEnter(e);
-                        return;
+                case 13: // Enter
+                    // eslint-disable-next-line no-case-declarations
+                    this.handleEnter(e);
+                    return;
 
-                    case 38: // Up arrow
-                        this.handleArrow("up");
-                        return;
+                case 38: // Up arrow
+                    this.handleArrow("up");
+                    return;
 
-                    case 40: // Down arrow
-                        this.handleArrow("down");
-                        return;
-                    case 188:
-                        this.initialiseRelatedSearch(query);
-                        return;
+                case 40: // Down arrow
+                    this.handleArrow("down");
+                    return;
+                case 188:
+                    this.initialiseRelatedSearch(query);
+                    return;
 
-                    default:
-                        this.debounceRequest(500).then(() => { this.sendSuggesterRequest(query, category); });
+                default:
+                    this.debounceRequest(500).then(() => { this.sendSuggesterRequest(query, category); });
                 }
             } else {
                 throw new Error("Event not happened Event Object Missing");
@@ -415,40 +431,44 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public setHeadingElement (listingType: string): void{
-      try {
-          if (listingType) {
-          switch (listingType) {
-              case "rc":
-                  this.headingElement.style.display = "block";
-                  this.headingElement.textContent = "Related Searches";
-                  break;
-              case "sug":
-                  this.headingElement.style.display = "block";
-                  this.headingElement.textContent = "Suggestions";
-                  break;
-          }
-        } else {
-            throw new Error("Listing type is not available");
+    /**
+     * Sets the heading element based on the current listing that is being shown.
+     * @param listingType : type of listing that is being shown if its suggester or related searches
+     */
+    public setHeadingElement(listingType: string): void {
+        try {
+            if (listingType) {
+                switch (listingType) {
+                case "rc":
+                    this.headingElement.style.display = "block";
+                    this.headingElement.textContent = "Related Searches";
+                    break;
+                case "sug":
+                    this.headingElement.style.display = "block";
+                    this.headingElement.textContent = "Suggestions";
+                    break;
+                }
+            } else {
+                throw new Error("Listing type is not available");
             }
-      } catch (e) {
-          console.warn("Error occurred while setting heading element");
-      }
+        } catch (e) {
+            console.warn("Error occurred while setting heading element");
+        }
     }
 
-    public sendSuggesterRequest (query: string, category: string): void {
+    public sendSuggesterRequest(query: string, category: string): void {
         try {
             console.log("query in here", query);
             if (query) {
-            this.handleApiResponse(
-                Helper.sendXhr(suggesterConfig.urls.autoComplete, {
+                this.handleApiResponse(
+                    Helper.sendXhr(suggesterConfig.urls.autoComplete, {
+                        query,
+                        category
+                    }),
+                    category,
                     query,
-                    category
-                }),
-                category,
-                query,
-                "sug"
-            );
+                    "sug"
+                );
             } else {
                 throw new Error("Query is not passed into the function");
             }
@@ -466,7 +486,7 @@ class SelectBoxInput implements TSubject {
         * @throws {null}
         *
         */
-    public sendRelatedSearchRequest (selectedObject: TData): void {
+    public sendRelatedSearchRequest(selectedObject: TData): void {
         try {
             if (selectedObject && selectedObject.displayTextEn) {
                 const query = selectedObject.displayTextEn.toLowerCase();
@@ -496,7 +516,7 @@ class SelectBoxInput implements TSubject {
      * @param category: String : category of results for which suggester is visible
      * @returns {void}
      */
-    public handleRelatedSearchResponseData (resp: TRecentSearchResponse, category: string): void {
+    public handleRelatedSearchResponseData(resp: TRecentSearchResponse, category: string): void {
         try {
             if (resp && category) {
                 this.dataSet = resp.resultConcepts[category];
@@ -516,7 +536,7 @@ class SelectBoxInput implements TSubject {
      * @param query: {string} : Query of the input feild being entered in the suggester input
      * @returns {void}
      */
-    public filterAndFillDataIntoListing (query: string, category: string, listingType: string): void {
+    public filterAndFillDataIntoListing(query: string, category: string, listingType: string): void {
         try {
             if (query || category) {
                 const filteredList = this.dataSet.filter((item: TData): boolean | void => {
@@ -558,7 +578,7 @@ class SelectBoxInput implements TSubject {
      * @param query: {String} : Query that is put inside the input feild
      * @returns{void}
      */
-    public handleSuggesterResponseData (resp: TSuggesterResponse, category: string, query: string): void {
+    public handleSuggesterResponseData(resp: TSuggesterResponse, category: string, query: string): void {
         try {
             if (resp && category && query) {
                 this.dataSet = resp.resultList[category];
@@ -580,7 +600,7 @@ class SelectBoxInput implements TSubject {
      * @param listingType :{String} : Listing  type that can be recent search and suggester suggestions
      * @returns {void}
      */
-    public handleApiResponse (
+    public handleApiResponse(
         promise: Promise<TResponse>,
         category: string,
         query: string,
@@ -592,12 +612,12 @@ class SelectBoxInput implements TSubject {
                     if (resp) {
                         if (listingType) {
                             switch (listingType) {
-                                case "rc":
-                                    this.handleRelatedSearchResponseData(resp, category);
-                                    break;
-                                case "sug":
-                                    this.handleSuggesterResponseData(resp, category, query);
-                                    break;
+                            case "rc":
+                                this.handleRelatedSearchResponseData(resp, category);
+                                break;
+                            case "sug":
+                                this.handleSuggesterResponseData(resp, category, query);
+                                break;
                             }
                         } else {
                             throw new Error("listingType not passed as a param");
@@ -620,7 +640,7 @@ class SelectBoxInput implements TSubject {
      * @param {hasResults} : {boolean} : Boolean flag that checks whether results are there or not
      * @returns: {void}
      */
-    public hidesNoResultMessage (hasResults: boolean): void {
+    public hidesNoResultMessage(hasResults: boolean): void {
         this.noResultElement.style.display = hasResults ? "block" : "none";
     }
 
@@ -630,14 +650,14 @@ class SelectBoxInput implements TSubject {
      * @param {hasResults} : {boolean}
      * @returns: {void}
      */
-    public showNoResultMessage (hasResults: boolean): void {
+    public showNoResultMessage(hasResults: boolean): void {
         this.noResultElement.style.display = hasResults ? "none" : "block";
     }
 
     /***
      *
      */
-    public handleArrow (direction: string): void {
+    public handleArrow(direction: string): void {
         /** get list of all li items */
         const listItems = this.listingElement.querySelectorAll("li");
 
@@ -677,7 +697,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public setData (newData: TState): void {
+    public setData(newData: TState): void {
         // This logic executes when SelectBox is provided with the data first time
         const isDataForFirstTime = newData.construct;
         if (isDataForFirstTime) {
@@ -694,43 +714,44 @@ class SelectBoxInput implements TSubject {
         this.notifyObservers();
     }
 
-    public registerObserver (o: TObserver): void {
+    public registerObserver(o: TObserver): void {
         this.listObserverCollection.push(o);
     }
 
-    public unregisterObserver (o: TObserver): void {
+    public unregisterObserver(o: TObserver): void {
         const index = this.listObserverCollection.indexOf(o);
         this.listObserverCollection.splice(index, 1);
     }
 
-    public notifyObservers (): void {
+    public notifyObservers(): void {
+        console.log(this.resultSet);
         for (const observer of this.listObserverCollection) {
             observer.update(this.resultSet);
         }
     }
 
-    public deleteSelection (name: string): void {
+    public deleteSelection(name: string): void {
         try {
-        if (this.resultSet.selection) {
-        const result: TState = {
-            hasListUpdated: false,
-            list: [...this.resultSet.list],
-            selection: [
-                ...this.resultSet.selection.filter(
-                    (item) => item.name !== name
-                )
-            ]
-        };
+            if (this.resultSet.selection) {
+                const result: TState = {
+                    hasListUpdated: false,
+                    list: [...this.resultSet.list],
+                    selection: [
+                        ...this.resultSet.selection.filter(
+                            (item) => item.name !== name
+                        )
+                    ]
+                };
 
-        this.setInputElement(name);
-        this.setData(result);
-    }
-} catch (e) {
-    console.warn("Error occurred while deletion of selected String", e);
-    }
+                this.setInputElement(name);
+                this.setData(result);
+            }
+        } catch (e) {
+            console.warn("Error occurred while deletion of selected String", e);
+        }
     }
 
-    public setInputElement (name: string): void {
+    public setInputElement(name: string): void {
         try {
             this.inputElement.value = name;
         } catch (e) {

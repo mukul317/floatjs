@@ -1,9 +1,9 @@
 import { TDroopeConfig } from "./Droope/interface";
-import { TSugOptions } from "./Suggester/interface";
+import { TSugOptions } from "./SuggesterBeta/interface";
 import droopeData from "./Droope/data";
-import suggesterData from "./Suggester/data";
+import suggesterData from "./SuggesterBeta/data";
 import Droope from "./Droope";
-import Suggester from "./Suggester";
+import Suggester from "./SuggesterBeta";
 
 ((): void => {
     const inputElement: HTMLInputElement | null = document.querySelector(".select-box-input");
@@ -11,14 +11,16 @@ import Suggester from "./Suggester";
     const displayElement: HTMLElement | null = document.querySelector(".select-box-display");
     if (inputElement && lisitingElement && displayElement) {
         const options: TDroopeConfig = {
+            domId: "demoDroope",
             inputElement,
             lisitingElement,
             displayElement,
-            selectLimit: 3,
+            selectLimit: 2,
             displayListOnFocus: true,
             displayDecorationList: [],
             noResultErrorMessage: "Sorry no result",
-            tagSelectedValues: true
+            tagSelectedValues: true,
+            checkboxes: true
         };
         const DroopeInstance = Droope(options, droopeData);
         console.log(DroopeInstance);
@@ -39,6 +41,7 @@ import Suggester from "./Suggester";
             displayDecorationList: ["chips"],
             noResultErrorMessage: "Sorry no result",
             selectedDecorator: "chips",
+            displayListStyle: "",
             sanitiseString: false,
             specialCharactersAllowedList: [";"]
         };

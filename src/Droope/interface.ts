@@ -10,29 +10,32 @@ interface TSubject {
     registerObserver(o: TObserver): void;
     unregisterObserver(o: TObserver): void;
     notifyObservers(): void;
-    deleteSelection(id: string): void;
     setData(data: TState): void;
+    removeSelection(id: string): void;
 }
 
 interface TState {
     list: TData[];
     selection: TData[];
     hasListUpdated: boolean;
+    hasSelectionUpdated: boolean;
 }
 
 interface TObserver {
     update(arrayOfObjects: TState): void;
 }
 interface TDroopeConfig {
-    inputElement: HTMLInputElement | null;
-    lisitingElement: HTMLElement | null;
-    displayElement: HTMLElement | null;
-    selectLimit?: number;
-    displayListOnFocus?: boolean;
-    displayDecorationList?: string[];
-    selectedDecorator: string;
-    noResultErrorMessage?: string;
-    tagSelectedValues: boolean;
+    readonly domId: string;
+    readonly inputElement: HTMLInputElement | null;
+    readonly lisitingElement: HTMLElement | null;
+    readonly displayElement: HTMLElement | null;
+    readonly selectLimit?: number;
+    readonly displayListOnFocus?: boolean;
+    readonly displayDecorationList?: string[];
+    readonly noResultErrorMessage?: string;
+    readonly tagSelectedValues: boolean;
+    readonly listLimit?: number;
+    readonly checkboxes?: boolean;
 }
 
 export {
