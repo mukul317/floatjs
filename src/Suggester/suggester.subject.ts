@@ -201,8 +201,8 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * setSelectedValues:set the selected values from the resultset on the click of the listing element
-     * and sets the result set state for the Subject and the observer and updates the whole view
+     * This sets the selected object values into the result set
+     * @access public
      * @param selectedObj
      * @returns void
      */
@@ -261,7 +261,9 @@ class SelectBoxInput implements TSubject {
     /**
      * Deletes the query on backspace and updates the query in the input feilds and also deletes the selected values
      * and updates the lsiting element based on that.
+     * @access public
      * @param e : keyboardEvent
+     * @returns void
      */
     public handleBackspace (e: KeyboardEvent): void {
         const which = e.which;
@@ -278,7 +280,7 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    /**
+    /*
      * Debouncing Request for avoiding multiple requests being hit repetitively as user types quickly.
      * When user types quickly then at the same instant multiple requests are being fired. To avoid those
      * multiple requests we have added debouncing so that once user is done typing the query then only hit
@@ -287,6 +289,8 @@ class SelectBoxInput implements TSubject {
      * request will not be fired and it will be fired only when user does not type during that interval.
      * @param requestFunction : Function on which debouncing is to be done
      * @param debounceInterval : Interval of debouncing after which request should be done
+     * @access public
+     * @returns Promise<void>
      */
 
     public debounceRequest (debounceInterval: number): Promise<void> {
@@ -302,6 +306,8 @@ class SelectBoxInput implements TSubject {
     /**
      * Handles the Enter key Press on the list item
      * @param e : { keyboardEvent }: Event passed
+     * @access public
+     * @returns void
      */
     public handleEnter (event: KeyboardEvent): void {
         try {
@@ -319,8 +325,12 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * Sanitises the String By removing Special Characters by matching with regex
+     * Sanitises the String By removing Special Characters by matching with regex that is passed for
+     * whitelisting the special characters as well. This custom characters whitelisting is being provided
+     * by passing a specialcharacterallowedlist into the config.
      * @param query : {String}
+     * @access public
+     * @returns string
      */
     public sanitiseQuery (query: string): string {
         try {
@@ -708,6 +718,7 @@ class SelectBoxInput implements TSubject {
     }
 
     public notifyObservers (): void {
+        console.log(this.resultSet);
         for (const observer of this.listObserverCollection) {
             observer.update(this.resultSet);
         }
