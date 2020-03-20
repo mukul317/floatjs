@@ -1,9 +1,9 @@
 import { TDroopeConfig } from "./Droope/interface";
-import { TSugOptions } from "./Suggester/interface";
+import { TSugOptions } from "./SuggesterBeta/interface";
 import droopeData from "./Droope/data";
-import suggesterData from "./Suggester/data";
+import suggesterData from "./SuggesterBeta/data";
 import Droope from "./Droope";
-import Suggester from "./Suggester";
+import Suggester from "./SuggesterBeta";
 
 ((): void => {
     const inputElement: HTMLInputElement | null = document.querySelector(".select-box-input");
