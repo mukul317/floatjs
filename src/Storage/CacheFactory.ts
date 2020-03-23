@@ -45,7 +45,7 @@ class LocalStorageCacheStorage {
         this.regexp_ = new RegExp("^" + escapedPrefix);
         this.debug = debug || false;
         this.maxSize = maxSize;
-    };
+    }
 
     /**
      * This method fetches the entire item object stored in local storage for a
@@ -57,13 +57,13 @@ class LocalStorageCacheStorage {
         const item = window.localStorage[this.prefix_ + key];
         if (item) return JSON.parse(item);
         return null;
-    };
+    }
 
     private log_ (msg: string): void {
         if (this.debug) {
             console.log(msg);
         }
-    };
+    }
 
     /**
      * This method actually adds item in the storage.
@@ -85,7 +85,7 @@ class LocalStorageCacheStorage {
             this.purge_();
             this.addItem(key, item, true);
         }
-    };
+    }
 
     /**
      * This method creates an object of type TLSItem which is required to store in storage
@@ -111,7 +111,7 @@ class LocalStorageCacheStorage {
             options,
             lastAccessed: new Date().getTime()
         };
-    };
+    }
 
     private keys (): string[] {
         const ret = []; let p;
@@ -119,7 +119,7 @@ class LocalStorageCacheStorage {
             if (p.match(this.regexp_)) ret.push(p.replace(this.prefix_, ""));
         }
         return ret;
-    };
+    }
 
     /**
      * This removes expired items from the cache.
@@ -161,7 +161,7 @@ class LocalStorageCacheStorage {
             }
         }
         this.log_("Purged cached");
-    };
+    }
 
     /**
      * checks if the item stored in the storage has been expired or not
@@ -182,7 +182,7 @@ class LocalStorageCacheStorage {
             }
         }
         return expired;
-    };
+    }
 
     /**
      * This method is used set data in local storage.
@@ -203,7 +203,7 @@ class LocalStorageCacheStorage {
         if ((this.maxSize > 0) && (this.size() > this.maxSize)) {
             setTimeout(() => this.purge_(), 0);
         }
-    };
+    }
 
     /**
      * This fetches the value from the item object, if present, in the local storage
@@ -236,7 +236,7 @@ class LocalStorageCacheStorage {
             this.log_("Cache MISS for key " + key);
         }
         return returnVal;
-    };
+    }
 
     /**
      * This method removes the item(if present) from the local storage
@@ -252,7 +252,7 @@ class LocalStorageCacheStorage {
             }, 0);
         }
         return item ? item.value : null;
-    };
+    }
 
     /**
     * Removes all items from the cache.
@@ -271,14 +271,14 @@ class LocalStorageCacheStorage {
      */
    public getStats (): Record<string, number> {
        return this.stats_;
-   };
+   }
 
    /**
      * Returns the total no of items in the storage
      */
    public size (): number {
        return this.keys().length;
-   };
+   }
 }
 
 class CacheFactory {

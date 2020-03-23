@@ -51,6 +51,10 @@ interface TSugOptions{
   sanitiseString?: boolean;
   specialCharactersAllowedList: string[];
   isPrefetch?: boolean;
+  vertical? : string;
+  keywords? : string;
+  category?: string;
+  relatedConceptCategory?: string;
 }
 interface TSuggesterResponse extends TResponse {
   resultList: any;

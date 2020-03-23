@@ -1,6 +1,6 @@
-import { TObserver, TData, TState, TSubject, TSuggesterResponse, TRecentSearchResponse, TResponse, TSugOptions } from "./interface";
-import { Helper } from "./helper.suggester";
+import { TObserver, TData, TState, TSubject, TSuggesterResponse, TRecentSearchResponse, TResponse, TSugOptions, TObject, TVersionResponse } from "./interface";
 import suggesterConfig from "./config.suggester";
+import { Helper } from "./helper.suggester";
 
 /**
  * @Class Select Box Input that acts as a subject for the Suggester
@@ -65,6 +65,18 @@ class SelectBoxInput implements TSubject {
     private isPrefetch: boolean
 
     /**
+     * For reading vertical
+     */
+    private vertical: string
+
+    /**
+     * For reading category
+     */
+    private category: string
+
+    private relatedConceptCategory: any
+
+    /**
      *
      */
     private dataSet: TData[] = []
@@ -108,6 +120,10 @@ class SelectBoxInput implements TSubject {
         this.displayListStyle = options.displayListStyle || "";
         this.sanitiseString = options.sanitiseString || false;
         this.isPrefetch = options.isPrefetch || false;
+        this.vertical = options.vertical || "";
+        this.category = options.category || "top";
+        this.relatedConceptCategory = options.relatedConceptCategory;
+
         if (this.sanitiseString) {
             if (options.specialCharactersAllowedList) {
                 this.specialCharactersAllowedList = options.specialCharactersAllowedList;
@@ -126,7 +142,7 @@ class SelectBoxInput implements TSubject {
         });
 
         if (this.isPrefetch) {
-            Helper.prefetchData(options);
+            this.prefetchData(options);
         }
 
         if (this.displayListOnFocus === true) {
@@ -398,7 +414,6 @@ class SelectBoxInput implements TSubject {
                         ? this.sanitiseQuery((e.target as HTMLInputElement).value.trim())
                         : "";
                 const which: number = e.which;
-                const category = "top";
                 switch (which) {
                 case 9: // Tab pressed
                     this.handleListingDisplayStateOn("blur");
@@ -421,7 +436,7 @@ class SelectBoxInput implements TSubject {
                     return;
 
                 default:
-                    this.debounceRequest(500).then(() => { this.sendSuggesterRequest(query, category); });
+                    this.debounceRequest(500).then(() => { this.sendSuggesterRequest(query, this.category); });
                 }
             } else {
                 throw new Error("Event not happened Event Object Missing");
@@ -757,6 +772,111 @@ class SelectBoxInput implements TSubject {
         } catch (e) {
             throw new Error("Error occurred while prefilling data");
         }
+    }
+
+    /**
+     * If 'isPrefetch' value is received as true in suggester then following method must be called.
+     * It prefetches some suggestions and then stores them in storage.
+     * Condition : Prefetching happens only if storage has no pre fetched data
+     * @access : private
+     */
+    private prefetchData = (params: TSugOptions): void => {
+        const url = suggesterConfig.urls.prefetch + Math.random();
+        this.fetchVersion().then((response: TVersionResponse) => {
+            Helper.setInStorage(suggesterConfig.storageKey.versionKey, response);
+
+            const prefetchedData = Helper.getFromStorage(suggesterConfig.storageKey.prefetchKey);
+            // todo:logic for when to fetch next
+            if (prefetchedData) {
+                /**
+             *
+             * @param  {String} prefetchedData.keyword_based_data [need to check with blank string,
+             * because in some cases false is treated as a true]
+             */
+                if ((params.keywords && prefetchedData.keyword_based_data === false) || (+new Date(prefetchedData.ttl)) - (+new Date()) < 0) {
+                    this.fetchKeywordBasedData(prefetchedData);
+                }
+            } else {
+                Helper.sendXhr(url + "?segments=''", null).then(function (resp) {
+                    Helper.setInStorage(suggesterConfig.storageKey.prefetchKey, resp);
+                });
+            }
+        });
+    };
+
+    /**
+     * To check the version of suggester apis to be used.
+     * Must be called only once on page load even if page has multiple suggesters.
+     * Sets the version number received in the storage.
+     * This version no must be passed in later api calls to fetch suggestions.
+     * @returns {void}
+     * @access : private
+     */
+    private fetchVersion = (): Promise<TVersionResponse> => {
+        const url = suggesterConfig.urls.checkVersion + Math.random() + "&";
+        return Helper.sendXhr(url, null);
+    };
+
+    /**
+     *
+     */
+    private fetchKeywordBasedData = (prefetchedData: TObject): void => {
+        try {
+            Helper.sendXhr(suggesterConfig.urls.prefetch + "segments=" + prefetchedData.segments, null).then((rData) => {
+                Helper.setInStorage(suggesterConfig.storageKey.prefetchKey, this.mergeData(prefetchedData, rData));
+            });
+        } catch (e) {
+            console.warn(e.message);
+        }
+    }
+
+    private mergeData = (prefetchedData: any, newData: any): TObject => {
+        this.vertical = newData.vertical;
+        let ac, rc;
+
+        if (this.vertical) {
+            const newAC: any = newData.ac;
+            const newRC: any = newData.rc;
+
+            const category = this.category;
+            const rcCategory = this.relatedConceptCategory;
+            for (const key in newAC) {
+                for (const k in newAC[key]) {
+                    if (category[k]) {
+                        const premKey = k + "_" + this.vertical;
+                        newAC[key][premKey] = newAC[key][k];
+                        delete newAC[key][k];
+                    } else {
+                        delete newAC[key][k];
+                    }
+                }
+            }
+            for (const key in newRC) {
+                for (const k in newRC[key]) {
+                    if (rcCategory[k]) {
+                        const premKey = k + "_" + this.vertical;
+                        newRC[key][premKey] = newRC[key][k];
+                        delete newRC[key][k];
+                    } else {
+                        delete newRC[key][k];
+                    }
+                }
+            }
+            ac = { ...prefetchedData.ac, ...newAC };
+            rc = { ...prefetchedData.rc, ...newRC };
+        } else {
+            ac = { ...prefetchedData.ac, ...newData.ac };
+            rc = { ...prefetchedData.rc, ...newData.rc };
+        }
+
+        return {
+            ac: ac,
+            rc: rc,
+            ttl: newData.ttl,
+            segments: newData.segments,
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            keyword_based_data: newData.keyword_based_data
+        };
     }
 }
 
