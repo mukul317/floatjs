@@ -51,13 +51,24 @@ interface TSugOptions {
   sanitiseString?: boolean;
   specialCharactersAllowedList: string[];
   isPrefetch?: boolean;
-  vertical? : string;
-  keywords? : string;
+  vertical?: string;
+  keywords?: string;
   category?: string;
   relatedConceptCategory?: string;
 }
 
+
 interface TSugConfig {
+  readonly source: string;
+  readonly category: string;
+  readonly maxSuggestions: number;
+  readonly specialCharactersAllowedList: string[] | RegExp;
+  readonly edge: number;
+  readonly invoker: string;
+  readonly version: string;
+  readonly urls: { [keys: string]: string };
+  readonly storageKey: { [keys: string]: string };
+  readonly appId: number;
   readonly domId: string;
   readonly inputElement: HTMLInputElement | null;
   readonly listingElement: HTMLElement | null;
@@ -70,9 +81,9 @@ interface TSugConfig {
   readonly listLimit?: number;
   readonly checkboxes?: boolean;
   readonly sanitiseString?: boolean;
-  readonly specialCharactersAllowedList: string[];
   readonly isPrefetch?: boolean;
   readonly displayListStyle?: string;
+  headingElement?: HTMLElement | null;
 }
 interface TSuggesterResponse extends TResponse {
   resultList: any;

@@ -22,7 +22,7 @@ class Listing implements TObserver {
                 liElement.textContent = item.name;
                 liElement.classList.add("list-item");
                 liElement.setAttribute("data-obj", JSON.stringify(item));
-                liElement.setAttribute("data-id", item.id);
+                liElement.setAttribute("data-id", item.id.toString());
                 if (this.hasCheckboxes === true) {
                     liElement.classList.add("check-enabled");
                     this.checkboxDecorator(liElement);
@@ -54,11 +54,11 @@ class Listing implements TObserver {
     public appendList(list: HTMLElement): void {
         try {
             const { noResultElement } = this.subject;
-            const { lisitingElement } = this.subject.config;
-            if (lisitingElement) {
-                lisitingElement.innerHTML = "";
-                lisitingElement.appendChild(noResultElement);
-                lisitingElement.appendChild(list);
+            const { listingElement } = this.subject.config;
+            if (listingElement) {
+                listingElement.innerHTML = "";
+                listingElement.appendChild(noResultElement);
+                listingElement.appendChild(list);
             }
         } catch (err) {
             console.warn(err.message);

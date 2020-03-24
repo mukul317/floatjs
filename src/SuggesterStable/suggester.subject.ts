@@ -1,9 +1,29 @@
 import { TSugConfig, TData, TState, TSubject, TObserver, TRecentSearchResponse, TSuggesterResponse, TResponse } from "./interface";
+import { Helper } from "../SuggesterStable/suggester.helper";
 interface TSetState extends TState {
     construct?: boolean;
 }
 
 const defaultConfig: TSugConfig = {
+    urls: {
+        autoComplete: "http://suggest.naukrigulf.com/suggest/autosuggest?invoker=ng&",
+        caching: "http://suggest.naukrigulf.com/suggest/prefetch?invoker=ng&",
+        checkVersion: "http://suggest.naukrigulf.com/suggest/v?",
+        relatedConcept: "http://suggest.naukrigulf.com/suggest/autoconcepts?invoker=ng&",
+        prefetch: "http://suggest.naukrigulf.com/suggest/prefetch?invoker=ng&",
+        trackingURL: "http://suggest.naukrigulf.com/suggestlg.naukrigulf.com/logger/log?invoker=ng&"
+    },
+    category: "top",
+    appId: 2050,
+    version: "1.2.0",
+    source: "server",
+    maxSuggestions: 15,
+    edge: 0,
+    invoker: "ng",
+    storageKey: { // It is used to store prefetched data against pretetchKey and version value against versionKey in localStorage.
+        prefetchKey: "__suggest_prefetch",
+        versionKey: "__suggest_versions"
+    },
     domId: "",
     inputElement: null,
     listingElement: null,
@@ -17,8 +37,11 @@ const defaultConfig: TSugConfig = {
     specialCharactersAllowedList: [],
     sanitiseString: false,
     checkboxes: true,
-    headingElement: null
+    suggesterHeadingElementText: "Suggestions",
+    relatedConceptsHeadingElementText: "Related Concepts",
+    debounceTimeout: 500
 };
+
 class SelectBoxInput implements TSubject {
     public state: TState = {
         list: [],
@@ -34,12 +57,14 @@ class SelectBoxInput implements TSubject {
 
     public noResultErrorMessage: boolean = true;
     public noResultElement: HTMLElement = document.createElement("p");
+    public headingElement: HTMLElement = document.createElement("p");
     public arrowCodisplayunter: number = -1;
     public config: TSugConfig = defaultConfig;
 
-    private dataSet: TData[] = [];
-    private listObserverCollection: TObserver[] = [];
-    private arrowCounter: number = -1;
+    public dataSet: TData[] = [];
+    public listObserverCollection: TObserver[] = [];
+    public arrowCounter: number = -1;
+    public helperObject: Helper | null = null;
 
     constructor(options: TSugConfig) {
         try {
@@ -49,6 +74,7 @@ class SelectBoxInput implements TSubject {
             this.registerInputEvents();
             this.createNoResultFragment();
             this.initialiseHeadingElement();
+            this.helperObject = new Helper(this.config);
         } catch (err) {
             console.warn(err.message);
         }
@@ -57,10 +83,9 @@ class SelectBoxInput implements TSubject {
 
 
     public initialiseHeadingElement(): void {
-        const { config } = this;
-        config.headingElement = document.createElement("P");
+
         try {
-            config.headingElement.classList.add("no-result");
+            this.headingElement.classList.add("no-result");
         } catch (e) {
             console.warn("Errors occurred while initialising heading element");
         }
@@ -73,15 +98,15 @@ class SelectBoxInput implements TSubject {
     public setHeadingElement(listingType: string): void {
         try {
             var { config } = this;
-            if (listingType && config.headingElement) {
-                switch (listingType) {
+            if (listingType && this.headingElement) {
+                switch (listingType && (config.relatedConceptsHeadingElementText && config.suggesterHeadingElementText)) {
                     case "rc":
-                        config.headingElement.style.display = "block";
-                        config.headingElement.textContent = "Related Searches";
+                        this.headingElement.style.display = "block";
+                        this.headingElement.innerHTML = config.relatedConceptsHeadingElementText ? config.relatedConceptsHeadingElementText : "Related Concepts";
                         break;
                     case "sug":
-                        config.headingElement.style.display = "block";
-                        config.headingElement.textContent = "Suggestions";
+                        this.headingElement.style.display = "block";
+                        this.headingElement.innerHTML = config.suggesterHeadingElementText ? config.suggesterHeadingElementText : "Suggestions";
                         break;
                 }
             } else {
@@ -157,35 +182,51 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    // public onSelect(target: HTMLElement): void {
+    //     try {
+    //         const { config } = this;
+    //         const dataObjFromDom: string | null = target.getAttribute("data-obj");
+    //         const parentOfTarget: HTMLElement | null = target.parentElement;
+    //         const selectedObjStr: string | null = dataObjFromDom || (parentOfTarget ? parentOfTarget.getAttribute("data-obj") : null);
+    //         const selectedObj: TData = selectedObjStr ? JSON.parse(selectedObjStr) : null;
+
+    //         if (selectedObj && config.selectLimit) {
+    //             const selectionLimitExceeded: boolean = config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
+    //             const isDuplicate: boolean = this.state.selection.filter((item) => item.id === selectedObj.id).length > 0;
+
+    //             if (isDuplicate === true) {
+    //                 if (config.checkboxes === true) {
+    //                     this.removeSelection(selectedObj.id);
+    //                 }
+    //             } else {
+    //                 this.onLastSelection();
+    //                 if (selectionLimitExceeded === true) {
+    //                     throw new Error(`Maximum select limit reached. Configured limit droope id "${config.domId}" is ${config.selectLimit}`);
+    //                 } else {
+    //                     this.addSelection(selectedObj);
+    //                 }
+    //             }
+    //         } else {
+    //             throw new Error("On select callback trigged. No selection json found. No mutation in state possible");
+    //         }
+    //     } catch (err) {
+    //         console.warn(err.message);
+    //     }
+    // }
+
+    /**
+     * Handle Select set the selected object by picking the item from the data-obj attribute of the selected
+     * listing element.
+     * @param target
+     * @returns { void }
+     */
     public onSelect(target: HTMLElement): void {
         try {
-            const { config } = this;
-            const dataObjFromDom: string | null = target.getAttribute("data-obj");
-            const parentOfTarget: HTMLElement | null = target.parentElement;
-            const selectedObjStr: string | null = dataObjFromDom || (parentOfTarget ? parentOfTarget.getAttribute("data-obj") : null);
-            const selectedObj: TData = selectedObjStr ? JSON.parse(selectedObjStr) : null;
-
-            if (selectedObj && config.selectLimit) {
-                const selectionLimitExceeded: boolean = config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
-                const isDuplicate: boolean = this.state.selection.filter((item) => item.id === selectedObj.id).length > 0;
-
-                if (isDuplicate === true) {
-                    if (config.checkboxes === true) {
-                        this.removeSelection(selectedObj.id.toString());
-                    }
-                } else {
-                    this.onLastSelection();
-                    if (selectionLimitExceeded === true) {
-                        throw new Error(`Maximum select limit reached. Configured limit droope id "${config.domId}" is ${config.selectLimit}`);
-                    } else {
-                        this.addSelection(selectedObj);
-                    }
-                }
-            } else {
-                throw new Error("On select callback trigged. No selection json found. No mutation in state possible");
-            }
-        } catch (err) {
-            console.warn(err.message);
+            const selectedObjStr: string = target.getAttribute("data-obj") || "";
+            const selectedObj: TData = JSON.parse(selectedObjStr);
+            this.setSelectedValues(selectedObj);
+        } catch (e) {
+            console.error(e);
         }
     }
 
@@ -197,7 +238,7 @@ class SelectBoxInput implements TSubject {
 
             if (which === 8) {
                 const lastIndexOfSelection: number = this.state.selection.length - 1;
-                const lastId: string | null = lastIndexOfSelection >= 0 ? this.state.selection[lastIndexOfSelection].id : null;
+                const lastId: number | null = lastIndexOfSelection >= 0 ? this.state.selection[lastIndexOfSelection].id : null;
                 if (isQueryEmpty === true && lastId !== null) {
                     this.removeSelection(lastId);
                     this.emulateEventOnListObserver("focus");
@@ -231,7 +272,9 @@ class SelectBoxInput implements TSubject {
                         ? this.sanitiseQuery((e.target as HTMLInputElement).value.trim())
                         : "";
                 const which: number = e.which;
-                const category = "top";
+                const { config } = this;
+                const category = config.category;
+                const debounceTimeout = config.debounceTimeout ? config.debounceTimeout : 500;
                 switch (which) {
                     case 9: // Tab pressed
                         this.emulateEventOnListObserver("focusout");
@@ -258,7 +301,7 @@ class SelectBoxInput implements TSubject {
                         return;
 
                     default:
-                        this.debounceRequest(500).then(() => { this.sendSuggesterRequest(query, category); });
+                        this.debounceRequest(debounceTimeout).then(() => { this.sendSuggesterRequest(query, category); });
                 }
             } else {
                 throw new Error("Event not happened Event Object Missing");
@@ -267,6 +310,30 @@ class SelectBoxInput implements TSubject {
             console.error("Error found: " + e);
         }
 
+    }
+
+
+    /**
+     * Sanitises the String By removing Special Characters by matching with regex that is passed for
+     * whitelisting the special characters as well. This custom characters whitelisting is being provided
+     * by passing a specialcharacterallowedlist into the config.
+     * @param query : {String}
+     * @access public
+     * @returns string
+     */
+    public sanitiseQuery(query: string): string {
+        try {
+            const { config } = this;
+            if (query) {
+                const patr = new RegExp("[^a-zA-Z0-9,\\s" + config.specialCharactersAllowedList + "]", "g");
+                return query.replace(patr, "");
+            } else {
+                throw new Error("Query not found that is to be sanitised");
+            }
+        } catch (e) {
+            console.log("Exception Occurred while Sanitising Query");
+        }
+        return "";
     }
 
     /*
@@ -283,13 +350,19 @@ class SelectBoxInput implements TSubject {
      */
 
     public debounceRequest(debounceInterval: number): Promise<void> {
-        if (this.debounceTimer) { clearTimeout(this.debounceTimer); }
-        return new Promise((resolve: Function): void => {
-            this.debounceTimer = setTimeout(
-                (): void => resolve(),
-                debounceInterval
-            );
-        });
+        try {
+            if (this.debounceTimer) { clearTimeout(this.debounceTimer); }
+            return new Promise((resolve: Function): void => {
+                this.debounceTimer = setTimeout(
+                    (): void => resolve(),
+                    debounceInterval
+                );
+            });
+        }
+        catch (e) {
+            return Promise.reject();
+
+        }
     }
 
     /**
@@ -324,39 +397,25 @@ class SelectBoxInput implements TSubject {
      */
     public setSelectedValues(selectedObj: TData): void {
         try {
-            if (selectedObj) {
+            const { config } = this;
+            if (selectedObj && config.selectLimit) {
                 // rishabh changes here
                 this.sendRelatedSearchRequest(selectedObj);
                 // rishabh changes here
                 const { config } = this;
-                if (config.selectLimit) {
+                const selectionLimitExceeded: boolean = config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
+                const isDuplicate: boolean = this.state.selection.filter((item) => item.id === selectedObj.id).length > 0;
 
-                    const selectionLimitExceeded: boolean =
-                        config.selectLimit && config.selectLimit > 1
-                            ? this.state.selection.length >= config.selectLimit
-                            : false;
-                    const isLastSelectionNow: boolean =
-                        this.state.selection.length + 1 >= config.selectLimit;
-                    const isDuplicate: boolean =
-                        this.resultSet.selection.filter((item) => item.name === selectedObj.name)
-                            .length > 0;
-                    if (selectedObj && isDuplicate === false) {
-                        if (selectionLimitExceeded === false) {
-                            const selection =
-                                this.selectLimit === 1
-                                    ? [selectedObj]
-                                    : [...this.resultSet.selection, selectedObj];
-                            const result: TState = {
-                                hasListUpdated: false,
-                                list: [...this.config.resultSet.list],
-                                selection
-                            };
-                            this.emptyInputFeilds();
-                            this.setData(result);
-                        }
-                        if (isLastSelectionNow) {
-                            this.emulateEventOnListObserver("focusout");
-                        }
+                if (isDuplicate === true) {
+                    if (config.checkboxes === true) {
+                        this.removeSelection(selectedObj.id);
+                    }
+                } else {
+                    this.onLastSelection();
+                    if (selectionLimitExceeded === true) {
+                        throw new Error(`Maximum select limit reached. Configured limit droope id "${config.domId}" is ${config.selectLimit}`);
+                    } else {
+                        this.addSelection(selectedObj);
                     }
                 }
             }
@@ -368,13 +427,29 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * This empties the input feilds values
+     * @returns{void}
+     */
+    public emptyInputFeilds(): void {
+        try {
+            if (this.config.inputElement) {
+                this.config.inputElement.value = "";
+            }
+            else {
+                throw new Error("Input Element not being set");
+            }
+        } catch (e) {
+            console.error("Emptying input feilds");
+        }
+    }
+
 
     public sendSuggesterRequest(query: string, category: string): void {
         try {
-            console.log("query in here", query);
-            if (query) {
+            if (query && this.helperObject) {
                 this.handleApiResponse(
-                    Helper.sendXhr(suggesterConfig.urls.autoComplete, {
+                    this.helperObject.sendXhr(this.config.urls.autoComplete, {
                         query,
                         category
                     }),
@@ -401,12 +476,12 @@ class SelectBoxInput implements TSubject {
         */
     public sendRelatedSearchRequest(selectedObject: TData): void {
         try {
-            if (selectedObject && selectedObject.displayTextEn) {
+            if (selectedObject && selectedObject.displayTextEn && this.helperObject) {
                 const query = selectedObject.displayTextEn.toLowerCase();
                 const category = "top";
 
                 this.handleApiResponse(
-                    Helper.sendXhr(suggesterConfig.urls.relatedConcept, {
+                    this.helperObject.sendXhr(this.config.urls.relatedConcept, {
                         query,
                         category
                     }),
@@ -754,13 +829,13 @@ class SelectBoxInput implements TSubject {
      * @param id {string}
      * @returns {void}
      */
-    public removeSelection(id: string): void {
+    public removeSelection(id: number): void {
         try {
             const result: TState = {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
                 list: this.state.list,
-                selection: [...this.state.selection.filter((item) => parseInt(item.id, 10) !== parseInt(id, 10))]
+                selection: [...this.state.selection.filter((item) => item.id, 10 !== id)]
             };
             this.setData(result);
         } catch (err) {

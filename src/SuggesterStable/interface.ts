@@ -5,18 +5,24 @@ interface TData {
 }
 
 interface TSubject {
-    listingElement: HTMLElement;
-    displayElement: HTMLElement;
-    noResultElement: HTMLElement;
-    headingElement: HTMLElement;
-    displayListStyle: string;
-    arrowCounter: number;
-    resultSet: TState;
+    state: TState;
+    debounceTimer: NodeJS.Timeout | null;
+    config: TSugConfig;
+    dataSet: TData[];
+    listObserverCollection: TObserver[];
     registerObserver(o: TObserver): void;
     unregisterObserver(o: TObserver): void;
     notifyObservers(): void;
-    deleteSelection(id: string): void;
+    removeSelection(id: number): void;
     setData(data: TState): void;
+}
+
+
+interface TVersionResponse {
+    "suggester_v": string;
+    "prefetch_v": string;
+    "autocorrect_v": string;
+    "relatedconcepts_v": string;
 }
 
 interface TState {
@@ -55,6 +61,16 @@ interface TSugOptions {
 }
 
 interface TSugConfig {
+    readonly source: string;
+    readonly category: string;
+    readonly maxSuggestions: number;
+    readonly specialCharactersAllowedList: string[] | RegExp;
+    readonly edge: number;
+    readonly invoker: string;
+    readonly version: string;
+    readonly urls: { [keys: string]: string };
+    readonly storageKey: { [keys: string]: string };
+    readonly appId: number;
     readonly domId: string;
     readonly inputElement: HTMLInputElement | null;
     readonly listingElement: HTMLElement | null;
@@ -67,10 +83,12 @@ interface TSugConfig {
     readonly listLimit?: number;
     readonly checkboxes?: boolean;
     readonly sanitiseString?: boolean;
-    readonly specialCharactersAllowedList: string[];
     readonly isPrefetch?: boolean;
     readonly displayListStyle?: string;
-    headingElement?: HTMLElement | null
+    readonly isRelatedConceptsSupported?: boolean;
+    readonly suggesterHeadingElementText?: string | null;
+    readonly relatedConceptsHeadingElementText?: string | null;
+    readonly debounceTimeout?: number;
 }
 interface TSuggesterResponse extends TResponse {
     resultList: any;
@@ -86,14 +104,7 @@ interface TResponse {
     resultList: any;
 }
 
-type TObject = Record<string, string>
-
-interface TVersionResponse {
-    "suggester_v": string;
-    "prefetch_v": string;
-    "autocorrect_v": string;
-    "relatedconcepts_v": string;
-}
+type TObject = Record<string, string>;
 
 export {
     TData,
@@ -107,5 +118,5 @@ export {
     TSugOptions,
     TVersionResponse,
     TObject,
-    TSugConfig
+    TSugConfig,
 };

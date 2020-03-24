@@ -55,7 +55,7 @@ class SelectDisplay implements TObserver {
                 const selectedHtml: HTMLElement = this.generateDisplayHtml(selection);
                 this.appendMarkup(selectedHtml);
 
-                console.info("[Notified]: Droope Select Observer with UPDATE");
+                console.info("[Notified]: Suggseter Select Observer with UPDATE");
             }
         } catch (err) {
             console.warn(err.message);
@@ -89,7 +89,7 @@ class SelectDisplay implements TObserver {
                     try {
                         const toBeDeletedId = (e.target as HTMLElement).getAttribute("data-id");
                         if (toBeDeletedId && toBeDeletedId !== "") {
-                            this.subject.removeSelection(toBeDeletedId);
+                            this.subject.removeSelection(parseInt(toBeDeletedId, 10));
                         }
                     } catch (err) {
                         console.warn(err.message);

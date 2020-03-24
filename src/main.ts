@@ -1,9 +1,9 @@
 import { TDroopeConfig } from "./Droope/interface";
-import { TSugConfig } from "./SuggesterBeta/interface";
+import { TSugConfig } from "./SuggesterStable/interface";
 import droopeData from "./Droope/data";
-import suggesterData from "./SuggesterBeta/data";
+import suggesterData from "./SuggesterStable/data";
 import Droope from "./Droope";
-import Suggester from "./SuggesterBeta";
+import Suggester from "./SuggesterStable";
 
 ((): void => {
     const inputElement: HTMLInputElement | null = document.querySelector(".select-box-input");
@@ -45,7 +45,11 @@ import Suggester from "./SuggesterBeta";
             checkboxes: true,
             displayListStyle: "",
             sanitiseString: false,
-            specialCharactersAllowedList: [";"]
+            specialCharactersAllowedList: [";"],
+            source: "server",
+            category: "top",
+            maxSuggestions: 15,
+            edge: 0
         };
         const SuggesterInstance = Suggester(options, suggesterData);
         console.log("Suggester", SuggesterInstance);

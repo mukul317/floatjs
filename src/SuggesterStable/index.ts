@@ -1,10 +1,10 @@
-import { TDroopeConfig, TData, TSubject } from "./interface";
-import DroopeSubject from "./suggester.subject";
+import { TSugConfig, TData, TSubject } from "./interface";
+import SuggesterSubject from "./suggester.subject";
 import ListObserver from "./lisiting.observer";
 import DisplayObserver from "./display.observer";
 
-const Droope = (options: TDroopeConfig, data: TData[]): TSubject => {
-    const SelectBox = new DroopeSubject(options);
+const Suggester = (options: TSugConfig, data: TData[]): TSubject => {
+    const SelectBox = new SuggesterSubject(options);
     new ListObserver(SelectBox);
     new DisplayObserver(SelectBox);
     SelectBox.setData({
@@ -17,4 +17,4 @@ const Droope = (options: TDroopeConfig, data: TData[]): TSubject => {
     return SelectBox;
 };
 
-export default Droope;
+export default Suggester;

@@ -1,13 +1,22 @@
-import suggesterConfig from "./config.suggester";
-import { TPayload, TResponse, TSugOptions } from "./interface";
+import { TPayload, TResponse, TSugConfig } from "./interface";
 
 class Helper {
+    private appId: number = 0;
+    private maxSuggestions: number = 0;
+    private prefetch: string = "";
+
+    constructor(config: TSugConfig) {
+        this.appId = config.appId;
+        this.maxSuggestions = config.maxSuggestions;
+        this.prefetch = config.urls.prefetch;
+    }
+
     /**
      * This method is responsible for sending an ajax request to fetch the suggestions for the typed query
      * @param url : url for ajax hit
      * @param payload : Contains an Object for paramets to be passed in the url
      */
-    static sendXhr = (url: string, payload: TPayload | null): Promise<TResponse> => {
+    public sendXhr = (url: string, payload: TPayload | null): Promise<TResponse> => {
         return new Promise((resolve: Function, reject: Function) => {
             const xhr: XMLHttpRequest = new XMLHttpRequest();
             try {
@@ -18,11 +27,10 @@ class Helper {
                     throw Error("Received empty query");
                 }
 
-                const { appId } = suggesterConfig;
                 const finalPayload: any = {
                     ...payload,
-                    appId,
-                    limit: suggesterConfig.maxSuggestions
+                    appId: this.appId,
+                    limit: this.maxSuggestions
                 };
                 const params = Object.keys(finalPayload)
                     .map((key) => key + "=" + finalPayload[key])
@@ -46,9 +54,9 @@ class Helper {
         });
     }
 
-    static prefetchData = (options: TSugOptions) => {
-        const url = suggesterConfig.urls.prefetch + Math.random();
-        Helper.sendXhr(url, null).then(function () {
+    public prefetchData = () => {
+        const url = this.prefetch + Math.random();
+        this.sendXhr(url, null).then(function () {
             // set response in LS
         });
     }
