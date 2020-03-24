@@ -38,7 +38,7 @@ interface TPayload {
   edge?: number;
 }
 
-interface TSugOptions{
+interface TSugOptions {
   inputElement: HTMLInputElement;
   listingElement: HTMLElement;
   displayElement: HTMLElement;
@@ -51,6 +51,24 @@ interface TSugOptions{
   sanitiseString?: boolean;
   specialCharactersAllowedList: string[];
   isPrefetch?: boolean;
+}
+
+interface TSugConfig {
+  readonly domId: string;
+  readonly inputElement: HTMLInputElement | null;
+  readonly listingElement: HTMLElement | null;
+  readonly displayElement: HTMLElement | null;
+  readonly selectLimit?: number;
+  readonly displayListOnFocus?: boolean;
+  readonly displayDecorationList?: string[];
+  readonly noResultErrorMessage?: string;
+  readonly tagSelectedValues: boolean;
+  readonly listLimit?: number;
+  readonly checkboxes?: boolean;
+  readonly sanitiseString?: boolean;
+  readonly specialCharactersAllowedList: string[];
+  readonly isPrefetch?: boolean;
+  readonly displayListStyle?: string;
 }
 interface TSuggesterResponse extends TResponse {
   resultList: any;
@@ -76,15 +94,16 @@ interface TVersionResponse {
 }
 
 export {
-    TData,
-    TSubject,
-    TState,
-    TObserver,
-    TResponse,
-    TSuggesterResponse,
-    TPayload,
-    TRecentSearchResponse,
-    TSugOptions,
-    TVersionResponse,
-    TObject
+  TData,
+  TSubject,
+  TState,
+  TObserver,
+  TResponse,
+  TSuggesterResponse,
+  TPayload,
+  TRecentSearchResponse,
+  TSugOptions,
+  TVersionResponse,
+  TObject,
+  TSugConfig
 };

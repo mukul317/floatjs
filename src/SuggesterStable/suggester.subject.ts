@@ -1,12 +1,12 @@
-import { TObserver, TData, TState, TSubject, TDroopeConfig } from "./interface";
+import { TSugConfig, TData, TState, TSubject, TObserver, TRecentSearchResponse, TSuggesterResponse, TResponse } from "./interface";
 interface TSetState extends TState {
     construct?: boolean;
 }
 
-const defaultConfig: TDroopeConfig = {
+const defaultConfig: TSugConfig = {
     domId: "",
     inputElement: null,
-    lisitingElement: null,
+    listingElement: null,
     displayElement: null,
     listLimit: 10,
     selectLimit: 1,
@@ -14,7 +14,10 @@ const defaultConfig: TDroopeConfig = {
     displayDecorationList: ["chips"],
     noResultErrorMessage: "No result for your query",
     tagSelectedValues: false,
-    checkboxes: true
+    specialCharactersAllowedList: [],
+    sanitiseString: false,
+    checkboxes: true,
+    headingElement: null
 };
 class SelectBoxInput implements TSubject {
     public state: TState = {
@@ -24,23 +27,68 @@ class SelectBoxInput implements TSubject {
         hasSelectionUpdated: false
     };
 
+    /**
+  * Debounce timer variable used for debouncing the user input
+  */
+    public debounceTimer: NodeJS.Timeout | null = null;
+
     public noResultErrorMessage: boolean = true;
     public noResultElement: HTMLElement = document.createElement("p");
-    public arrowCounter: number = -1;
-    public config: TDroopeConfig = defaultConfig;
+    public arrowCodisplayunter: number = -1;
+    public config: TSugConfig = defaultConfig;
 
     private dataSet: TData[] = [];
     private listObserverCollection: TObserver[] = [];
+    private arrowCounter: number = -1;
 
-    constructor(options: TDroopeConfig) {
+    constructor(options: TSugConfig) {
         try {
             this.config = { ...this.config, ...options };
 
             this.registerListEvents();
             this.registerInputEvents();
             this.createNoResultFragment();
+            this.initialiseHeadingElement();
         } catch (err) {
             console.warn(err.message);
+        }
+    }
+
+
+
+    public initialiseHeadingElement(): void {
+        const { config } = this;
+        config.headingElement = document.createElement("P");
+        try {
+            config.headingElement.classList.add("no-result");
+        } catch (e) {
+            console.warn("Errors occurred while initialising heading element");
+        }
+    }
+
+    /**
+     * Sets the heading element based on the current listing that is being shown.
+     * @param listingType : type of listing that is being shown if its suggester or related searches
+     */
+    public setHeadingElement(listingType: string): void {
+        try {
+            var { config } = this;
+            if (listingType && config.headingElement) {
+                switch (listingType) {
+                    case "rc":
+                        config.headingElement.style.display = "block";
+                        config.headingElement.textContent = "Related Searches";
+                        break;
+                    case "sug":
+                        config.headingElement.style.display = "block";
+                        config.headingElement.textContent = "Suggestions";
+                        break;
+                }
+            } else {
+                throw new Error("Listing type is not available");
+            }
+        } catch (e) {
+            console.warn("Error occurred while setting heading element");
         }
     }
 
@@ -67,8 +115,8 @@ class SelectBoxInput implements TSubject {
     public registerListEvents(): void {
         try {
             const { config } = this;
-            if (config.lisitingElement) {
-                config.lisitingElement.addEventListener("click", (e: MouseEvent) => {
+            if (config.listingElement) {
+                config.listingElement.addEventListener("click", (e: MouseEvent) => {
                     const target: HTMLElement | null = (e.target as HTMLElement);
                     if (target) {
                         this.onSelect(target);
@@ -101,8 +149,8 @@ class SelectBoxInput implements TSubject {
     public emulateEventOnListObserver(eventType: string): void {
         try {
             const { config } = this;
-            if (config.lisitingElement) {
-                config.lisitingElement.style.display = eventType === "focus" ? "block" : "none";
+            if (config.listingElement) {
+                config.listingElement.style.display = eventType === "focus" ? "block" : "none";
             }
         } catch (err) {
             console.warn(err.message);
@@ -123,7 +171,7 @@ class SelectBoxInput implements TSubject {
 
                 if (isDuplicate === true) {
                     if (config.checkboxes === true) {
-                        this.removeSelection(selectedObj.id);
+                        this.removeSelection(selectedObj.id.toString());
                     }
                 } else {
                     this.onLastSelection();
@@ -160,68 +208,373 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Handles the keyUp event attached to the suggester input field.It does different functionalities
+     * when the event is being  done. Covers a lot of cases for different keys presses that are as follows:
+     * case 9: Tabs Pressed
+     * Handles the Listing Display State and sets to blur
+     * case 13: Enter pressed
+     * finds the current active listing element and then Selects that listing element into the display and
+     * pass the state on
+     * case 38: Up Arrow
+     * handles the UpArrow case by making the listing element above current active listing element as active
+     * case 40: Down Arrow
+     * handles the Down Arrow cases by the listing element below the current active listing element as active
+     * @param e : KeyBoardEvent
+     * @returns {void}
+     */
     public onKeyUp(e: KeyboardEvent): void {
         try {
-            const query: string = e && e.target && (e.target as HTMLInputElement).value ? (e.target as HTMLInputElement).value.trim() : "";
-            const which: number = e.which;
+            if (e) {
+                const query: string =
+                    e && e.target && (e.target as HTMLInputElement).value
+                        ? this.sanitiseQuery((e.target as HTMLInputElement).value.trim())
+                        : "";
+                const which: number = e.which;
+                const category = "top";
+                switch (which) {
+                    case 9: // Tab pressed
+                        this.emulateEventOnListObserver("focusout");
+                        return;
 
-            switch (which) {
-            case 9: { // Tab pressed
-                this.emulateEventOnListObserver("focusout");
-                return;
-            }
-            // ENter
-            case 13: {
-                const { config } = this;
-                const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
-                if (listItem) {
-                    this.onSelect(listItem);
+                    case 13: {
+                        const { config } = this;
+                        const listItem: HTMLElement | null = config.listingElement && config.listingElement.querySelector(".active");
+                        if (listItem) {
+                            this.onSelect(listItem);
+                        }
+                        return;
+                    }
+
+                    case 38: // Up arrow
+                        this.onArrowPress("up");
+                        return;
+
+                    case 40: // Down arrow
+                        this.onArrowPress("down");
+                        return;
+                    case 188:
+                        this.initialiseRelatedSearch(query);
+                        return;
+
+                    default:
+                        this.debounceRequest(500).then(() => { this.sendSuggesterRequest(query, category); });
                 }
-                return;
+            } else {
+                throw new Error("Event not happened Event Object Missing");
             }
+        } catch (e) {
+            console.error("Error found: " + e);
+        }
 
-            case 38: // Up arrow
-                this.onArrowPress("up");
-                return;
+    }
 
-            case 40: {
-                // Down arrow
-                this.onArrowPress("down");
-                return;
+    /*
+     * Debouncing Request for avoiding multiple requests being hit repetitively as user types quickly.
+     * When user types quickly then at the same instant multiple requests are being fired. To avoid those
+     * multiple requests we have added debouncing so that once user is done typing the query then only hit
+     * for the suggestions will go for the suggestions. This avoid multiple hits on the server on the same
+     * time. Here we define timeout of debouncing i.e. if in this time user types again then the previous
+     * request will not be fired and it will be fired only when user does not type during that interval.
+     * @param requestFunction : Function on which debouncing is to be done
+     * @param debounceInterval : Interval of debouncing after which request should be done
+     * @access public
+     * @returns Promise<void>
+     */
+
+    public debounceRequest(debounceInterval: number): Promise<void> {
+        if (this.debounceTimer) { clearTimeout(this.debounceTimer); }
+        return new Promise((resolve: Function): void => {
+            this.debounceTimer = setTimeout(
+                (): void => resolve(),
+                debounceInterval
+            );
+        });
+    }
+
+    /**
+ * Handles the comma being entered by the user in the query . This also sanitises the Query String.
+ * @param query : {String}: Query being entered by the User in the Suggester Input feild
+ * @param selectedObj : {TData}:Selected Object being Selected by clicking on the Listing element
+ */
+
+    public initialiseRelatedSearch(query: string): void {
+        try {
+            const selectedObj: TData = { id: 0, name: "", displayTextEn: "" };
+            if (query.length > 1) {
+                selectedObj.id = 0;
+                selectedObj.name = query.split(",")[0];
+                selectedObj.displayTextEn = selectedObj.name;
+
+                this.setSelectedValues(selectedObj);
+            } else {
+                throw new Error("Query not passed in the function");
             }
+        } catch (e) {
+            console.log("Exception Occurred :" + e);
+        }
+    }
 
-            default: {
-                // Default filtering logic
-                const filteredList = this.dataSet.filter((item) => {
-                    const lowerItem = item.name.toLowerCase();
-                    const lowerQuery = query.toLowerCase();
-                    const includesSupported = Array.prototype.includes !== undefined;
-                    return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
+
+    /**
+     * This sets the selected object values into the result set
+     * @access public
+     * @param selectedObj
+     * @returns void
+     */
+    public setSelectedValues(selectedObj: TData): void {
+        try {
+            if (selectedObj) {
+                // rishabh changes here
+                this.sendRelatedSearchRequest(selectedObj);
+                // rishabh changes here
+                const { config } = this;
+                if (config.selectLimit) {
+
+                    const selectionLimitExceeded: boolean =
+                        config.selectLimit && config.selectLimit > 1
+                            ? this.state.selection.length >= config.selectLimit
+                            : false;
+                    const isLastSelectionNow: boolean =
+                        this.state.selection.length + 1 >= config.selectLimit;
+                    const isDuplicate: boolean =
+                        this.resultSet.selection.filter((item) => item.name === selectedObj.name)
+                            .length > 0;
+                    if (selectedObj && isDuplicate === false) {
+                        if (selectionLimitExceeded === false) {
+                            const selection =
+                                this.selectLimit === 1
+                                    ? [selectedObj]
+                                    : [...this.resultSet.selection, selectedObj];
+                            const result: TState = {
+                                hasListUpdated: false,
+                                list: [...this.config.resultSet.list],
+                                selection
+                            };
+                            this.emptyInputFeilds();
+                            this.setData(result);
+                        }
+                        if (isLastSelectionNow) {
+                            this.emulateEventOnListObserver("focusout");
+                        }
+                    }
+                }
+            }
+            else {
+                throw new Error()
+            }
+        } catch (e) {
+            throw new Error("Error in selecting target in here" + e);
+        }
+    }
+
+
+    public sendSuggesterRequest(query: string, category: string): void {
+        try {
+            console.log("query in here", query);
+            if (query) {
+                this.handleApiResponse(
+                    Helper.sendXhr(suggesterConfig.urls.autoComplete, {
+                        query,
+                        category
+                    }),
+                    category,
+                    query,
+                    "sug"
+                );
+            } else {
+                throw new Error("Query is not passed into the function");
+            }
+        } catch (e) {
+            console.warn("Suggester Request function resulted in an issue", e);
+        }
+    }
+
+    /**
+        * Initiates related search functionality that takes selectedObject selected by clicking on the listing
+        * element . The resposibility of this function is to fetch the selectedObject query and then send the
+        * ajax request to get more related  searches .
+        * @param selectedObject: TData : Selected Object from the Listing element being clicked
+        * @returns {return}
+        * @throws {null}
+        *
+        */
+    public sendRelatedSearchRequest(selectedObject: TData): void {
+        try {
+            if (selectedObject && selectedObject.displayTextEn) {
+                const query = selectedObject.displayTextEn.toLowerCase();
+                const category = "top";
+
+                this.handleApiResponse(
+                    Helper.sendXhr(suggesterConfig.urls.relatedConcept, {
+                        query,
+                        category
+                    }),
+                    category,
+                    query,
+                    "rc"
+                );
+            } else {
+                throw Error("Error in the selectedObject");
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    /**
+     * Handles the related Search results returned from the api .This function initiates the filtering and fill data
+     * into listing by calling the function filterAndFillDataIntoListing
+     * @param resp: TRecentSearchResponse : Related Search results returned from the related search api
+     * @param category: String : category of results for which suggester is visible
+     * @returns {void}
+     */
+    public handleRelatedSearchResponseData(resp: TRecentSearchResponse, category: string): void {
+        try {
+            if (resp && category) {
+                this.dataSet = resp.resultConcepts[category];
+                const emptyQuery = ""; // to disable filtering in case of rc selected
+                this.filterAndFillDataIntoListing(emptyQuery, category, "rc");
+            } else {
+                throw new Error("resp and category not found - param not found");
+            }
+        } catch (e) {
+            console.error("Error occurred while handling RCData:" + e);
+        }
+    }
+
+    /**
+     * Fills the lisitng element by filtering the result set based on the query of the input feild. The result
+     * list is filtered first on the basis of the query and then the data is being set into the listing element.
+     * @param query: {string} : Query of the input feild being entered in the suggester input
+     * @returns {void}
+     */
+    public filterAndFillDataIntoListing(query: string, category: string, listingType: string): void {
+        try {
+            if (query || category) {
+                const filteredList = this.dataSet.filter((item: TData): boolean | void => {
+                    if (item && item.displayTextEn) {
+                        item.name = item.displayTextEn;
+                        const lowerItem = item.displayTextEn.toLowerCase();
+                        const lowerQuery = query.toLowerCase();
+                        const includesSupported = (Array.prototype as any).includes !== undefined;
+                        return includesSupported
+                            ? lowerItem.includes(lowerQuery)
+                            : lowerItem.indexOf(lowerQuery) !== -1;
+                    }
                 });
 
                 const hasResults = filteredList.length !== 0;
                 const result: TState = {
-                    hasSelectionUpdated: false,
                     hasListUpdated: true,
                     list: hasResults ? filteredList : this.dataSet,
-                    selection: [...this.state.selection]
+                    selection: [...this.state.selection],
+                    hasSelectionUpdated: true,
                 };
+                this.setHeadingElement(listingType);
                 this.setData(result);
-                // Reset counter for arrow keys
+
                 this.arrowCounter = -1;
                 this.showNoResultMessage(hasResults);
+            } else {
+                throw new Error("param not found: query");
             }
-            }
-        } catch (err) {
-            console.warn(err.message);
+        } catch (e) {
+            console.log("Error occurred while entering data into Listing:", e.message);
         }
     }
+
+    /**
+     * Handles the Suggester Search results returned from the api.This function initiates the filtering and fill data
+     * into listing by calling the function filterAndFillDataIntoListing
+     * @param resp: {TSuggesterResponse} : Response of Suggester Search api
+     * @param category: {String} : category of results for which the suggester is visible
+     * @param query: {String} : Query that is put inside the input feild
+     * @returns{void}
+     */
+    public handleSuggesterResponseData(resp: TSuggesterResponse, category: string, query: string): void {
+        try {
+            if (resp && category && query) {
+                this.dataSet = resp.resultList[category];
+                this.filterAndFillDataIntoListing(query, category, "sug");
+            } else {
+                throw new Error("param not found: resp , category, query");
+            }
+        } catch (e) {
+            console.error("Error while handling Suggester respone data:" + e);
+        }
+    }
+
+    /**
+     * Handles API response returned from Suggester API and inititate the intended functionality for the suggester
+     * as well as related searches taken both together based on the listing type.
+     * @param promise :{TResponse} : promise returned from the suggester api hit function
+     * @param category :{String} : category of results for which the suggester is visible
+     * @param query : {String} : Query of the input feild
+     * @param listingType :{String} : Listing  type that can be recent search and suggester suggestions
+     * @returns {void}
+     */
+    public handleApiResponse(
+        promise: Promise<TResponse>,
+        category: string,
+        query: string,
+        listingType: string
+    ): void {
+        try {
+            if (promise) {
+                promise.then((resp: TRecentSearchResponse | TSuggesterResponse) => {
+                    if (resp) {
+                        if (listingType) {
+                            switch (listingType) {
+                                case "rc":
+                                    this.handleRelatedSearchResponseData(resp, category);
+                                    break;
+                                case "sug":
+                                    this.handleSuggesterResponseData(resp, category, query);
+                                    break;
+                            }
+                        } else {
+                            throw new Error("listingType not passed as a param");
+                        }
+                    } else {
+                        throw new Error("Promise resulted in Error - sendXHR-helper.ts");
+                    }
+                });
+            } else {
+                throw new Error("Promise expected as parameter - Not Found");
+            }
+        } catch (e) {
+            console.error("Error occured in handle Response" + e);
+        }
+    }
+
+    /**
+     * Hides the no result message present on the listing element
+     * when no results are there in the listing element
+     * @param {hasResults} : {boolean} : Boolean flag that checks whether results are there or not
+     * @returns: {void}
+     */
+    public hidesNoResultMessage(hasResults: boolean): void {
+        this.noResultElement.style.display = hasResults ? "block" : "none";
+    }
+
+    /**
+     * Shows the no result message present on the listing element
+     * when there are results in the listing element
+     * @param {hasResults} : {boolean}
+     * @returns: {void}
+     */
+    public showNoResultMessage(hasResults: boolean): void {
+        this.noResultElement.style.display = hasResults ? "none" : "block";
+    }
+
+
 
     public onArrowPress(direction: string): void {
         try {
             /** get list of all li items */
             const { config } = this;
-            const listItems = config.lisitingElement ? config.lisitingElement.querySelectorAll("li") : null;
+            const listItems = config.listingElement ? config.listingElement.querySelectorAll("li") : null;
 
             /** determine the direction */
             const isGoingUp = direction === "up";
@@ -472,22 +825,6 @@ class SelectBoxInput implements TSubject {
                 this.noResultElement.style.display = "none";
                 this.noResultElement.textContent = config.noResultErrorMessage;
             }
-        } catch (err) {
-            console.warn(err.message);
-        }
-    }
-
-    /**
-     * Enables a banner when there in no result on user's query.
-     * The no result message is based on config provided. This Fn
-     * acts as a listener when filtering is executed.
-     *
-     * @param hasResults {boolean}
-     * @returns {void}
-     */
-    public showNoResultMessage(hasResults: boolean): void {
-        try {
-            this.noResultElement.style.display = hasResults ? "none" : "block";
         } catch (err) {
             console.warn(err.message);
         }

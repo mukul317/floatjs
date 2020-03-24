@@ -166,51 +166,51 @@ class SelectBoxInput implements TSubject {
             const which: number = e.which;
 
             switch (which) {
-            case 9: { // Tab pressed
-                this.emulateEventOnListObserver("focusout");
-                return;
-            }
-            // ENter
-            case 13: {
-                const { config } = this;
-                const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
-                if (listItem) {
-                    this.onSelect(listItem);
+                case 9: { // Tab pressed
+                    this.emulateEventOnListObserver("focusout");
+                    return;
                 }
-                return;
-            }
+                // ENter
+                case 13: {
+                    const { config } = this;
+                    const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
+                    if (listItem) {
+                        this.onSelect(listItem);
+                    }
+                    return;
+                }
 
-            case 38: // Up arrow
-                this.onArrowPress("up");
-                return;
+                case 38: // Up arrow
+                    this.onArrowPress("up");
+                    return;
 
-            case 40: {
-                // Down arrow
-                this.onArrowPress("down");
-                return;
-            }
+                case 40: {
+                    // Down arrow
+                    this.onArrowPress("down");
+                    return;
+                }
 
-            default: {
-                // Default filtering logic
-                const filteredList = this.dataSet.filter((item) => {
-                    const lowerItem = item.name.toLowerCase();
-                    const lowerQuery = query.toLowerCase();
-                    const includesSupported = Array.prototype.includes !== undefined;
-                    return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
-                });
+                default: {
+                    // Default filtering logic
+                    const filteredList = this.dataSet.filter((item) => {
+                        const lowerItem = item.name.toLowerCase();
+                        const lowerQuery = query.toLowerCase();
+                        const includesSupported = Array.prototype.includes !== undefined;
+                        return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
+                    });
 
-                const hasResults = filteredList.length !== 0;
-                const result: TState = {
-                    hasSelectionUpdated: false,
-                    hasListUpdated: true,
-                    list: hasResults ? filteredList : this.dataSet,
-                    selection: [...this.state.selection]
-                };
-                this.setData(result);
-                // Reset counter for arrow keys
-                this.arrowCounter = -1;
-                this.showNoResultMessage(hasResults);
-            }
+                    const hasResults = filteredList.length !== 0;
+                    const result: TState = {
+                        hasSelectionUpdated: false,
+                        hasListUpdated: true,
+                        list: hasResults ? filteredList : this.dataSet,
+                        selection: [...this.state.selection]
+                    };
+                    this.setData(result);
+                    // Reset counter for arrow keys
+                    this.arrowCounter = -1;
+                    this.showNoResultMessage(hasResults);
+                }
             }
         } catch (err) {
             console.warn(err.message);

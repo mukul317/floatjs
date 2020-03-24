@@ -1,34 +1,63 @@
 interface TData {
-    id: string;
+    id: number;
     name: string;
+    displayTextEn?: string;
 }
+
 interface TSubject {
-    config: TDroopeConfig;
-    arrowCounter: number;
-    state: TState;
+    listingElement: HTMLElement;
+    displayElement: HTMLElement;
     noResultElement: HTMLElement;
+    headingElement: HTMLElement;
+    displayListStyle: string;
+    arrowCounter: number;
+    resultSet: TState;
     registerObserver(o: TObserver): void;
     unregisterObserver(o: TObserver): void;
     notifyObservers(): void;
+    deleteSelection(id: string): void;
     setData(data: TState): void;
-    removeSelection(id: string): void;
 }
 
 interface TState {
     list: TData[];
-    enSelection: string[];
-    arSelection: string[];
+    selection: TData[];
     hasListUpdated: boolean;
     hasSelectionUpdated: boolean;
+    construct?: boolean;
 }
 
 interface TObserver {
     update(arrayOfObjects: TState): void;
 }
-interface TDroopeConfig {
+interface TPayload {
+    query: string;
+    category: any;
+    vertical?: string;
+    source?: string;
+    appId?: string;
+    edge?: number;
+}
+
+interface TSugOptions {
+    inputElement: HTMLInputElement;
+    listingElement: HTMLElement;
+    displayElement: HTMLElement;
+    selectLimit?: number;
+    displayListOnFocus?: boolean;
+    displayDecorationList?: string[];
+    selectedDecorator: string;
+    noResultErrorMessage?: string;
+    displayListStyle?: string;
+    sanitiseString?: boolean;
+    specialCharactersAllowedList: string[];
+    isPrefetch?: boolean;
+}
+
+interface TSugConfig {
     readonly domId: string;
     readonly inputElement: HTMLInputElement | null;
-    readonly lisitingElement: HTMLElement | null;
+    readonly listingElement: HTMLElement | null;
     readonly displayElement: HTMLElement | null;
     readonly selectLimit?: number;
     readonly displayListOnFocus?: boolean;
@@ -37,6 +66,33 @@ interface TDroopeConfig {
     readonly tagSelectedValues: boolean;
     readonly listLimit?: number;
     readonly checkboxes?: boolean;
+    readonly sanitiseString?: boolean;
+    readonly specialCharactersAllowedList: string[];
+    readonly isPrefetch?: boolean;
+    readonly displayListStyle?: string;
+    headingElement?: HTMLElement | null
+}
+interface TSuggesterResponse extends TResponse {
+    resultList: any;
+}
+
+interface TRecentSearchResponse extends TResponse {
+    resultConcepts: any;
+}
+
+interface TResponse {
+    [key: string]: any;
+    resultConcepts: any;
+    resultList: any;
+}
+
+type TObject = Record<string, string>
+
+interface TVersionResponse {
+    "suggester_v": string;
+    "prefetch_v": string;
+    "autocorrect_v": string;
+    "relatedconcepts_v": string;
 }
 
 export {
@@ -44,5 +100,12 @@ export {
     TSubject,
     TState,
     TObserver,
-    TDroopeConfig
+    TResponse,
+    TSuggesterResponse,
+    TPayload,
+    TRecentSearchResponse,
+    TSugOptions,
+    TVersionResponse,
+    TObject,
+    TSugConfig
 };

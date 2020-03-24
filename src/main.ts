@@ -1,5 +1,5 @@
 import { TDroopeConfig } from "./Droope/interface";
-import { TSugOptions } from "./SuggesterBeta/interface";
+import { TSugConfig } from "./SuggesterBeta/interface";
 import droopeData from "./Droope/data";
 import suggesterData from "./SuggesterBeta/data";
 import Droope from "./Droope";
@@ -32,15 +32,17 @@ import Suggester from "./SuggesterBeta";
     const listingElement: HTMLElement | null = document.querySelector(".suggester-select-box-listing");
     const displayElement: HTMLElement | null = document.querySelector(".suggester-select-box-display");
     if (inputElement && listingElement && displayElement) {
-        const options: TSugOptions = {
+        const options: TSugConfig = {
+            domId: "demoSuggester",
             inputElement,
             listingElement,
             displayElement,
-            selectLimit: 4,
-            displayListOnFocus: false,
-            displayDecorationList: ["chips"],
+            selectLimit: 2,
+            displayListOnFocus: true,
+            displayDecorationList: [],
             noResultErrorMessage: "Sorry no result",
-            selectedDecorator: "chips",
+            tagSelectedValues: true,
+            checkboxes: true,
             displayListStyle: "",
             sanitiseString: false,
             specialCharactersAllowedList: [";"]

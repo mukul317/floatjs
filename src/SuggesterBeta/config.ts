@@ -4,7 +4,7 @@
 
 const domain = "http://suggest.naukrigulf.com/";
 
-const suggesterConfig = {
+const defaultConfig = {
     urls: {
         autoComplete: domain + "/suggest/autosuggest?",
         caching: domain + "/suggest/prefetch?",
@@ -26,4 +26,4 @@ const suggesterConfig = {
     }
 };
 
-export default suggesterConfig;
+export default defaultConfig;
