@@ -19,7 +19,11 @@ const suggesterConfig = {
     maxSuggestions: 15,
     whiteListSpecialChar: [],
     edge: 0,
-    invoker: "ng"
+    invoker: "ng",
+    storageKey: { // It is used to store prefetched data against pretetchKey and version value against versionKey in localStorage.
+        prefetchKey: "__suggest_prefetch",
+        versionKey: "__suggest_versions"
+    }
 };
 
 export default suggesterConfig;

@@ -1,6 +1,6 @@
-import suggesterConfig from "./config";
 import { CacheFactory } from "../Storage/CacheFactory";
-import { TResponse, TVersionResponse, TObject } from "./interface";
+import suggesterConfig from "../SuggesterBeta/config.suggester";
+import { TVersionResponse } from "../SuggesterBeta/interface";
 
 interface TPayload {
   query: string;
@@ -71,51 +71,6 @@ class Helper {
       const url = suggesterConfig.urls.checkVersion + Math.random() + "&";
       return Helper.sendXhr(url, null);
   };
-
-  /**
-   * If 'isPrefetch' value is received as true in suggester then following method must be called.
-   * It prefetches some suggestions and then stores them in storage.
-   * Condition : Prefetching happens only if storage has no pre fetched data
-   * @access: public
-   */
-  public static prefetchData = (params: TObject): void => {
-      const url = suggesterConfig.urls.prefetch + Math.random();
-      Helper.fetchVersion().then((response: TVersionResponse) => {
-          Helper.setInStorage(suggesterConfig.storageKey.versionKey, response);
-
-          const prefetchedData = Helper.getFromStorage(suggesterConfig.storageKey.prefetchKey);
-          // todo:logic for when to fetch next
-          if (prefetchedData) {
-            /**
-             *
-             * @param  {String} prefetchedData.keyword_based_data [need to check with blank string,
-             * because in some cases false is treated as a true]
-             */
-              if ((params.keywords && prefetchedData.keyword_based_data === false) || (+new Date(prefetchedData.ttl)) - (+new Date()) < 0) {
-Helper.fetchKeywordBasedData(prefetchedData);
-              }
-          } else {
-              Helper.sendXhr(url + "?segments=''", null).then(function (resp) {
-                  Helper.setInStorage(suggesterConfig.storageKey.prefetchKey, resp);
-              });
-          }
-      });
-  };
-
-  private static fetchKeywordBasedData = (prefetchedData: any) => {
-    try {
-        Helper.sendXhr(suggesterConfig.urls.prefetch + "segments=" + prefetchedData.segments, null).then((rData) => {
-            Helper.setInStorage(suggesterConfig.storageKey.prefetchKey, Helper.mergeData(prefetchedData, rData));
-          });
-    } catch (e) {
-console.warn(e.message);
-    }
-  }
-
-  private static mergeData = (prefetchedData: TObject, rData: TObject): TObject => {
-      // todo : merge object on some conditions and return merged object
-      return prefetchedData || rData;
-  }
 
   /**
    * This method detects if text enetred is english or arabic
