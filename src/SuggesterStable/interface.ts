@@ -9,6 +9,8 @@ interface TSubject {
     debounceTimer: NodeJS.Timeout | null;
     config: TSugConfig;
     dataSet: TData[];
+    noResultElement: HTMLElement;
+    headingElement: HTMLElement;
     listObserverCollection: TObserver[];
     registerObserver(o: TObserver): void;
     unregisterObserver(o: TObserver): void;
@@ -31,6 +33,7 @@ interface TState {
     hasListUpdated: boolean;
     hasSelectionUpdated: boolean;
     construct?: boolean;
+    query: string
 }
 
 interface TObserver {

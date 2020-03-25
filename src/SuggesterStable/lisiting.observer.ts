@@ -54,10 +54,12 @@ class Listing implements TObserver {
     public appendList(list: HTMLElement): void {
         try {
             const { noResultElement } = this.subject;
+            const { headingElement } = this.subject;
             const { listingElement } = this.subject.config;
             if (listingElement) {
                 listingElement.innerHTML = "";
                 listingElement.appendChild(noResultElement);
+                listingElement.appendChild(headingElement);
                 listingElement.appendChild(list);
             }
         } catch (err) {
@@ -98,7 +100,7 @@ class Listing implements TObserver {
                     this.updateTicks(newData.selection);
                 }
             }
-            console.info("[Notified]: Droope Lisiting Observer");
+            console.info("[Notified]: Suggester Lisiting Observer");
         } catch (err) {
             console.warn(err.message);
         }
