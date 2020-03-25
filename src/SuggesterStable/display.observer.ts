@@ -21,6 +21,7 @@ class SelectDisplay implements TObserver {
             this.view.innerHTML = "";
             selectedValues.forEach((item: TData) => {
                 const listItem: HTMLElement = document.createElement("LI");
+                // this.config.displayEle.value = [].join(",")
                 listItem.textContent = item.name;
                 listItem.classList.add("selection-item");
                 listItem.setAttribute("data-obj", JSON.stringify(item));

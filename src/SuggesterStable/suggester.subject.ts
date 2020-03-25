@@ -1,17 +1,17 @@
 import { TSugConfig, TData, TState, TSubject, TObserver, TRecentSearchResponse, TSuggesterResponse, TResponse } from "./interface";
-import { Helper } from "../SuggesterStable/suggester.helper";
+import { Model } from "./suggester.model";
 interface TSetState extends TState {
     construct?: boolean;
 }
 
 const defaultConfig: TSugConfig = {
     urls: {
-        autoComplete: "http://suggest.naukrigulf.com/suggest/autosuggest?invoker=ng&",
-        caching: "http://suggest.naukrigulf.com/suggest/prefetch?invoker=ng&",
-        checkVersion: "http://suggest.naukrigulf.com/suggest/v?",
-        relatedConcept: "http://suggest.naukrigulf.com/suggest/autoconcepts?invoker=ng&",
-        prefetch: "http://suggest.naukrigulf.com/suggest/prefetch?invoker=ng&",
-        trackingURL: "http://suggest.naukrigulf.com/suggestlg.naukrigulf.com/logger/log?invoker=ng&"
+        autoComplete: "/suggest/autosuggest?invoker=ng&",
+        caching: "/suggest/prefetch?invoker=ng&",
+        checkVersion: "/suggest/v?",
+        relatedConcept: "/suggest/autoconcepts?invoker=ng&",
+        prefetch: "/suggest/prefetch?invoker=ng&",
+        trackingURL: "/suggestlg.naukrigulf.com/logger/log?invoker=ng&"
     },
     category: "top",
     appId: 2050,
@@ -65,7 +65,7 @@ class SelectBoxInput implements TSubject {
     public dataSet: TData[] = [];
     public listObserverCollection: TObserver[] = [];
     public arrowCounter: number = -1;
-    public helperObject: Helper | null = null;
+    public modelInstance: Model | null = null;
 
     constructor(options: TSugConfig) {
         try {
@@ -75,7 +75,7 @@ class SelectBoxInput implements TSubject {
             this.registerInputEvents();
             this.createNoResultFragment();
             this.initialiseHeadingElement();
-            this.helperObject = new Helper(this.config);
+            this.modelInstance = new Model(this.config);
         } catch (err) {
             console.warn(err.message);
         }
@@ -332,7 +332,7 @@ class SelectBoxInput implements TSubject {
         try {
             const { config } = this;
             if (query) {
-                if (query.length == 1 && query == ",") {
+                if (query.length === 1 && query === ",") {
                     return "";
                 }
                 const patr = new RegExp("[^a-zA-Z0-9,\\s" + config.specialCharactersAllowedList + "]", "g");
@@ -369,6 +369,7 @@ class SelectBoxInput implements TSubject {
                 );
             });
         } catch (e) {
+            // eslint-disable-next-line prefer-promise-reject-errors
             return Promise.reject();
         }
     }
@@ -452,14 +453,13 @@ class SelectBoxInput implements TSubject {
 
     public sendSuggesterRequest(query: string, category: string): void {
         try {
-            if (query && this.helperObject) {
-                this.handleApiResponse(
-                    this.helperObject.sendXhr(this.config.urls.autoComplete, {
-                        query,
-                        category
-                    }),
-                    category,
+            if (query && this.modelInstance) {
+                const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.autoComplete, {
                     query,
+                    category
+                });
+                this.handleApiResponse(
+                    xhrPromise,
                     "sug"
                 );
             } else {
@@ -481,17 +481,15 @@ class SelectBoxInput implements TSubject {
         */
     public sendRelatedSearchRequest(selectedObject: TData): void {
         try {
-            if (selectedObject && selectedObject.displayTextEn && this.helperObject) {
+            if (selectedObject && selectedObject.displayTextEn && this.modelInstance) {
                 const query = selectedObject.displayTextEn.toLowerCase();
                 const category = "top";
-
-                this.handleApiResponse(
-                    this.helperObject.sendXhr(this.config.urls.relatedConcept, {
-                        query,
-                        category
-                    }),
-                    category,
+                const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.relatedConcept, {
                     query,
+                    category
+                });
+                this.handleApiResponse(
+                    xhrPromise,
                     "rc"
                 );
             } else {
@@ -509,19 +507,19 @@ class SelectBoxInput implements TSubject {
      * @param category: String : category of results for which suggester is visible
      * @returns {void}
      */
-    public handleRelatedSearchResponseData(resp: TRecentSearchResponse, category: string): void {
-        try {
-            if (resp && category) {
-                this.dataSet = resp.resultConcepts[category];
-                const emptyQuery = ""; // to disable filtering in case of rc selected
-                this.filterAndFillDataIntoListing(emptyQuery, category, "rc");
-            } else {
-                throw new Error("resp and category not found - param not found");
-            }
-        } catch (e) {
-            console.error("Error occurred while handling RCData:" + e);
-        }
-    }
+    // public handleRelatedSearchResponseData(resp: TRecentSearchResponse, category: string): void {
+    //     try {
+    //         if (resp && category) {
+    //             this.dataSet = resp.resultConcepts[category];
+    //             const emptyQuery = ""; // to disable filtering in case of rc selected
+    //             this.filterAndFillDataIntoListing(emptyQuery, category, "rc");
+    //         } else {
+    //             throw new Error("resp and category not found - param not found");
+    //         }
+    //     } catch (e) {
+    //         console.error("Error occurred while handling RCData:" + e);
+    //     }
+    // }
 
     /**
      * Fills the lisitng element by filtering the result set based on the query of the input feild. The result
@@ -529,8 +527,11 @@ class SelectBoxInput implements TSubject {
      * @param query: {string} : Query of the input feild being entered in the suggester input
      * @returns {void}
      */
-    public filterAndFillDataIntoListing(query: string, category: string, listingType: string): void {
+    public filterAndFillDataIntoListing(listingType: string): void {
         try {
+            const { config } = this;
+            const query: string = this.state.query;
+            const category = config.category;
             if (query || category) {
                 const filteredList = this.dataSet.filter((item: TData): boolean | void => {
                     if (item && item.displayTextEn) {
@@ -543,7 +544,6 @@ class SelectBoxInput implements TSubject {
                             : lowerItem.indexOf(lowerQuery) !== -1;
                     }
                 });
-                console.log("filtered list", filteredList);
 
                 const hasResults = filteredList.length !== 0;
                 const result: TState = {
@@ -575,18 +575,18 @@ class SelectBoxInput implements TSubject {
      * @param query: {String} : Query that is put inside the input feild
      * @returns{void}
      */
-    public handleSuggesterResponseData(resp: TSuggesterResponse, category: string, query: string): void {
-        try {
-            if (resp && category && query) {
-                this.dataSet = resp.resultList[category];
-                this.filterAndFillDataIntoListing(query, category, "sug");
-            } else {
-                throw new Error("param not found: resp , category, query");
-            }
-        } catch (e) {
-            console.error("Error while handling Suggester respone data:" + e);
-        }
-    }
+    // public handleSuggesterResponseData(resp: TSuggesterResponse, category: string, query: string): void {
+    //     try {
+    //         if (resp && category && query) {
+    //             this.dataSet = resp.resultList[category];
+    //             this.filterAndFillDataIntoListing(query, category, "sug");
+    //         } else {
+    //             throw new Error("param not found: resp , category, query");
+    //         }
+    //     } catch (e) {
+    //         console.error("Error while handling Suggester respone data:" + e);
+    //     }
+    // }
 
     /**
      * Handles API response returned from Suggester API and inititate the intended functionality for the suggester
@@ -599,23 +599,25 @@ class SelectBoxInput implements TSubject {
      */
     public handleApiResponse(
         promise: Promise<TResponse>,
-        category: string,
-        query: string,
         listingType: string
     ): void {
         try {
             if (promise) {
                 promise.then((resp: TRecentSearchResponse | TSuggesterResponse) => {
                     if (resp) {
+                        const { config } = this;
+                        const category = config.category;
                         if (listingType) {
                             switch (listingType) {
                             case "rc":
-                                this.handleRelatedSearchResponseData(resp, category);
+                                this.dataSet = resp.resultConcepts[category];
+                                this.state.query = "";
                                 break;
                             case "sug":
-                                this.handleSuggesterResponseData(resp, category, query);
+                                this.dataSet = resp.resultList[category];
                                 break;
                             }
+                            this.filterAndFillDataIntoListing(listingType);
                         } else {
                             throw new Error("listingType not passed as a param");
                         }
@@ -653,7 +655,7 @@ class SelectBoxInput implements TSubject {
     }
 
     public hideHeading(hasResults: boolean): void{
-        this.headingElement.style.display = hasResults ? "none" : "block";
+        this.headingElement.style.display = hasResults ? "block" : "none";
     }
 
     public onArrowPress(direction: string): void {

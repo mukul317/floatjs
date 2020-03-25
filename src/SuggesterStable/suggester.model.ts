@@ -1,6 +1,6 @@
 import { TPayload, TResponse, TSugConfig } from "./interface";
 
-class Helper {
+class Model {
     private appId: number = 0;
     private maxSuggestions: number = 0;
     private prefetch: string = "";
@@ -84,4 +84,4 @@ class Helper {
     // }
 }
 
-export { Helper };
+export { Model };
