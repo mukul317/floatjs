@@ -30,7 +30,7 @@ import Suggester from "./SuggesterStable";
 ((): void => {
     const inputElement: HTMLInputElement | null = document.querySelector(".suggester-select-box-input");
     const listingElement: HTMLElement | null = document.querySelector(".suggester-select-box-listing");
-    const displayElement: HTMLElement | null = document.querySelector(".suggester-select-box-display");
+    const displayElement: HTMLElement | null = inputElement;
     if (inputElement && listingElement && displayElement) {
         const options: TSugConfig = {
             domId: "demoSuggester",

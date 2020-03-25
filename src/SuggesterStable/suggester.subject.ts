@@ -6,12 +6,12 @@ interface TSetState extends TState {
 
 const defaultConfig: TSugConfig = {
     urls: {
-        autoComplete: "/suggest/autosuggest?invoker=ng&",
-        caching: "/suggest/prefetch?invoker=ng&",
-        checkVersion: "/suggest/v?",
-        relatedConcept: "/suggest/autoconcepts?invoker=ng&",
-        prefetch: "/suggest/prefetch?invoker=ng&",
-        trackingURL: "/suggestlg.naukrigulf.com/logger/log?invoker=ng&"
+        autoComplete: "http://suggest.naukrigulf.com/suggest/autosuggest?invoker=ng&",
+        caching: "http://suggest.naukrigulf.com/suggest/prefetch?invoker=ng&",
+        checkVersion: "http://suggest.naukrigulf.com/suggest/v?",
+        relatedConcept: "http://suggest.naukrigulf.com/suggest/autoconcepts?invoker=ng&",
+        prefetch: "http://suggest.naukrigulf.com/suggest/prefetch?invoker=ng&",
+        trackingURL: "http://suggest.naukrigulf.com/suggestlg.naukrigulf.com/logger/log?invoker=ng&"
     },
     category: "top",
     appId: 2050,
@@ -43,6 +43,9 @@ const defaultConfig: TSugConfig = {
 };
 
 class SelectBoxInput implements TSubject {
+    // private readonly enDomain: string = "http://suggest.naukrigulf.com/";
+    // private readonly arDomain: string = "http://suggest.naukrigulf.com/";
+
     public state: TState = {
         list: [],
         selection: [],
@@ -259,6 +262,7 @@ class SelectBoxInput implements TSubject {
 
     /**
    * This method detects if text enetred is english,arabic or a special character
+   * @access public
    * @param query : Text entered in suggester
    * @returns
    * a)'EN' for English
