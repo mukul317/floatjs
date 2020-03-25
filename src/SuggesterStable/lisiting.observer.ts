@@ -22,6 +22,7 @@ class Listing implements TObserver {
                 liElement.textContent = item.name;
                 liElement.classList.add("list-item");
                 liElement.setAttribute("data-obj", JSON.stringify(item));
+                if (!item.id) { item.id = index; }
                 liElement.setAttribute("data-id", item.id.toString());
                 if (this.hasCheckboxes === true) {
                     liElement.classList.add("check-enabled");
@@ -92,6 +93,7 @@ class Listing implements TObserver {
 
     public update(newData: TState): void {
         try {
+            console.log("new data", newData);
             if (newData.hasListUpdated) {
                 const list: HTMLElement = this.generateList(newData);
                 this.appendList(list);

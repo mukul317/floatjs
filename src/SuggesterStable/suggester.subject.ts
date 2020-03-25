@@ -543,6 +543,7 @@ class SelectBoxInput implements TSubject {
                             : lowerItem.indexOf(lowerQuery) !== -1;
                     }
                 });
+                console.log("filtered list", filteredList);
 
                 const hasResults = filteredList.length !== 0;
                 const result: TState = {
@@ -552,6 +553,7 @@ class SelectBoxInput implements TSubject {
                     hasSelectionUpdated: true,
                     query: ""
                 };
+                console.log("result TState", result);
                 this.setHeadingElement(listingType);
                 this.setData(result);
 
@@ -646,7 +648,12 @@ class SelectBoxInput implements TSubject {
      * @returns: {void}
      */
     public showNoResultMessage(hasResults: boolean): void {
+        this.hideHeading(hasResults);
         this.noResultElement.style.display = hasResults ? "none" : "block";
+    }
+
+    public hideHeading(hasResults: boolean): void{
+        this.headingElement.style.display = hasResults ? "none" : "block";
     }
 
     public onArrowPress(direction: string): void {
@@ -775,6 +782,7 @@ class SelectBoxInput implements TSubject {
     public notifyObservers(): void {
         try {
             for (const observer of this.listObserverCollection) {
+                console.log("state in herer", this.state);
                 observer.update(this.state);
             }
         } catch (err) {

@@ -19,7 +19,6 @@ interface TSubject {
     setData(data: TState): void;
 }
 
-
 interface TVersionResponse {
     "suggester_v": string;
     "prefetch_v": string;
@@ -33,7 +32,7 @@ interface TState {
     hasListUpdated: boolean;
     hasSelectionUpdated: boolean;
     construct?: boolean;
-    query: string
+    query: string;
 }
 
 interface TObserver {
@@ -121,5 +120,5 @@ export {
     TSugOptions,
     TVersionResponse,
     TObject,
-    TSugConfig,
+    TSugConfig
 };
