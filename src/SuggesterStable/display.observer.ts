@@ -64,6 +64,7 @@ class SelectDisplay implements TObserver {
                     this.appendMarkup(selectedHtml);
                 } else {
                     const selectionList: string[] = selection.map((item) => item.name);
+                    console.log("selectionList", selectionList);
                     let queryComplete: string;
                     if (selectionList.length > 0) {
                         queryComplete = selectionList.join(",") + "," + query;

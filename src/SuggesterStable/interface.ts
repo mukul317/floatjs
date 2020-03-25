@@ -33,6 +33,7 @@ interface TState {
     hasSelectionUpdated: boolean;
     construct?: boolean;
     query: string;
+    hasQueryUpdated?: boolean;
 }
 
 interface TObserver {

@@ -244,12 +244,14 @@ class SelectBoxInput implements TSubject {
     public onBackspace(e: KeyboardEvent): void {
         try {
             const which = e.which;
-            const query = (e.target as HTMLInputElement).value.trim();
+            const query = this.state.query;
             const isQueryEmpty: boolean = query === "";
+            console.log("query in backspace ", query);
 
             if (which === 8) {
                 const lastIndexOfSelection: number = this.state.selection.length - 1;
                 const lastId: number | null = lastIndexOfSelection >= 0 ? this.state.selection[lastIndexOfSelection].id : null;
+                console.log("lastId", lastId);
                 if (isQueryEmpty === true && lastId !== null) {
                     this.removeSelection(lastId);
                     this.emulateEventOnListObserver("focus");
@@ -287,12 +289,26 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public extractQuery(query: string): string {
+    /**
+     * Extract query is used for extracting the query from the value of the input feild that
+     * contains
+     * @acces public
+     * @param query
+     * @param e
+     */
+    public extractQuery(query: string, e: KeyboardEvent): string {
         try {
             if (query) {
                 const queryArray: string[] = query.split(",");
-                if (queryArray.length > 1 && query.lastIndexOf(",") === query.length - 1) {
+                console.log("query in here extract query", query, this.state);
+                if (queryArray.length > 2 && query.lastIndexOf(",") === query.length - 1 && e.which !== 188) {
                     return "";
+                } else if (queryArray.length > 2 && query.lastIndexOf(",") === query.length - 1 && e.which === 188) {
+                    console.log("returned query frm here", query);
+                    return query;
+                } else if (queryArray.length === 2 && queryArray[1] === "" && e.which === 188) {
+                    console.log("query in here", query);
+                    return query;
                 }
                 return queryArray[queryArray.length - 1];
             } else {
@@ -324,13 +340,13 @@ class SelectBoxInput implements TSubject {
             if (e) {
                 const query: string =
                     e && e.target && (e.target as HTMLInputElement).value
-                        ? this.extractQuery((e.target as HTMLInputElement).value.trim())
+                        ? this.extractQuery((e.target as HTMLInputElement).value.trim(), e)
                         : "";
+                console.log("query in here onkeyup", query);
                 this.state.query = this.sanitiseQuery(query);
                 const which: number = e.which;
                 const { config } = this;
-                const category = config.category ? config.category : "top";
-                const debounceTimeout = config.debounceTimeout ? config.debounceTimeout : 500;
+                const debounceTimeout = config.debounceTimeout ? config.debounceTimeout : 1000;
                 switch (which) {
                 case 9: // Tab pressed
                     this.emulateEventOnListObserver("focusout");
@@ -357,7 +373,8 @@ class SelectBoxInput implements TSubject {
                     return;
 
                 default:
-                    this.debounceRequest(debounceTimeout).then(() => { this.sendSuggesterRequest(query, category); });
+                    console.log("query in here", query);
+                    this.debounceRequest(debounceTimeout).then(() => { this.sendSuggesterRequest(); });
                 }
             } else {
                 throw new Error("Event not happened Event Object Missing");
@@ -431,11 +448,11 @@ class SelectBoxInput implements TSubject {
         try {
             const selectedObj: TData = { id: 0, name: "", displayTextEn: "" };
             if (query.length > 1) {
-                selectedObj.id = 0;
-                selectedObj.name = query.split(",")[0];
+                selectedObj.id = this.state.selection.length;
+                selectedObj.name = query.split(",")[this.state.selection.length];
                 selectedObj.displayTextEn = selectedObj.name;
-
-                this.setSelectedValues(selectedObj);
+                console.log("selected Object created", selectedObj);
+                if (selectedObj.name) { this.setSelectedValues(selectedObj); }
             } else {
                 throw new Error("Query not passed in the function");
             }
@@ -465,10 +482,12 @@ class SelectBoxInput implements TSubject {
                         this.removeSelection(selectedObj.id);
                     }
                 } else {
+                    this.removeSelection(selectedObj.id);
                     this.onLastSelection();
                     if (selectionLimitExceeded === true) {
                         throw new Error(`Maximum select limit reached. Configured limit droope id "${config.domId}" is ${config.selectLimit}`);
                     } else {
+                        selectedObj.id = this.state.selection.length;
                         this.addSelection(selectedObj);
                     }
                 }
@@ -497,8 +516,11 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public sendSuggesterRequest(query: string, category: string): void {
+    public sendSuggesterRequest(): void {
         try {
+            const query = this.state.query;
+            const { config } = this;
+            const category = config.category ? config.category : "top";
             if (query && this.modelInstance) {
                 if (this.config.urls && this.config.urls.autoComplete) {
                     const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.autoComplete, {
@@ -790,7 +812,7 @@ class SelectBoxInput implements TSubject {
                 selection: newData.selection || [],
                 hasListUpdated: newData.hasListUpdated,
                 hasSelectionUpdated: newData.hasSelectionUpdated,
-                query: this.state.query
+                query: newData.query ? newData.query : this.state.query
             };
 
             this.notifyObservers();
@@ -902,7 +924,7 @@ class SelectBoxInput implements TSubject {
      */
     public removeSelection(id: number): void {
         try {
-            console.log("id", id, this.state);
+            console.log("id__________________________", id, this.state);
             const result: TState = {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
@@ -911,6 +933,7 @@ class SelectBoxInput implements TSubject {
                 selection: [...this.state.selection.filter((item) => item.id !== id)]
 
             };
+            console.log("result after removal of the selection", result);
             this.setData(result);
         } catch (err) {
             console.warn(`Could not delete the select id: ${id}`);
