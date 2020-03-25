@@ -55,7 +55,7 @@ class SelectDisplay implements TObserver {
 
     public update(state: TState): void {
         try {
-            const { selection, hasSelectionUpdated } = state;
+            const { selection, hasSelectionUpdated, query } = state;
 
             const { tagSelectedValues } = this.subject.config;
             if (hasSelectionUpdated === true) {
@@ -64,7 +64,14 @@ class SelectDisplay implements TObserver {
                     this.appendMarkup(selectedHtml);
                 } else {
                     const selectionList: string[] = selection.map((item) => item.name);
-                    (this.subject.config.displayElement as HTMLInputElement).value = selectionList.join(",");
+                    let queryComplete: string;
+                    if (selectionList.length > 0) {
+                        queryComplete = selectionList.join(",") + "," + query;
+                    } else {
+                        queryComplete = query;
+                    }
+
+                    (this.subject.config.displayElement as HTMLInputElement).value = queryComplete;
                 }
 
                 console.info("[Notified]: Suggester Select Observer with UPDATE");

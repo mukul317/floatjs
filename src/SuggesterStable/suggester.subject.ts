@@ -287,6 +287,23 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    public extractQuery(query: string): string {
+        try {
+            if (query) {
+                const queryArray: string[] = query.split(",");
+                if (queryArray.length > 1 && query.lastIndexOf(",") === query.length - 1) {
+                    return "";
+                }
+                return queryArray[queryArray.length - 1];
+            } else {
+                throw new Error("Query not found that is to be sanitised");
+            }
+        } catch (e) {
+            console.log("Exception Occurred while Sanitising Query");
+        }
+        return "";
+    }
+
     /**
      * Handles the keyUp event attached to the suggester input field.It does different functionalities
      * when the event is being  done. Covers a lot of cases for different keys presses that are as follows:
@@ -307,9 +324,9 @@ class SelectBoxInput implements TSubject {
             if (e) {
                 const query: string =
                     e && e.target && (e.target as HTMLInputElement).value
-                        ? this.sanitiseQuery((e.target as HTMLInputElement).value.trim())
+                        ? this.extractQuery((e.target as HTMLInputElement).value.trim())
                         : "";
-                this.state.query = query;
+                this.state.query = this.sanitiseQuery(query);
                 const which: number = e.which;
                 const { config } = this;
                 const category = config.category ? config.category : "top";
@@ -442,8 +459,7 @@ class SelectBoxInput implements TSubject {
                 // rishabh changes here
                 const { config } = this;
                 const selectionLimitExceeded: boolean = config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
-                const isDuplicate: boolean = this.state.selection.filter((item) => item.id === selectedObj.id).length > 0;
-
+                const isDuplicate: boolean = this.state.selection.filter((item) => (item.id === selectedObj.id && item.name === selectedObj.name)).length > 0;
                 if (isDuplicate === true) {
                     if (config.checkboxes === true) {
                         this.removeSelection(selectedObj.id);
@@ -568,7 +584,7 @@ class SelectBoxInput implements TSubject {
     public filterAndFillDataIntoListing(listingType: string): void {
         try {
             const { config } = this;
-            const query: string = this.state.query;
+            const query: string = listingType === "rc" ? "" : this.state.query;
             const category = config.category;
             if (query || category) {
                 const filteredList = this.dataSet.filter((item: TData): boolean | void => {
@@ -589,7 +605,7 @@ class SelectBoxInput implements TSubject {
                     list: hasResults ? filteredList : this.dataSet,
                     selection: [...this.state.selection],
                     hasSelectionUpdated: true,
-                    query: ""
+                    query: query
                 };
                 console.log("result TState", result);
                 this.setHeadingElement(listingType);
@@ -774,7 +790,7 @@ class SelectBoxInput implements TSubject {
                 selection: newData.selection || [],
                 hasListUpdated: newData.hasListUpdated,
                 hasSelectionUpdated: newData.hasSelectionUpdated,
-                query: ""
+                query: this.state.query
             };
 
             this.notifyObservers();
@@ -845,7 +861,7 @@ class SelectBoxInput implements TSubject {
                 list: newList,
                 selection: this.state.selection,
                 hasSelectionUpdated: false,
-                query: ""
+                query: this.state.query
             };
             this.setData(result);
         } catch (err) {
@@ -868,7 +884,7 @@ class SelectBoxInput implements TSubject {
                 list: [...this.state.list, ...newList],
                 selection: this.state.selection,
                 hasSelectionUpdated: false,
-                query: ""
+                query: this.state.query
             };
             this.setData(result);
         } catch (err) {
