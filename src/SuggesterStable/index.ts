@@ -12,7 +12,8 @@ const Suggester = (options: TSugConfig, data: TData[]): TSubject => {
         hasListUpdated: false,
         construct: true,
         selection: [],
-        list: data
+        list: data,
+        query: ""
     });
     return SelectBox;
 };

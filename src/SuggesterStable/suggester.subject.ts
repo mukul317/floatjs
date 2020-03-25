@@ -282,7 +282,7 @@ class SelectBoxInput implements TSubject {
                 this.state.query = query;
                 const which: number = e.which;
                 const { config } = this;
-                const category = config.category;
+                const category = config.category ? config.category : "top";
                 const debounceTimeout = config.debounceTimeout ? config.debounceTimeout : 500;
                 switch (which) {
                 case 9: // Tab pressed
@@ -454,14 +454,18 @@ class SelectBoxInput implements TSubject {
     public sendSuggesterRequest(query: string, category: string): void {
         try {
             if (query && this.modelInstance) {
-                const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.autoComplete, {
-                    query,
-                    category
-                });
-                this.handleApiResponse(
-                    xhrPromise,
-                    "sug"
-                );
+                if (this.config.urls && this.config.urls.autoComplete) {
+                    const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.autoComplete, {
+                        query,
+                        category
+                    });
+                    this.handleApiResponse(
+                        xhrPromise,
+                        "sug"
+                    );
+                } else {
+                    throw new Error("Config urls not set for suggester autocomplete request ");
+                }
             } else {
                 throw new Error("Query is not passed into the function");
             }
@@ -482,18 +486,22 @@ class SelectBoxInput implements TSubject {
     public sendRelatedSearchRequest(selectedObject: TData): void {
         try {
             if (selectedObject && selectedObject.displayTextEn && this.modelInstance) {
-                const query = selectedObject.displayTextEn.toLowerCase();
-                const category = "top";
-                const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.relatedConcept, {
-                    query,
-                    category
-                });
-                this.handleApiResponse(
-                    xhrPromise,
-                    "rc"
-                );
+                if (this.config.urls && this.config.urls.relatedConcept) {
+                    const query = selectedObject.displayTextEn.toLowerCase();
+                    const category = "top";
+                    const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.relatedConcept, {
+                        query,
+                        category
+                    });
+                    this.handleApiResponse(
+                        xhrPromise,
+                        "rc"
+                    );
+                } else {
+                    throw new Error("Config urls are not present for the related concepts");
+                }
             } else {
-                throw Error("Error in the selectedObject");
+                throw new Error("Error in the selectedObject");
             }
         } catch (e) {
             console.error(e);
@@ -607,7 +615,7 @@ class SelectBoxInput implements TSubject {
                     if (resp) {
                         const { config } = this;
                         const category = config.category;
-                        if (listingType) {
+                        if (listingType && category) {
                             switch (listingType) {
                             case "rc":
                                 this.dataSet = resp.resultConcepts[category];
@@ -853,7 +861,7 @@ class SelectBoxInput implements TSubject {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
                 list: this.state.list,
-                query: this.state.selection.filter((item) => item.id == id)[0].name,
+                query: this.state.selection.filter((item) => item.id === id)[0].name,
                 selection: [...this.state.selection.filter((item) => item.id !== id)]
 
             };

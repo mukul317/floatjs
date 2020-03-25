@@ -6,9 +6,17 @@ class Model {
     private prefetch: string = "";
 
     constructor(config: TSugConfig) {
-        this.appId = config.appId;
-        this.maxSuggestions = config.maxSuggestions;
-        this.prefetch = config.urls.prefetch;
+        try {
+            if (config.appId && config.maxSuggestions && config.urls && config.urls.prefetch) {
+                this.appId = config.appId;
+                this.maxSuggestions = config.maxSuggestions;
+                this.prefetch = config.urls.prefetch;
+            } else {
+                throw new Error("Config Params were not provided quite well");
+            }
+        } catch (e) {
+            console.warn("Please provide proper config to help in setting the model params: " + e);
+        }
     }
 
     /**
