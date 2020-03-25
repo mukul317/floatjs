@@ -258,6 +258,32 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
+   * This method detects if text enetred is english,arabic or a special character
+   * @param query : Text entered in suggester
+   * @returns
+   * a)'EN' for English
+   * b)'AR' for Arabic
+   * c)'SC' for Special Character
+   *
+   */
+    public detectLang (query: string): boolean | string| void {
+        try {
+            if (!query) return "EN";
+            const englishRegEx = /[A-Za-z0-9]/;
+            // eslint-disable-next-line no-useless-escape
+            const specialCharRegEx = /[\!\@\#\$\%\^\&\*\(\)\-\+\=\-\{\}\[\]\;\'\,\.\/\:\"\<\>\?\|\\\_]/;
+
+            return englishRegEx.test(query)
+                ? "EN"
+                : specialCharRegEx.test(query)
+                    ? "SC"
+                    : "AR";
+        } catch (e) {
+            console.warn("Exception occurred while Language detection", e);
+        }
+    }
+
+    /**
      * Handles the keyUp event attached to the suggester input field.It does different functionalities
      * when the event is being  done. Covers a lot of cases for different keys presses that are as follows:
      * case 9: Tabs Pressed

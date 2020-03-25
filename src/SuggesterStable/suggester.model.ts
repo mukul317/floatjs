@@ -68,28 +68,6 @@ class Model {
             // set response in LS
         });
     }
-
-    /**
-   * This method detects if text enetred is english,arabic or a special character
-   * @param query : Text entered in suggester
-   * @returns
-   * a)'EN' for English
-   * b)'AR' for Arabic
-   * c)'SC' for Special Character
-   *
-   */
-    //   private detectLang (query: string): boolean | string {
-    //       if (!query) return "EN";
-    //       const englishRegEx = /[A-Za-z0-9]/;
-    //       const specialCharRegEx = /[\!\@\#\$\%\^\&\*\(\)\-\+\=\-\{\}\[\]\;\'\,\.\/\:\"\<\>\?\|\\\_]/;
-
-    //       return englishRegEx.test(query)
-    //           ? "EN"
-    //           : specialCharRegEx.test(query)
-    //               ? "SC"
-    //               : "AR";
-    //   }
-    // }
 }
 
 export { Model };
