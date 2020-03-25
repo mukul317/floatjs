@@ -37,7 +37,7 @@ import Suggester from "./SuggesterStable";
             inputElement,
             listingElement,
             displayElement,
-            selectLimit: 2,
+            selectLimit: 6,
             displayListOnFocus: true,
             displayDecorationList: [],
             noResultErrorMessage: "Sorry no result",
