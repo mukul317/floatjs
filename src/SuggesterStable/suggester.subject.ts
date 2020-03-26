@@ -52,7 +52,7 @@ class SelectBoxInput implements TSubject {
         hasListUpdated: false,
         hasSelectionUpdated: false,
         query: ""
-    };
+    }
 
     /**
   * Debounce timer variable used for debouncing the user input
