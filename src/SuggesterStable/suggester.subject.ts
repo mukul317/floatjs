@@ -39,7 +39,8 @@ const defaultConfig: TSugConfig = {
     checkboxes: true,
     suggesterHeadingElementText: "Suggestions",
     relatedConceptsHeadingElementText: "Related Concepts",
-    debounceTimeout: 500
+    debounceTimeout: 500,
+    selectionType: "string"
 };
 
 class SelectBoxInput implements TSubject {
@@ -188,12 +189,11 @@ class SelectBoxInput implements TSubject {
      */
     public onSelect(target: HTMLElement): void {
         try {
-            const selectedObjStr: string = target.getAttribute("data-obj") || "";
-            const selectedObj: TData = JSON.parse(selectedObjStr);
-            selectedObj.id = this.state.selection.length;
-            if (selectedObj.name) {
-                this.sendRelatedSearchRequest(selectedObj);
-                this.onAfterRCRequest(selectedObj);
+            const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
+            console.log("selected Display text", selectedDisplayText);
+            if (selectedDisplayText) {
+                this.sendRelatedSearchRequest(selectedDisplayText);
+                this.onAfterRCRequest(selectedDisplayText);
             }
         } catch (e) {
             console.error(e);
@@ -212,13 +212,23 @@ class SelectBoxInput implements TSubject {
             const which = e.which;
             const query = this.state.query;
             const isQueryEmpty: boolean = query === "";
+            const { config } = this;
+            const selectionType: string = config.selectionType ? config.selectionType : "";
 
             if (which === 8) {
                 const lastIndexOfSelection: number = this.state.selection.length - 1;
-                const lastId: number | null = lastIndexOfSelection >= 0 ? this.state.selection[lastIndexOfSelection].id : null;
-                if (isQueryEmpty === true && lastId !== null) {
-                    this.removeSelection(lastId);
-                    this.emulateEventOnListObserver("focus");
+                if (selectionType === "object" && this.state.selection) {
+                    const lastId: number | null | undefined = lastIndexOfSelection >= 0 ? (this.state.selection as TData[])[lastIndexOfSelection].id : null;
+                    if (isQueryEmpty === true && lastId !== null && lastId !== undefined) {
+                        this.removeSelection(lastId);
+                        this.emulateEventOnListObserver("focus");
+                    }
+                } else if (selectionType === "string") {
+                    const lastSelectionDisplayText: string = lastIndexOfSelection >= 0 ? (this.state.selection as string[])[lastIndexOfSelection] : "";
+                    if (isQueryEmpty === true && lastSelectionDisplayText !== "") {
+                        this.removeSelectionString(lastSelectionDisplayText);
+                        this.emulateEventOnListObserver("focus");
+                    }
                 }
             }
         } catch (err) {
@@ -418,29 +428,49 @@ class SelectBoxInput implements TSubject {
 
     public initialiseRelatedSearch(query: string): void {
         try {
-            const selectedObj: TData = { id: 0, name: "", displayTextEn: "" };
-            if (query.length > 1) {
-                selectedObj.id = this.state.selection.length;
-                selectedObj.name = query.split(",")[this.state.selection.length];
-                selectedObj.displayTextEn = selectedObj.name;
-                if (selectedObj.name) {
-                    this.sendRelatedSearchRequest(selectedObj);
-                    this.onAfterRCRequest(selectedObj);
+            const { config } = this;
+            if (config.selectionType === "object") {
+                const selectedObj: TData = { id: 0, name: "", displayTextEn: "" };
+                if (query.length > 1) {
+                    selectedObj.id = this.state.selection.length;
+                    selectedObj.name = query.split(",")[this.state.selection.length];
+                    selectedObj.displayTextEn = selectedObj.name;
+                    if (selectedObj.name) {
+                        this.sendRelatedSearchRequest(selectedObj);
+                        this.onAfterRCRequest(selectedObj);
+                    }
+                } else {
+                    throw new Error("Query not passed in the function");
                 }
-            } else {
-                throw new Error("Query not passed in the function");
+            } else if (config.selectionType === "string") {
+                if (query.length > 1) {
+                    const selectedDisplayText: string = query.split(",")[this.state.selection.length];
+                    if (selectedDisplayText) {
+                        this.sendRelatedSearchRequest(selectedDisplayText);
+                        this.onAfterRCRequest(selectedDisplayText);
+                    }
+                } else {
+                    throw new Error("Query not passed in the function");
+                }
             }
         } catch (e) {
             console.log("Exception Occurred :" + e);
         }
     }
 
-    public checkIfSelectionEligible(selectedObj: TData): boolean {
+    public checkIfSelectionEligible(selectedObj: TData | string): boolean {
         try {
             const { config } = this;
-            const selectionLimitExceeded: boolean = config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
-            const isDuplicate: boolean = this.checkIfDuplicate(selectedObj);
-            return !isDuplicate && !selectionLimitExceeded;
+            if (typeof selectedObj === "object") {
+                const selectionLimitExceeded: boolean = config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
+                const isDuplicate: boolean = this.checkIfDuplicate(selectedObj);
+                return !isDuplicate && !selectionLimitExceeded;
+            } else if (typeof selectedObj === "string") {
+                const selectionLimitExceeded: boolean = config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
+                const isDuplicate: boolean = this.checkIfDuplicate(selectedObj);
+                return !isDuplicate && !selectionLimitExceeded;
+            }
+            return false;
         } catch (e) {
             console.warn("Error occurred while checking the eligibility of selection:", e);
             return false;
@@ -453,30 +483,45 @@ class SelectBoxInput implements TSubject {
      * @param selectedObj
      * @returns void
      */
-    public onAfterRCRequest(selectedObj: TData): void {
+    public onAfterRCRequest(selectedObj: TData | string): void {
         try {
             const { config } = this;
-            if (selectedObj && config.selectLimit) {
-                const isUpdateEligible: boolean = this.checkIfSelectionEligible(selectedObj);
-                if (isUpdateEligible) {
-                    this.removeSelection(selectedObj.id);
-                    this.onLastSelection();
-                    selectedObj.id = this.state.selection.length;
-                    this.addSelection(selectedObj);
+            if (typeof selectedObj === "object") {
+                if (selectedObj && config.selectLimit) {
+                    const isUpdateEligible: boolean = this.checkIfSelectionEligible(selectedObj);
+                    if (isUpdateEligible && selectedObj.id) {
+                        this.removeSelection(selectedObj.id);
+                        this.onLastSelection();
+                        selectedObj.id = this.state.selection.length;
+                        this.addSelection(selectedObj);
+                    }
+                    this.setQueryInInputFeild();
+                } else {
+                    throw new Error();
                 }
-                this.setQueryInInputFeild();
-            } else {
-                throw new Error();
+            } else if (typeof selectedObj === "string") {
+                if (selectedObj && config.selectLimit) {
+                    const isUpdateEligible: boolean = this.checkIfSelectionEligible(selectedObj);
+                    console.log("isUpdate eligible", isUpdateEligible);
+                    if (isUpdateEligible) {
+                        // this.removeSelectionString(selectedObj);
+                        this.onLastSelection();
+                        this.addSelectionString(selectedObj);
+                    }
+                    // this.setQueryInInputFeild();
+                } else {
+                    throw new Error();
+                }
             }
         } catch (e) {
             throw console.warn("Error in selecting target in here" + e);
         }
     }
 
-    public checkIfDuplicate(selectedObj: TData): boolean {
+    public checkIfDuplicate(selectedObj: TData | string): boolean {
         try {
-            // return JSON.stringify(this.state.selection).indexOf(selectedObj.name) !== -1;
-            return this.state.selection.filter((item) => (item.id === selectedObj.id || item.name === selectedObj.name)).length > 0;
+            if (typeof selectedObj === "object") { return (this.state.selection as TData[]).filter((item) => (item.id === selectedObj.id || item.name === selectedObj.name)).length > 0; } else if (typeof selectedObj === "string") { return (this.state.selection as string[]).indexOf(selectedObj) !== -1; }
+            return false;
         } catch (e) {
             console.warn("some error in checking duplicated:", e);
             return false;
@@ -490,6 +535,7 @@ class SelectBoxInput implements TSubject {
     public setQueryInInputFeild(): void {
         try {
             if (this.config.inputElement) {
+                console.log("setting query in input feild", this.state);
                 this.config.inputElement.value = this.state.query ? this.state.query : "";
             } else {
                 throw new Error("Input Element not being set");
@@ -534,11 +580,26 @@ class SelectBoxInput implements TSubject {
         * @throws {null}
         *
         */
-    public sendRelatedSearchRequest(selectedObject: TData): void {
+    public sendRelatedSearchRequest(selectedObject: TData | string): void {
         try {
-            if (selectedObject && selectedObject.displayTextEn && this.modelInstance) {
+            if (selectedObject && (selectedObject as TData).displayTextEn && this.modelInstance) {
                 if (this.config.urls && this.config.urls.relatedConcept) {
-                    const query = selectedObject.displayTextEn.toLowerCase();
+                    const query = (selectedObject as TData).displayTextEn.toLowerCase();
+                    const category = "top";
+                    const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.relatedConcept, {
+                        query,
+                        category
+                    });
+                    this.handleApiResponse(
+                        xhrPromise,
+                        "rc"
+                    );
+                } else {
+                    throw new Error("Config urls are not present for the related concepts");
+                }
+            } else if (typeof selectedObject === "string") {
+                if (this.config.urls && this.config.urls.relatedConcept && this.modelInstance) {
+                    const query = selectedObject.toLowerCase();
                     const category = "top";
                     const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.relatedConcept, {
                         query,
@@ -587,10 +648,12 @@ class SelectBoxInput implements TSubject {
                 const result: TState = {
                     hasListUpdated: true,
                     list: hasResults ? filteredList : this.dataSet,
-                    selection: [...this.state.selection],
+                    selection: this.state.selection,
                     hasSelectionUpdated: true,
                     query: query
                 };
+
+                console.log("state in filter and fill listing", result);
                 this.setHeadingElement(listingType);
                 this.setData(result);
 
@@ -746,13 +809,12 @@ class SelectBoxInput implements TSubject {
                 this.dataSet = newData.list;
                 newData.hasListUpdated = true;
             }
-
             this.state = {
                 list: newData.list || [],
                 selection: newData.selection || [],
                 hasListUpdated: newData.hasListUpdated,
                 hasSelectionUpdated: newData.hasSelectionUpdated,
-                query: newData.query ? newData.query : this.state.query
+                query: newData.query
             };
 
             this.notifyObservers();
@@ -867,13 +929,29 @@ class SelectBoxInput implements TSubject {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
                 list: this.state.list,
-                query: this.state.selection.filter((item) => item.id === id)[0].name,
-                selection: [...this.state.selection.filter((item) => item.id !== id)]
+                query: (this.state.selection as TData[]).filter((item: TData) => item.id === id)[0].name || "",
+                selection: [...(this.state.selection as TData[]).filter((item: TData) => item.id !== id)]
 
             };
             this.setData(result);
         } catch (err) {
             console.warn(`Could not delete the select id: ${id}`);
+            console.warn(err.message);
+        }
+    }
+
+    public removeSelectionString(displayTextEn: string): void {
+        try {
+            const result: TState = {
+                hasListUpdated: false,
+                hasSelectionUpdated: true,
+                list: this.state.list,
+                query: (this.state.selection as string[]).splice((this.state.selection as string[]).indexOf(displayTextEn), 1)[0],
+                selection: this.state.selection
+            };
+            this.setData(result);
+        } catch (err) {
+            console.warn("Could not delete the select id: ");
             console.warn(err.message);
         }
     }
@@ -888,7 +966,32 @@ class SelectBoxInput implements TSubject {
      */
     public addSelection(selectedObj: TData): void {
         try {
-            const selection = this.config.selectLimit === 1 ? [selectedObj] : [...this.state.selection, selectedObj];
+            const selection = this.config.selectLimit === 1 ? [selectedObj] : [...(this.state.selection as TData[]), selectedObj];
+            const result: TState = {
+                hasListUpdated: false,
+                hasSelectionUpdated: true,
+                list: this.state.list,
+                selection,
+                query: ""
+            };
+            this.setData(result);
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    /**
+     * Adds new item in the droope by mutating the state object.
+     * Every addition shall be driven by this function acting as a developer API
+     *
+     * @access public
+     * @param selectedObj {TData}
+     * @returns {void}
+     */
+    public addSelectionString(displayTextEn: string): void {
+        try {
+            console.log("displaytext en in add selection", this.state, displayTextEn);
+            const selection = this.config.selectLimit === 1 ? [displayTextEn] : [...(this.state.selection as string[]), displayTextEn];
             const result: TState = {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,

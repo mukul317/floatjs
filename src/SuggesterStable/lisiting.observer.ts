@@ -19,11 +19,12 @@ class Listing implements TObserver {
             let index: number = 1;
             for (const item of newData.list) {
                 const liElement: HTMLElement = document.createElement("LI");
-                liElement.textContent = item.name;
+                liElement.textContent = item.displayTextEn;
                 liElement.classList.add("list-item");
-                liElement.setAttribute("data-obj", JSON.stringify(item));
-                if (!item.id) { item.id = index; }
-                liElement.setAttribute("data-id", item.id.toString());
+                liElement.setAttribute("data-displayTextEn", item.displayTextEn);
+                liElement.setAttribute("data-textsuggest", item.textsuggest ? item.textsuggest : "");
+                // if (!item.id) { item.id = index; }
+                // liElement.setAttribute("data-id", item.id.toString());
                 if (this.hasCheckboxes === true) {
                     liElement.classList.add("check-enabled");
                     this.checkboxDecorator(liElement);
@@ -99,7 +100,7 @@ class Listing implements TObserver {
                 this.appendList(list);
             } else {
                 if (this.hasCheckboxes) {
-                    this.updateTicks(newData.selection);
+                    this.updateTicks((newData.selection as TData[]));
                 }
             }
             console.info("[Notified]: Suggester Lisiting Observer");

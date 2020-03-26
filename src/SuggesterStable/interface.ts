@@ -1,7 +1,8 @@
 interface TData {
-    id: number;
-    name: string;
-    displayTextEn?: string;
+    id?: number;
+    name?: string;
+    displayTextEn: string;
+     textsuggest?: string;
 }
 
 interface TSubject {
@@ -28,7 +29,7 @@ interface TVersionResponse {
 
 interface TState {
     list: TData[];
-    selection: TData[];
+    selection: string[] | TData[];
     hasListUpdated: boolean;
     hasSelectionUpdated: boolean;
     construct?: boolean;
@@ -92,6 +93,7 @@ interface TSugConfig {
     readonly suggesterHeadingElementText?: string | null;
     readonly relatedConceptsHeadingElementText?: string | null;
     readonly debounceTimeout?: number;
+    readonly selectionType?: string;
 }
 interface TSuggesterResponse extends TResponse {
     resultList: any;

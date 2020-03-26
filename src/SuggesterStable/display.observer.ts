@@ -23,7 +23,7 @@ class SelectDisplay implements TObserver {
                 if (tagSelectedValues) {
                     const listItem: HTMLElement = document.createElement("LI");
                     // this.config.displayEle.value = [].join(",")
-                    listItem.textContent = item.name;
+                    listItem.textContent = item.name ? item.name : "";
                     listItem.classList.add("selection-item");
                     listItem.setAttribute("data-obj", JSON.stringify(item));
                     if (tagSelectedValues) {
@@ -60,7 +60,7 @@ class SelectDisplay implements TObserver {
             const { tagSelectedValues } = this.subject.config;
             if (hasSelectionUpdated === true) {
                 if (tagSelectedValues) {
-                    const selectedHtml: HTMLElement = this.generateDisplayHtml(selection);
+                    const selectedHtml: HTMLElement = this.generateDisplayHtml((selection as TData[]));
                     this.appendMarkup(selectedHtml);
                 } else {
                     this.generateDefaultDisplay(state);
@@ -76,16 +76,21 @@ class SelectDisplay implements TObserver {
     public generateDefaultDisplay(state: TState): void{
         try {
             const { selection, query } = state;
-            const selectionList: string[] = selection.map((item) => item.name);
+            const selectionList: string[] = (selection as string[]);
 
             // let queryComplete: string = (this.subject.config.displayElement as HTMLInputElement).value;
             // queryComplete = queryComplete + query;
+            console.log("params in display selection", state, (this.subject.config.displayElement as HTMLInputElement).value);
             let queryComplete: string;
             if (selectionList.length > 0) {
                 queryComplete = selectionList.join(",") + "," + query;
             } else {
                 queryComplete = query;
             }
+            // if (query === "") {
+            //     (this.subject.config.displayElement as HTMLInputElement).value = (this.subject.config.displayElement as HTMLInputElement).value.replace(/[^,]+$/, selectionList.join(",") + ",");
+            //  }
+            console.log("query complete", queryComplete);
             (this.subject.config.displayElement as HTMLInputElement).value = queryComplete;
         } catch (e) {
             console.warn("Error occurred while updating display : ", e);
