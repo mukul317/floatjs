@@ -55,7 +55,7 @@ class SelectDisplay implements TObserver {
 
     public update(state: TState): void {
         try {
-            const { selection, hasSelectionUpdated, query } = state;
+            const { selection, hasSelectionUpdated } = state;
 
             const { tagSelectedValues } = this.subject.config;
             if (hasSelectionUpdated === true) {
@@ -63,22 +63,32 @@ class SelectDisplay implements TObserver {
                     const selectedHtml: HTMLElement = this.generateDisplayHtml(selection);
                     this.appendMarkup(selectedHtml);
                 } else {
-                    const selectionList: string[] = selection.map((item) => item.name);
-                    console.log("selectionList", selectionList);
-                    let queryComplete: string;
-                    if (selectionList.length > 0) {
-                        queryComplete = selectionList.join(",") + "," + query;
-                    } else {
-                        queryComplete = query;
-                    }
-
-                    (this.subject.config.displayElement as HTMLInputElement).value = queryComplete;
+                    this.generateDefaultDisplay(state);
                 }
 
                 console.info("[Notified]: Suggester Select Observer with UPDATE");
             }
         } catch (err) {
             console.warn(err.message);
+        }
+    }
+
+    public generateDefaultDisplay(state: TState): void{
+        try {
+            const { selection, query } = state;
+            const selectionList: string[] = selection.map((item) => item.name);
+
+            // let queryComplete: string = (this.subject.config.displayElement as HTMLInputElement).value;
+            // queryComplete = queryComplete + query;
+            let queryComplete: string;
+            if (selectionList.length > 0) {
+                queryComplete = selectionList.join(",") + "," + query;
+            } else {
+                queryComplete = query;
+            }
+            (this.subject.config.displayElement as HTMLInputElement).value = queryComplete;
+        } catch (e) {
+            console.warn("Error occurred while updating display : ", e);
         }
     }
 
