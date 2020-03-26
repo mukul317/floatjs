@@ -210,11 +210,16 @@ class SelectBoxInput implements TSubject {
     public onBackspace(e: KeyboardEvent): void {
         try {
             const which = e.which;
-            const query = this.state.query;
-            const isQueryEmpty: boolean = query === "";
             const { config } = this;
             const selectionType: string = config.selectionType ? config.selectionType : "";
+            if (selectionType === "string" && which === 8 && config.inputElement) {
+                this.state.query = this.extractQuery(config.inputElement.value, 8);
+            }
+            const query = this.state.query;
+            console.log("state in backspace", this.state);
+            const isQueryEmpty: boolean = query === "";
 
+            console.log("backspace detected in here", which);
             if (which === 8) {
                 const lastIndexOfSelection: number = this.state.selection.length - 1;
                 if (selectionType === "object" && this.state.selection) {
@@ -225,7 +230,9 @@ class SelectBoxInput implements TSubject {
                     }
                 } else if (selectionType === "string") {
                     const lastSelectionDisplayText: string = lastIndexOfSelection >= 0 ? (this.state.selection as string[])[lastIndexOfSelection] : "";
+                    console.log("lastSelectionDisplayText before", lastSelectionDisplayText, isQueryEmpty);
                     if (isQueryEmpty === true && lastSelectionDisplayText !== "") {
+                        console.log("lastSelectionDisplayText", lastSelectionDisplayText);
                         this.removeSelectionString(lastSelectionDisplayText);
                         this.emulateEventOnListObserver("focus");
                     }
@@ -949,6 +956,7 @@ class SelectBoxInput implements TSubject {
                 query: (this.state.selection as string[]).splice((this.state.selection as string[]).indexOf(displayTextEn), 1)[0],
                 selection: this.state.selection
             };
+            console.log("in remove selection checking the new state", result);
             this.setData(result);
         } catch (err) {
             console.warn("Could not delete the select id: ");
