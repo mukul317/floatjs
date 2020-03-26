@@ -43,9 +43,6 @@ const defaultConfig: TSugConfig = {
 };
 
 class SelectBoxInput implements TSubject {
-    // private readonly enDomain: string = "http://suggest.naukrigulf.com/";
-    // private readonly arDomain: string = "http://suggest.naukrigulf.com/";
-
     public state: TState = {
         list: [],
         selection: [],
@@ -239,7 +236,7 @@ class SelectBoxInput implements TSubject {
    * c)'SC' for Special Character
    *
    */
-    public detectLang (query: string): boolean | string| void {
+    public detectLanguage (query: string): boolean | string| void {
         try {
             if (!query) return "EN";
             const englishRegEx = /[A-Za-z0-9]/;
@@ -265,12 +262,12 @@ class SelectBoxInput implements TSubject {
      * @param query
      * @param e
      */
-    public extractQuery(query: string, e: KeyboardEvent): string {
+    public extractQuery(query: string, keyCode: number): string {
         try {
             if (query) {
                 const regex: RegExp = /\s*([^,]+$)/g;
                 const matches: RegExpExecArray| null = regex.exec(query);
-                if (!matches && e.which === 188) {
+                if (!matches && keyCode === 188) {
                     return query;
                 }
                 if (matches) {
@@ -284,6 +281,20 @@ class SelectBoxInput implements TSubject {
             console.log("Exception Occurred while Sanitising Query");
         }
         return "";
+    }
+
+    public setQueryToState(target: HTMLInputElement | null, keyCode: number): void {
+        try {
+            if (target) {
+                const value: string = target.value;
+                const query = this.extractQuery(value.trim(), keyCode);
+                this.state.query = this.sanitiseQuery(query);
+            } else {
+                throw new Error(`Could not set query in state. target : ${target}, keyCode: ${keyCode}`);
+            }
+        } catch (err) {
+            console.warn(err.message);
+        }
     }
 
     /**
@@ -304,14 +315,10 @@ class SelectBoxInput implements TSubject {
     public onKeyUp(e: KeyboardEvent): void {
         try {
             if (e) {
-                const query: string | undefined =
-                    e && e.target && (e.target as HTMLInputElement).value
-                        ? this.extractQuery((e.target as HTMLInputElement).value.trim(), e)
-                        : "";
-                this.state.query = this.sanitiseQuery(query);
                 const which: number = e.which;
-                const { config } = this;
-                const debounceTimeout = config.debounceTimeout ? config.debounceTimeout : 1000;
+                const target: HTMLInputElement | null = (e.target as HTMLInputElement);
+                this.setQueryToState(target, which);
+
                 switch (which) {
                 case 9: // Tab pressed
                     this.emulateEventOnListObserver("focusout");
@@ -333,12 +340,13 @@ class SelectBoxInput implements TSubject {
                 case 40: // Down arrow
                     this.onArrowPress("down");
                     return;
+
                 case 188:
-                    this.initialiseRelatedSearch(query);
+                    this.initialiseRelatedSearch(this.state.query);
                     return;
 
                 default:
-                    this.debounceRequest(debounceTimeout).then(() => { this.sendSuggesterRequest(); });
+                    this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
                 }
             } else {
                 throw new Error("Event not happened Event Object Missing");
@@ -387,7 +395,7 @@ class SelectBoxInput implements TSubject {
      * @returns Promise<void>
      */
 
-    public debounceRequest(debounceInterval: number): Promise<void> {
+    public debounceRequest(debounceInterval: number = 0): Promise<void> {
         try {
             if (this.debounceTimer) { clearTimeout(this.debounceTimer); }
             return new Promise((resolve: Function): void => {

@@ -65,15 +65,15 @@ interface TSugOptions {
 
 interface TSugConfig {
     readonly source?: string | undefined;
-    readonly category?: string| undefined;
-    readonly maxSuggestions?: number| undefined;
+    readonly category?: string | undefined;
+    readonly maxSuggestions?: number | undefined;
     readonly specialCharactersAllowedList: string[] | RegExp;
-    readonly edge?: number| undefined;
-    readonly invoker?: string| undefined;
-    readonly version?: string| undefined;
+    readonly edge?: number | undefined;
+    readonly invoker?: string | undefined;
+    readonly version?: string | undefined;
     readonly urls?: { [keys: string]: string };
     readonly storageKey?: { [keys: string]: string };
-    readonly appId?: number| undefined;
+    readonly appId?: number | undefined;
     readonly domId: string;
     readonly inputElement: HTMLInputElement | null;
     readonly listingElement: HTMLElement | null;
