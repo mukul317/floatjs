@@ -120,8 +120,8 @@ class SelectBoxInput implements TSubject {
         try {
             const { config } = this;
             if (config.inputElement) {
-                config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e));
-                config.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
+                // config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e));
+                config.inputElement.addEventListener("keypress", (e) => this.onKeyUp(e));
                 if (config.displayListOnFocus === true) {
                     document.addEventListener("click", (e) => this.handleDocumentBlur(e));
                     config.inputElement.addEventListener("focus", (e) => this.emulateEventOnListObserver(e.type));
@@ -207,37 +207,34 @@ class SelectBoxInput implements TSubject {
      * @param e : keyboardEvent
      * @returns void
      */
-    public onBackspace(e: KeyboardEvent): void {
+    public onBackspace(): void {
         try {
-            const which = e.which;
+            // const which = e.which;
             const { config } = this;
-            const selectionType: string = config.selectionType ? config.selectionType : "";
-            if (selectionType === "string" && which === 8 && config.inputElement) {
+            const selectionType: string = config.selectionType || "";
+            if (selectionType === "string" && config.inputElement) {
                 this.state.query = this.extractQuery(config.inputElement.value, 8);
             }
             const query = this.state.query;
-            console.log("state in backspace", this.state);
             const isQueryEmpty: boolean = query === "";
-
-            console.log("backspace detected in here", which);
-            if (which === 8) {
-                const lastIndexOfSelection: number = this.state.selection.length - 1;
-                if (selectionType === "object" && this.state.selection) {
-                    const lastId: number | null | undefined = lastIndexOfSelection >= 0 ? (this.state.selection as TData[])[lastIndexOfSelection].id : null;
-                    if (isQueryEmpty === true && lastId !== null && lastId !== undefined) {
-                        this.removeSelection(lastId);
-                        this.emulateEventOnListObserver("focus");
-                    }
-                } else if (selectionType === "string") {
-                    const lastSelectionDisplayText: string = lastIndexOfSelection >= 0 ? (this.state.selection as string[])[lastIndexOfSelection] : "";
-                    console.log("lastSelectionDisplayText before", lastSelectionDisplayText, isQueryEmpty);
-                    if (isQueryEmpty === true && lastSelectionDisplayText !== "") {
-                        console.log("lastSelectionDisplayText", lastSelectionDisplayText);
-                        this.removeSelectionString(lastSelectionDisplayText);
-                        this.emulateEventOnListObserver("focus");
-                    }
+            // if (which === 8) {
+            const lastIndexOfSelection: number = this.state.selection.length - 1;
+            if (selectionType === "object" && this.state.selection) {
+                const lastId: number | null | undefined = lastIndexOfSelection >= 0 ? (this.state.selection as TData[])[lastIndexOfSelection].id : null;
+                if (isQueryEmpty === true && lastId !== null && lastId !== undefined) {
+                    this.removeSelection(lastId);
+                    this.emulateEventOnListObserver("focus");
+                }
+            } else if (selectionType === "string") {
+                const lastSelectionDisplayText: string = lastIndexOfSelection >= 0 ? (this.state.selection as string[])[lastIndexOfSelection] : "";
+                console.log("lastSelectionDisplayText before", lastSelectionDisplayText, isQueryEmpty);
+                if (isQueryEmpty === true && lastSelectionDisplayText !== "") {
+                    console.log("lastSelectionDisplayText", lastSelectionDisplayText);
+                    this.removeSelectionString(lastSelectionDisplayText);
+                    this.emulateEventOnListObserver("focus");
                 }
             }
+            // }
         } catch (err) {
             console.warn(err.message);
         }
@@ -304,7 +301,7 @@ class SelectBoxInput implements TSubject {
         try {
             if (target) {
                 const value: string = target.value;
-                const query = this.extractQuery(value.trim(), keyCode);
+                const query = this.extractQuery(value, keyCode);
                 this.state.query = this.sanitiseQuery(query);
             } else {
                 throw new Error(`Could not set query in state. target : ${target}, keyCode: ${keyCode}`);
@@ -337,6 +334,10 @@ class SelectBoxInput implements TSubject {
                 this.setQueryToState(target, which);
 
                 switch (which) {
+                case 8: {
+                    this.onBackspace();
+                    return;
+                }
                 case 9: // Tab pressed
                     this.emulateEventOnListObserver("focusout");
                     return;
@@ -656,7 +657,7 @@ class SelectBoxInput implements TSubject {
                     hasListUpdated: true,
                     list: hasResults ? filteredList : this.dataSet,
                     selection: this.state.selection,
-                    hasSelectionUpdated: true,
+                    hasSelectionUpdated: false,
                     query: query
                 };
 
