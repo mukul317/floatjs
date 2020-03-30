@@ -1,4 +1,4 @@
-import { TSubject, TObserver, TData, TState } from "./interface";
+import { TSubject, TObserver, TState } from "./interface";
 
 class SelectDisplay implements TObserver {
     public subject: TSubject;
@@ -14,18 +14,18 @@ class SelectDisplay implements TObserver {
         }
     }
 
-    public generateDisplayHtml(selectedValues: TData[]): HTMLElement {
+    public generateDisplayHtml(selectedValues: string[]): HTMLElement {
         try {
             /** @todo: Object vs DOM difffing */
             this.view.innerHTML = "";
             const { tagSelectedValues } = this.subject.config;
-            selectedValues.forEach((item: TData) => {
+            selectedValues.forEach((item: string) => {
                 if (tagSelectedValues) {
                     const listItem: HTMLElement = document.createElement("LI");
                     // this.config.displayEle.value = [].join(",")
-                    listItem.textContent = item.name ? item.name : "";
+                    listItem.textContent = item || "";
                     listItem.classList.add("selection-item");
-                    listItem.setAttribute("data-obj", JSON.stringify(item));
+                    listItem.setAttribute("data-displayTextEn", JSON.stringify(item));
                     if (tagSelectedValues) {
                         this.tagDecorator(listItem);
                     }
@@ -60,7 +60,7 @@ class SelectDisplay implements TObserver {
             const { tagSelectedValues } = this.subject.config;
             if (hasSelectionUpdated === true) {
                 if (tagSelectedValues) {
-                    const selectedHtml: HTMLElement = this.generateDisplayHtml((selection as TData[]));
+                    const selectedHtml: HTMLElement = this.generateDisplayHtml(selection);
                     this.appendMarkup(selectedHtml);
                 } else {
                     this.generateDefaultDisplay(state);
@@ -77,20 +77,12 @@ class SelectDisplay implements TObserver {
         try {
             const { selection, query } = state;
             const selectionList: string[] = (selection as string[]);
-
-            // let queryComplete: string = (this.subject.config.displayElement as HTMLInputElement).value;
-            // queryComplete = queryComplete + query;
-            console.log("params in display selection", state, (this.subject.config.displayElement as HTMLInputElement).value);
             let queryComplete: string;
             if (selectionList.length > 0) {
                 queryComplete = selectionList.join(",") + "," + query;
             } else {
                 queryComplete = query;
             }
-            // if (query === "") {
-            //     (this.subject.config.displayElement as HTMLInputElement).value = (this.subject.config.displayElement as HTMLInputElement).value.replace(/[^,]+$/, selectionList.join(",") + ",");
-            //  }
-            console.log("query complete", queryComplete);
             (this.subject.config.displayElement as HTMLInputElement).value = queryComplete;
         } catch (e) {
             console.warn("Error occurred while updating display : ", e);
@@ -122,9 +114,9 @@ class SelectDisplay implements TObserver {
             this.view.addEventListener("click", (e: MouseEvent) => {
                 if (e.target) {
                     try {
-                        const toBeDeletedId = (e.target as HTMLElement).getAttribute("data-id");
-                        if (toBeDeletedId && toBeDeletedId !== "") {
-                            this.subject.removeSelection(parseInt(toBeDeletedId, 10));
+                        const toBeDeletedSelection = (e.target as HTMLElement).getAttribute("data-displayTextEn");
+                        if (toBeDeletedSelection && toBeDeletedSelection !== "") {
+                            this.subject.removeSelection(toBeDeletedSelection);
                         }
                     } catch (err) {
                         console.warn(err.message);

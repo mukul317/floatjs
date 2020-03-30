@@ -16,7 +16,7 @@ interface TSubject {
     registerObserver(o: TObserver): void;
     unregisterObserver(o: TObserver): void;
     notifyObservers(): void;
-    removeSelection(id: number): void;
+    removeSelection(displayTextEn: string): void;
     setData(data: TState): void;
 }
 
@@ -29,7 +29,8 @@ interface TVersionResponse {
 
 interface TState {
     list: TData[];
-    selection: string[] | TData[];
+    selection: string[];
+    selectionAr: string[];
     hasListUpdated: boolean;
     hasSelectionUpdated: boolean;
     construct?: boolean;
@@ -93,7 +94,6 @@ interface TSugConfig {
     readonly suggesterHeadingElementText?: string | null;
     readonly relatedConceptsHeadingElementText?: string | null;
     readonly debounceTimeout?: number;
-    readonly selectionType?: string;
 }
 interface TSuggesterResponse extends TResponse {
     resultList: any;

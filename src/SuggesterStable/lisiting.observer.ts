@@ -1,4 +1,4 @@
-import { TSubject, TObserver, TState, TData } from "./interface";
+import { TSubject, TObserver, TState } from "./interface";
 class Listing implements TObserver {
     private subject: TSubject;
     private hasCheckboxes: boolean | undefined;
@@ -70,7 +70,7 @@ class Listing implements TObserver {
     }
 
     // BigO(n)
-    public updateTicks(selection: TData[]): void {
+    public updateTicks(selection: string[]): void {
         try {
             const domList: HTMLElement | null = document.getElementById(this.listId);
             if (domList) {
@@ -100,7 +100,7 @@ class Listing implements TObserver {
                 this.appendList(list);
             } else {
                 if (this.hasCheckboxes) {
-                    this.updateTicks((newData.selection as TData[]));
+                    this.updateTicks(newData.selection);
                 }
             }
             console.info("[Notified]: Suggester Lisiting Observer");
