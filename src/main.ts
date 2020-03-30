@@ -40,6 +40,7 @@ import Suggester from "./SuggesterStable";
             selectLimit: 6,
             displayListOnFocus: true,
             displayDecorationList: [],
+            startSearchAfter: 2,
             // displayBehaviour: "tag",
             noResultErrorMessage: "Sorry no result",
             checkboxes: false,

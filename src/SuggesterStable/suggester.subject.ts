@@ -18,6 +18,7 @@ const defaultConfig: TSugConfig = {
     version: "1.2.0",
     source: "server",
     maxSuggestions: 15,
+    startSearchAfter: 2,
     edge: 0,
     invoker: "ng",
     storageKey: { // It is used to store prefetched data against pretetchKey and version value against versionKey in localStorage.
@@ -78,11 +79,19 @@ class SelectBoxInput implements TSubject {
             this.createNoResultFragment();
             this.initialiseHeadingElement();
             this.modelInstance = new Model(this.config);
+            // if (this.config.isPrefetch) {
+            //     this.initiatePrefetchingSuggesterSuggestions();
+            // }
         } catch (err) {
             console.warn(err.message);
         }
     }
 
+    /**
+     * Initialises the
+     * @param {null}
+     * @returns {void}
+     */
     public initialiseHeadingElement(): void {
         try {
             this.headingElement.classList.add("no-result");
@@ -292,6 +301,7 @@ class SelectBoxInput implements TSubject {
             if (target) {
                 const value: string = target.value;
                 const query = this.extractQuery(value.trim(), keyCode);
+                this.emulateEventOnListObserver(!query ? "focusout" : "focus");
                 this.state.query = this.userLanguage === "AR" ? query : this.sanitiseQuery(query);
             } else {
                 throw new Error(`Could not set query in state. target : ${target}, keyCode: ${keyCode}`);
@@ -396,13 +406,21 @@ class SelectBoxInput implements TSubject {
 
     public debounceRequest(debounceInterval: number = 0): Promise<void> {
         try {
-            if (this.debounceTimer) { clearTimeout(this.debounceTimer); }
-            return new Promise((resolve: Function): void => {
-                this.debounceTimer = setTimeout(
-                    (): void => resolve(),
-                    debounceInterval
-                );
-            });
+            const { config } = this;
+            const { query } = this.state;
+            if (config.startSearchAfter && query.length > config.startSearchAfter) {
+                if (this.debounceTimer) {
+                    clearTimeout(this.debounceTimer);
+                }
+                return new Promise((resolve: Function): void => {
+                    this.debounceTimer = setTimeout(
+                        (): void => resolve(),
+                        debounceInterval
+                    );
+                });
+            } else {
+                throw new Error("Query length is less than the startSerachAfter config param");
+            }
         } catch (err) {
             console.warn(err.message);
             return Promise.reject(err.message);
@@ -447,29 +465,6 @@ class SelectBoxInput implements TSubject {
             return false;
         }
     }
-
-    /**
-     * This sets the selected object values into the result set
-     * @access public
-     * @param selectedObj
-     * @returns void
-     */
-    // public onAfterRCRequest(selectedObj: string): void {
-    //     try {
-    //         const { config } = this;
-    //         if (selectedObj && config.selectLimit) {
-    //             const isUpdateEligible: boolean =;
-    //             if (isUpdateEligible) {
-    //                 this.onLastSelection();
-    //                 this.addSelection(selectedObj);
-    //             }
-    //         } else {
-    //             throw new Error();
-    //         }
-    //     } catch (e) {
-    //         throw console.warn("Error in selecting target in here" + e);
-    //     }
-    // }
 
     public checkIfDuplicate(selectedObj: string): boolean {
         try {

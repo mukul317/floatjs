@@ -88,6 +88,7 @@ interface TSugConfig {
     readonly noResultErrorMessage?: string;
     readonly displayBehaviour?: string;
     readonly listLimit?: number;
+    readonly startSearchAfter?: number;
     readonly checkboxes?: boolean;
     readonly sanitiseString?: boolean;
     readonly isPrefetch?: boolean;
