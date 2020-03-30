@@ -30,7 +30,7 @@ import Suggester from "./SuggesterStable";
 ((): void => {
     const inputElement: HTMLInputElement | null = document.querySelector(".suggester-select-box-input");
     const listingElement: HTMLElement | null = document.querySelector(".suggester-select-box-listing");
-    const displayElement: HTMLElement | null = inputElement;
+    const displayElement: HTMLElement | null = document.querySelector(".suggester-select-box-display");
     if (inputElement && listingElement && displayElement) {
         const options: TSugConfig = {
             domId: "demoSuggester",
@@ -40,7 +40,7 @@ import Suggester from "./SuggesterStable";
             selectLimit: 6,
             displayListOnFocus: true,
             displayDecorationList: [],
-            // displayBehaviour: "tag",
+            displayBehaviour: "tag",
             noResultErrorMessage: "Sorry no result",
             checkboxes: false,
             sanitiseString: false,

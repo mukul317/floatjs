@@ -40,10 +40,13 @@ class SelectDisplay implements TObserver {
 
     public appendMarkup(selectedHtml: Element): void {
         try {
-            const { displayElement } = this.subject.config;
+            const { displayElement, inputElement } = this.subject.config;
             if (displayElement) {
                 displayElement.innerHTML = "";
                 displayElement.appendChild(selectedHtml);
+            }
+            if (inputElement) {
+                inputElement.value = "";
             }
         } catch (err) {
             console.warn(err.message);
@@ -75,14 +78,10 @@ class SelectDisplay implements TObserver {
     public generateDefaultDisplay(state: TState): void{
         try {
             const { selection, query } = state;
-            const selectionList: string[] = (selection as string[]);
-            let queryComplete: string;
-            if (selectionList.length > 0) {
-                queryComplete = selectionList.join(",") + "," + query;
-            } else {
-                queryComplete = query;
-            }
-            (this.subject.config.displayElement as HTMLInputElement).value = queryComplete;
+            const selectionLength: number = selection.length;
+            const selectionInString: string = selection.join(", ");
+            const completeSelectionString: string = selectionLength > 0 ? `${selectionInString}, ${query}` : `${query}`;
+            (this.subject.config.displayElement as HTMLInputElement).value = completeSelectionString;
         } catch (e) {
             console.warn("Error occurred while updating display : ", e);
         }

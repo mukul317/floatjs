@@ -315,18 +315,13 @@ class SelectBoxInput implements TSubject {
                 this.setQueryToState(target, which);
 
                 switch (which) {
-                case 9: // Tab pressed
+                case 9:
                     this.emulateEventOnListObserver("focusout");
                     return;
 
-                case 13: {
-                    const { config } = this;
-                    const listItem: HTMLElement | null = config.listingElement && config.listingElement.querySelector(".active");
-                    if (listItem) {
-                        this.onSelect(listItem);
-                    }
+                case 13:
+                    this.onEnterPress();
                     return;
-                }
 
                 case 38: // Up arrow
                     this.onArrowPress("up");
@@ -339,11 +334,28 @@ class SelectBoxInput implements TSubject {
                 case 188:
                     this.initialiseRelatedSearch(this.state.query);
                     return;
-                default:
+                default :
                     this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
                 }
             } else {
                 throw new Error("Event not happened Event Object Missing");
+            }
+        } catch (e) {
+            console.warn(e.message);
+        }
+    }
+
+    /**
+     * Handle the Enter key press and calls the onSelect method with the selected listing item
+     * @param target
+     * @returns { void }
+     */
+    public onEnterPress(): void{
+        try {
+            const { config } = this;
+            const listItem: HTMLElement | null = config.listingElement && config.listingElement.querySelector(".active");
+            if (listItem) {
+                this.onSelect(listItem);
             }
         } catch (e) {
             console.warn(e.message);
