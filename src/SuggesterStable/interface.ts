@@ -2,7 +2,7 @@ interface TData {
     id?: number;
     name?: string;
     displayTextEn: string;
-     textsuggest?: string;
+    textsuggest?: string;
 }
 
 interface TSubject {
@@ -42,11 +42,13 @@ interface TObserver {
 }
 interface TPayload {
     query: string;
-    category: any;
+    category: string;
     vertical?: string;
     source?: string;
     appId?: string;
     edge?: number;
+    locale?: string;
+    additionalfields?: string;
 }
 
 interface TSugOptions {
@@ -65,6 +67,7 @@ interface TSugOptions {
 }
 
 interface TSugConfig {
+    urls?: { [keys: string]: string };
     readonly source?: string | undefined;
     readonly category?: string | undefined;
     readonly maxSuggestions?: number | undefined;
@@ -72,7 +75,6 @@ interface TSugConfig {
     readonly edge?: number | undefined;
     readonly invoker?: string | undefined;
     readonly version?: string | undefined;
-    readonly urls?: { [keys: string]: string };
     readonly storageKey?: { [keys: string]: string };
     readonly appId?: number | undefined;
     readonly domId: string;
@@ -110,6 +112,7 @@ interface TResponse {
 }
 
 type TObject = Record<string, string>;
+type TLanguage = "EN" | "AR" | "SC";
 
 export {
     TData,
@@ -123,5 +126,6 @@ export {
     TSugOptions,
     TVersionResponse,
     TObject,
-    TSugConfig
+    TSugConfig,
+    TLanguage
 };
