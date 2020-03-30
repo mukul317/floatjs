@@ -308,17 +308,21 @@ class SelectBoxInput implements TSubject {
      */
     public onKeyUp(e: KeyboardEvent): void {
         try {
-            const which: number = e.which;
-            const target: HTMLInputElement | null = (e.target as HTMLInputElement);
-            this.detectLanguage();
-            this.setQueryToState(target, which);
-            switch (which) {
-            case 9: this.emulateEventOnListObserver("focusout"); break;
-            case 13: this.onEnterPress(); break;
-            case 38: this.onArrowPress("up"); break;
-            case 40 : this.onArrowPress("down"); break;
-            case 188 : this.initialiseRelatedSearch(this.state.query); break;
-            default : this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest()); break;
+            if (e) {
+                const which: number = e.which;
+                const target: HTMLInputElement | null = (e.target as HTMLInputElement);
+                this.detectLanguage();
+                this.setQueryToState(target, which);
+                switch (which) {
+                case 9: this.emulateEventOnListObserver("focusout"); break;
+                case 13: this.onEnterPress(); break;
+                case 38: this.onArrowPress("up"); break;
+                case 40 : this.onArrowPress("down"); break;
+                case 188 : this.initialiseRelatedSearch(this.state.query); break;
+                default : this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest()); break;
+                }
+            } else {
+                throw new Error("Event not happened Event Object Missing");
             }
         } catch (err) {
             console.warn(err.message);
@@ -326,7 +330,9 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * Makes selection on enter press
+     * Handle the Enter key press and calls the onSelect method with the selected listing item
+     * @param target
+     * @returns { void }
      */
     public onEnterPress(): void {
         try {
@@ -337,6 +343,7 @@ class SelectBoxInput implements TSubject {
             } else {
                 throw new Error("No active element in lisitng. Probably up/down arrow not pressed yet");
             }
+            
         } catch (err) {
             console.warn(err.message);
         }

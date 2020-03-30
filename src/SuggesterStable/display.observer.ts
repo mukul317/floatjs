@@ -40,10 +40,13 @@ class SelectDisplay implements TObserver {
 
     public appendMarkup(selectedHtml: Element): void {
         try {
-            const { displayElement } = this.subject.config;
+            const { displayElement, inputElement } = this.subject.config;
             if (displayElement) {
                 displayElement.innerHTML = "";
                 displayElement.appendChild(selectedHtml);
+            }
+            if (inputElement) {
+                inputElement.value = "";
             }
         } catch (err) {
             console.warn(err.message);
