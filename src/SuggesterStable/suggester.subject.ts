@@ -143,7 +143,7 @@ class SelectBoxInput implements TSubject {
                 config.listingElement.addEventListener("click", (e: MouseEvent) => {
                     const target: HTMLElement | null = (e.target as HTMLElement);
                     if (target) {
-                        this.onSelect(target);
+                        this.initSelection(target);
                     }
                 });
             } else {
@@ -187,12 +187,22 @@ class SelectBoxInput implements TSubject {
      * @param target
      * @returns { void }
      */
-    public onSelect(target: HTMLElement): void {
+    public initSelection(target: HTMLElement): void {
         try {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
-            if (selectedDisplayText) {
+            const translatedText: string = target.getAttribute("data-textsuggest") || "";
+            if (selectedDisplayText && this.config.selectLimit) {
                 this.sendRelatedSearchRequest(selectedDisplayText);
-                this.onAfterRCRequest(selectedDisplayText);
+                const isEligible: boolean = this.checkIfSelectionEligible(selectedDisplayText);
+                if (isEligible) {
+                    this.onLastSelection();
+                    this.addSelection(selectedDisplayText, translatedText);
+                    if (this.userLanguage === "AR") {
+                        this.emulateEventOnListObserver("focusout");
+                    }
+                } else {
+                    throw new Error("Selection is not eligible");
+                }
             }
         } catch (e) {
             console.warn(e.message);
@@ -335,7 +345,7 @@ class SelectBoxInput implements TSubject {
             const { config } = this;
             const listItem: HTMLElement | null = config.listingElement && config.listingElement.querySelector(".active");
             if (listItem) {
-                this.onSelect(listItem);
+                this.initSelection(listItem);
             } else {
                 throw new Error("No active element in lisitng. Probably up/down arrow not pressed yet");
             }
@@ -410,13 +420,19 @@ class SelectBoxInput implements TSubject {
                 const selectedDisplayText: string = query.split(",")[this.state.selection.length];
                 if (selectedDisplayText) {
                     this.sendRelatedSearchRequest(selectedDisplayText);
-                    this.onAfterRCRequest(selectedDisplayText);
+                    const isEligible: boolean = this.checkIfSelectionEligible(selectedDisplayText);
+                    if (isEligible) {
+                        this.onLastSelection();
+                        this.addSelection(selectedDisplayText);
+                    } else {
+                        throw new Error("Selection is not eligible");
+                    }
                 }
             } else {
                 throw new Error("Query not passed in the function");
             }
-        } catch (e) {
-            console.warn(e.message);
+        } catch (err) {
+            console.warn(err.message);
         }
     }
 
@@ -438,22 +454,22 @@ class SelectBoxInput implements TSubject {
      * @param selectedObj
      * @returns void
      */
-    public onAfterRCRequest(selectedObj: string): void {
-        try {
-            const { config } = this;
-            if (selectedObj && config.selectLimit) {
-                const isUpdateEligible: boolean = this.checkIfSelectionEligible(selectedObj);
-                if (isUpdateEligible) {
-                    this.onLastSelection();
-                    this.addSelection(selectedObj);
-                }
-            } else {
-                throw new Error();
-            }
-        } catch (e) {
-            throw console.warn("Error in selecting target in here" + e);
-        }
-    }
+    // public onAfterRCRequest(selectedObj: string): void {
+    //     try {
+    //         const { config } = this;
+    //         if (selectedObj && config.selectLimit) {
+    //             const isUpdateEligible: boolean =;
+    //             if (isUpdateEligible) {
+    //                 this.onLastSelection();
+    //                 this.addSelection(selectedObj);
+    //             }
+    //         } else {
+    //             throw new Error();
+    //         }
+    //     } catch (e) {
+    //         throw console.warn("Error in selecting target in here" + e);
+    //     }
+    // }
 
     public checkIfDuplicate(selectedObj: string): boolean {
         try {
@@ -726,7 +742,7 @@ class SelectBoxInput implements TSubject {
                 hasListUpdated: newData.hasListUpdated,
                 hasSelectionUpdated: newData.hasSelectionUpdated,
                 query: newData.query,
-                selectionAr: []
+                selectionAr: newData.selectionAr || []
             };
 
             this.notifyObservers();
@@ -819,7 +835,7 @@ class SelectBoxInput implements TSubject {
                 hasListUpdated: true,
                 list: [...newList],
                 selection: this.state.selection,
-                selectionAr: [],
+                selectionAr: this.state.selectionAr,
                 hasSelectionUpdated: false,
                 query: this.state.query
             };
@@ -862,15 +878,18 @@ class SelectBoxInput implements TSubject {
      * @param selectedObj {TData}
      * @returns {void}
      */
-    public addSelection(displayTextEn: string): void {
+    public addSelection(displayTextEn: string, translatedText: string = ""): void {
         try {
+            const getArSelection = (): string[] => {
+                return this.config.selectLimit === 1 ? [translatedText] : [...this.state.selectionAr, translatedText];
+            };
             const selection = this.config.selectLimit === 1 ? [displayTextEn] : [...this.state.selection, displayTextEn];
             const result: TState = {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
                 list: this.state.list,
                 selection,
-                selectionAr: [],
+                selectionAr: this.userLanguage === "AR" ? getArSelection() : [],
                 query: ""
             };
             this.setData(result);
