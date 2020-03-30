@@ -313,35 +313,19 @@ class SelectBoxInput implements TSubject {
                 const target: HTMLInputElement | null = (e.target as HTMLInputElement);
                 this.detectLanguage();
                 this.setQueryToState(target, which);
-
                 switch (which) {
-                case 9:
-                    this.emulateEventOnListObserver("focusout");
-                    return;
-
-                case 13:
-                    this.onEnterPress();
-                    return;
-
-                case 38: // Up arrow
-                    this.onArrowPress("up");
-                    return;
-
-                case 40: // Down arrow
-                    this.onArrowPress("down");
-                    return;
-
-                case 188:
-                    this.initialiseRelatedSearch(this.state.query);
-                    return;
-                default :
-                    this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
+                case 9: this.emulateEventOnListObserver("focusout"); break;
+                case 13: this.onEnterPress(); break;
+                case 38: this.onArrowPress("up"); break;
+                case 40 : this.onArrowPress("down"); break;
+                case 188 : this.initialiseRelatedSearch(this.state.query); break;
+                default : this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest()); break;
                 }
             } else {
                 throw new Error("Event not happened Event Object Missing");
             }
-        } catch (e) {
-            console.warn(e.message);
+        } catch (err) {
+            console.warn(err.message);
         }
     }
 
@@ -411,18 +395,17 @@ class SelectBoxInput implements TSubject {
                     debounceInterval
                 );
             });
-        } catch (e) {
-            // eslint-disable-next-line prefer-promise-reject-errors
-            return Promise.reject();
+        } catch (err) {
+            console.warn(err.message);
+            return Promise.reject(err.message);
         }
     }
 
     /**
- * Handles the comma being entered by the user in the query . This also sanitises the Query String.
- * @param query : {String}: Query being entered by the User in the Suggester Input feild
- * @param selectedObj : {TData}:Selected Object being Selected by clicking on the Listing element
- */
-
+     * Handles the comma being entered by the user in the query . This also sanitises the Query String.
+     * @param query : {String}: Query being entered by the User in the Suggester Input feild
+     * @param selectedObj : {TData}:Selected Object being Selected by clicking on the Listing element
+     */
     public initialiseRelatedSearch(query: string): void {
         try {
             if (query.length > 1) {
@@ -586,7 +569,7 @@ class SelectBoxInput implements TSubject {
                     item.name = item.displayTextEn;
                     const lowerItem = item.displayTextEn.toLowerCase();
                     const lowerQuery = query.toLowerCase();
-                    const includesSupported = (Array.prototype as any).includes !== undefined;
+                    const includesSupported = Array.prototype.includes !== undefined;
                     return includesSupported
                         ? lowerItem.includes(lowerQuery)
                         : lowerItem.indexOf(lowerQuery) !== -1;
