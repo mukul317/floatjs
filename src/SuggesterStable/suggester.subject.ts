@@ -190,13 +190,12 @@ class SelectBoxInput implements TSubject {
     public onSelect(target: HTMLElement): void {
         try {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
-            console.log("selected Display text", selectedDisplayText);
             if (selectedDisplayText) {
                 this.sendRelatedSearchRequest(selectedDisplayText);
                 this.onAfterRCRequest(selectedDisplayText);
             }
         } catch (e) {
-            console.error(e);
+            console.warn(e.message);
         }
     }
 
@@ -273,7 +272,7 @@ class SelectBoxInput implements TSubject {
                 throw new Error("Query not found that is to be sanitised");
             }
         } catch (e) {
-            console.log("Exception Occurred while Sanitising Query");
+            console.warn(e.message);
         }
         return "";
     }
@@ -347,7 +346,7 @@ class SelectBoxInput implements TSubject {
                 throw new Error("Event not happened Event Object Missing");
             }
         } catch (e) {
-            console.error("Error found: " + e);
+            console.warn(e.message);
         }
     }
 
@@ -373,7 +372,7 @@ class SelectBoxInput implements TSubject {
                 throw new Error("Query not found that is to be sanitised");
             }
         } catch (e) {
-            console.log("Exception Occurred while Sanitising Query");
+            console.warn(e.message);
         }
         return "";
     }
@@ -424,7 +423,7 @@ class SelectBoxInput implements TSubject {
                 throw new Error("Query not passed in the function");
             }
         } catch (e) {
-            console.log("Exception Occurred :" + e);
+            console.warn(e.message);
         }
     }
 
@@ -451,7 +450,6 @@ class SelectBoxInput implements TSubject {
             const { config } = this;
             if (selectedObj && config.selectLimit) {
                 const isUpdateEligible: boolean = this.checkIfSelectionEligible(selectedObj);
-                console.log("isUpdate eligible", isUpdateEligible);
                 if (isUpdateEligible) {
                     this.onLastSelection();
                     this.addSelection(selectedObj);
@@ -489,8 +487,6 @@ class SelectBoxInput implements TSubject {
                         ? { ...basePayload, locale: "ar_AR", additionalfields: "textsuggest" }
                         : basePayload;
 
-                    console.log("Payload", payload);
-
                     const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.autoComplete, payload);
                     this.handleApiResponse(
                         xhrPromise,
@@ -503,7 +499,7 @@ class SelectBoxInput implements TSubject {
                 throw new Error("Query is not passed into the function");
             }
         } catch (e) {
-            console.warn("Suggester Request function resulted in an issue", e);
+            console.warn(e.message);
         }
     }
 
@@ -533,7 +529,7 @@ class SelectBoxInput implements TSubject {
                 throw new Error("Config urls are not present for the related concepts");
             }
         } catch (e) {
-            console.error(e);
+            console.warn(e);
         }
     }
 
@@ -550,7 +546,6 @@ class SelectBoxInput implements TSubject {
             const category = config.category;
             if (query || category) {
                 const filteredList = this.filterListing(query);
-
                 const hasResults = filteredList.length !== 0;
                 this.updateListing(hasResults ? filteredList : this.dataSet);
                 this.setHeadingElement(listingType);
@@ -560,7 +555,7 @@ class SelectBoxInput implements TSubject {
                 throw new Error("param not found: query");
             }
         } catch (e) {
-            console.log("Error occurred while entering data into Listing:", e.message);
+            console.warn(e.message);
         }
     }
 
@@ -632,7 +627,7 @@ class SelectBoxInput implements TSubject {
                 throw new Error("Promise expected as parameter - Not Found");
             }
         } catch (e) {
-            console.error("Error occured in handle Response" + e);
+            console.warn(e.message);
         }
     }
 
@@ -701,7 +696,6 @@ class SelectBoxInput implements TSubject {
                     this.arrowCounter--;
                 }
             }
-            console.log(this.arrowCounter);
         } catch (err) {
             console.warn(err.message);
         }

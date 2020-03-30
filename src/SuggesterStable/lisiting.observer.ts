@@ -81,7 +81,7 @@ class Listing implements TObserver {
                 });
 
                 selection.forEach((selected) => {
-                    const checkedElement: HTMLInputElement | null = domList.querySelector(`[data-id="${selected.id}"] input`);
+                    const checkedElement: HTMLInputElement | null = domList.querySelector(`[data-displayTextEn="${selected}"] input`);
                     if (checkedElement) {
                         checkedElement.checked = true;
                     }
@@ -94,7 +94,6 @@ class Listing implements TObserver {
 
     public update(newData: TState): void {
         try {
-            console.log("new data", newData);
             if (newData.hasListUpdated) {
                 const list: HTMLElement = this.generateList(newData);
                 this.appendList(list);
