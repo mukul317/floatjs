@@ -64,7 +64,6 @@ class SelectDisplay implements TObserver {
                     this.appendMarkup(this.generateDisplayHtml(selection));
                     break;
                 }
-
                 console.info("[Notified]: Suggester Select Observer with UPDATE");
             }
         } catch (err) {
@@ -72,19 +71,15 @@ class SelectDisplay implements TObserver {
         }
     }
 
-    public generateDefaultDisplay(state: TState): void{
+    public generateDefaultDisplay(state: TState): void {
         try {
             const { selection, query } = state;
-            const selectionList: string[] = (selection as string[]);
-            let queryComplete: string;
-            if (selectionList.length > 0) {
-                queryComplete = selectionList.join(",") + "," + query;
-            } else {
-                queryComplete = query;
-            }
-            (this.subject.config.displayElement as HTMLInputElement).value = queryComplete;
-        } catch (e) {
-            console.warn("Error occurred while updating display : ", e);
+            const selectionLength: number = selection.length;
+            const selectionInString: string = selection.join(", ");
+            const completeSelectionString: string = selectionLength > 0 ? `${selectionInString}, ${query}` : query;
+            (this.subject.config.displayElement as HTMLInputElement).value = completeSelectionString;
+        } catch (err) {
+            console.warn(err.message);
         }
     }
 
