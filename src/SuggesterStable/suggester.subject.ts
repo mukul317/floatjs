@@ -279,12 +279,12 @@ class SelectBoxInput implements TSubject {
                 }
                 return "";
             } else {
-                throw new Error("Query not found that is to be sanitised");
+                throw new Error(`Received query: '${query}'. Returing as it is.`);
             }
-        } catch (e) {
-            console.warn(e.message);
+        } catch (err) {
+            console.warn(err.message);
+            return query;
         }
-        return "";
     }
 
     public setQueryToState(target: HTMLInputElement | null, keyCode: number): void {
@@ -322,14 +322,22 @@ class SelectBoxInput implements TSubject {
             const target: HTMLInputElement | null = (e.target as HTMLInputElement);
             this.detectLanguage();
             this.setQueryToState(target, which);
+            // if (this.state.query && this.state.query !== "") {
             switch (which) {
             case 9: this.emulateEventOnListObserver("focusout"); break;
             case 13: this.onEnterPress(); break;
             case 38: this.onArrowPress("up"); break;
             case 40: this.onArrowPress("down"); break;
             case 188: this.initialiseRelatedSearch(this.state.query); break;
-            default: this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest()); break;
+            default: {
+                const isQueryEmpty: boolean = this.state.query === "";
+                isQueryEmpty === false
+                    ? this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest())
+                    : this.emulateEventOnListObserver("focusout");
+                break;
             }
+            }
+            // }
         } catch (err) {
             console.warn(err.message);
         }
@@ -373,7 +381,7 @@ class SelectBoxInput implements TSubject {
                 const patr = new RegExp("[^a-zA-Z0-9,\\s" + config.specialCharactersAllowedList + "]", "g");
                 return query.replace(patr, "");
             } else {
-                throw new Error("Query not found that is to be sanitised");
+                throw new Error(`Received query '${query}' that can not be sanitized`);
             }
         } catch (e) {
             console.warn(e.message);
