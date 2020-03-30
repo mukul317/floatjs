@@ -1,4 +1,4 @@
-import { TSugConfig, TData, TState, TSubject, TObserver, TRecentSearchResponse, TSuggesterResponse, TResponse } from "./interface";
+import { TSugConfig, TData, TState, TSubject, TObserver, TRecentSearchResponse, TSuggesterResponse, TResponse, TLanguage, TPayload } from "./interface";
 import { Model } from "./suggester.model";
 interface TSetState extends TState {
     construct?: boolean;
@@ -67,6 +67,7 @@ class SelectBoxInput implements TSubject {
     public listObserverCollection: TObserver[] = [];
     public arrowCounter: number = -1;
     public modelInstance: Model | null = null;
+    private userLanguage: TLanguage = "EN";
 
     constructor(options: TSugConfig) {
         try {
@@ -217,9 +218,7 @@ class SelectBoxInput implements TSubject {
                 const isQueryEmpty: boolean = query === "";
                 const lastIndexOfSelection: number = this.state.selection.length - 1;
                 const lastSelectionDisplayText: string = lastIndexOfSelection >= 0 ? (this.state.selection as string[])[lastIndexOfSelection] : "";
-                console.log("lastSelectionDisplayText before", lastSelectionDisplayText, isQueryEmpty);
                 if (isQueryEmpty === true && lastSelectionDisplayText !== "") {
-                    console.log("lastSelectionDisplayText", lastSelectionDisplayText);
                     this.removeSelection(lastSelectionDisplayText);
                     this.emulateEventOnListObserver("focus");
                 }
@@ -232,27 +231,20 @@ class SelectBoxInput implements TSubject {
     /**
    * This method detects if text enetred is english,arabic or a special character
    * @access public
-   * @param query : Text entered in suggester
-   * @returns
-   * a)'EN' for English
-   * b)'AR' for Arabic
-   * c)'SC' for Special Character
+   * @param query
+   * @returns {TLanguage}
    *
    */
-    public detectLanguage (query: string): boolean | string| void {
+    public detectLanguage(): void {
         try {
-            if (!query) return "EN";
+            const { query } = this.state;
             const englishRegEx = /[A-Za-z0-9]/;
             // eslint-disable-next-line no-useless-escape
             const specialCharRegEx = /[\!\@\#\$\%\^\&\*\(\)\-\+\=\-\{\}\[\]\;\'\,\.\/\:\"\<\>\?\|\\\_]/;
-
-            return englishRegEx.test(query)
-                ? "EN"
-                : specialCharRegEx.test(query)
-                    ? "SC"
-                    : "AR";
-        } catch (e) {
-            console.warn("Exception occurred while Language detection", e);
+            this.userLanguage = englishRegEx.test(query) ? "EN" : specialCharRegEx.test(query) ? "SC" : "AR";
+        } catch (err) {
+            console.warn(err);
+            this.userLanguage = "EN";
         }
     }
 
@@ -269,7 +261,7 @@ class SelectBoxInput implements TSubject {
         try {
             if (query) {
                 const regex: RegExp = /\s*([^,]+$)/g;
-                const matches: RegExpExecArray| null = regex.exec(query);
+                const matches: RegExpExecArray | null = regex.exec(query);
                 if (!matches && keyCode === 188) {
                     return query;
                 }
@@ -290,8 +282,8 @@ class SelectBoxInput implements TSubject {
         try {
             if (target) {
                 const value: string = target.value;
-                const query = this.extractQuery(value, keyCode);
-                this.state.query = this.sanitiseQuery(query);
+                const query = this.extractQuery(value.trim(), keyCode);
+                this.state.query = this.userLanguage === "AR" ? query : this.sanitiseQuery(query);
             } else {
                 throw new Error(`Could not set query in state. target : ${target}, keyCode: ${keyCode}`);
             }
@@ -320,6 +312,7 @@ class SelectBoxInput implements TSubject {
             if (e) {
                 const which: number = e.which;
                 const target: HTMLInputElement | null = (e.target as HTMLInputElement);
+                this.detectLanguage();
                 this.setQueryToState(target, which);
 
                 switch (which) {
@@ -362,6 +355,7 @@ class SelectBoxInput implements TSubject {
      * Sanitises the String By removing Special Characters by matching with regex that is passed for
      * whitelisting the special characters as well. This custom characters whitelisting is being provided
      * by passing a specialcharacterallowedlist into the config.
+     *
      * @param query : {String}
      * @access public
      * @returns string
@@ -505,10 +499,18 @@ class SelectBoxInput implements TSubject {
             const category = config.category ? config.category : "top";
             if (query && this.modelInstance) {
                 if (this.config.urls && this.config.urls.autoComplete) {
-                    const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.autoComplete, {
+                    const basePayload: TPayload = {
                         query,
                         category
-                    });
+                    };
+
+                    const payload: TPayload = this.userLanguage === "AR"
+                        ? { ...basePayload, locale: "ar_AR", additionalfields: "textsuggest" }
+                        : basePayload;
+
+                    console.log("Payload", payload);
+
+                    const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.autoComplete, payload);
                     this.handleApiResponse(
                         xhrPromise,
                         "sug"
@@ -569,7 +571,6 @@ class SelectBoxInput implements TSubject {
                 const filteredList = this.filterListing(query);
 
                 const hasResults = filteredList.length !== 0;
-                this.state.query = query;
                 this.updateListing(hasResults ? filteredList : this.dataSet);
                 this.setHeadingElement(listingType);
                 this.arrowCounter = -1;
@@ -675,7 +676,7 @@ class SelectBoxInput implements TSubject {
         this.noResultElement.style.display = hasResults ? "none" : "block";
     }
 
-    public hideHeading(hasResults: boolean): void{
+    public hideHeading(hasResults: boolean): void {
         this.headingElement.style.display = hasResults ? "block" : "none";
     }
 
