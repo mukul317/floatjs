@@ -453,11 +453,9 @@ class SelectBoxInput implements TSubject {
                 const isUpdateEligible: boolean = this.checkIfSelectionEligible(selectedObj);
                 console.log("isUpdate eligible", isUpdateEligible);
                 if (isUpdateEligible) {
-                    // this.removeSelectionString(selectedObj);
                     this.onLastSelection();
                     this.addSelection(selectedObj);
                 }
-                // this.setQueryInInputFeild();
             } else {
                 throw new Error();
             }
@@ -472,23 +470,6 @@ class SelectBoxInput implements TSubject {
         } catch (e) {
             console.warn("some error in checking duplicated:", e);
             return false;
-        }
-    }
-
-    /**
-     * This empties the input feilds values
-     * @returns{void}
-     */
-    public setQueryInInputFeild(): void {
-        try {
-            if (this.config.inputElement) {
-                console.log("setting query in input feild", this.state);
-                this.config.inputElement.value = this.state.query ? this.state.query : "";
-            } else {
-                throw new Error("Input Element not being set");
-            }
-        } catch (e) {
-            console.error("Emptying input feilds");
         }
     }
 
@@ -897,31 +878,6 @@ class SelectBoxInput implements TSubject {
     public addSelection(displayTextEn: string): void {
         try {
             const selection = this.config.selectLimit === 1 ? [displayTextEn] : [...this.state.selection, displayTextEn];
-            const result: TState = {
-                hasListUpdated: false,
-                hasSelectionUpdated: true,
-                list: this.state.list,
-                selection,
-                selectionAr: [],
-                query: ""
-            };
-            this.setData(result);
-        } catch (err) {
-            console.warn(err.message);
-        }
-    }
-
-    /**
-     * Adds new item in the droope by mutating the state object.
-     * Every addition shall be driven by this function acting as a developer API
-     *
-     * @access public
-     * @param selectedObj {TData}
-     * @returns {void}
-     */
-    public addSelectionString(displayTextEn: string): void {
-        try {
-            const selection = this.config.selectLimit === 1 ? [displayTextEn] : [...(this.state.selection as string[]), displayTextEn];
             const result: TState = {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
