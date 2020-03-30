@@ -28,7 +28,7 @@ interface TDroopeConfig {
     readonly domId: string;
     readonly inputElement: HTMLInputElement | null;
     readonly lisitingElement: HTMLElement | null;
-    readonly displayElement: HTMLElement | null;
+    readonly displayElement: HTMLElement | NodeList | null;
     readonly selectLimit?: number;
     readonly displayListOnFocus?: boolean;
     readonly displayDecorationList?: string[];

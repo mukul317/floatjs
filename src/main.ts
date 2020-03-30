@@ -6,7 +6,7 @@ import "./Suggester";
 ((): void => {
     const inputElement: HTMLInputElement | null = document.querySelector(".select-box-input");
     const lisitingElement: HTMLElement | null = document.querySelector(".select-box-listing");
-    const displayElement: HTMLElement | null = document.querySelector(".select-box-display");
+    const displayElement: NodeList | null = document.querySelectorAll(".select-box-display");
     if (inputElement && lisitingElement && displayElement) {
         const options: TDroopeConfig = {
             domId: "demoDroope",

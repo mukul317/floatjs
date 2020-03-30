@@ -160,6 +160,16 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Callback for keyUp event attached to the droope input field
+     * case 9   : Handles the Listing Display State and sets to blur
+     * case 13  : Enter
+     * case 38  : Up Arrow
+     * case 40  : Down Arrow
+     *
+     * @param e : KeyBoardEvent
+     * @returns {void}
+     */
     public onKeyUp(e: KeyboardEvent): void {
         try {
             const query: string = e && e.target && (e.target as HTMLInputElement).value ? (e.target as HTMLInputElement).value.trim() : "";
