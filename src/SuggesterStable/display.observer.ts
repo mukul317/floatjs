@@ -9,7 +9,7 @@ class SelectDisplay implements TObserver {
         this.subject.registerObserver(this);
         this.view = document.createElement("UL");
 
-        if (this.subject.config.tagSelectedValues) {
+        if (this.subject.config.displayBehaviour === "tag") {
             this.onCrossClick();
         }
     }
@@ -18,19 +18,18 @@ class SelectDisplay implements TObserver {
         try {
             /** @todo: Object vs DOM difffing */
             this.view.innerHTML = "";
-            const { tagSelectedValues } = this.subject.config;
+            const { displayBehaviour } = this.subject.config;
             selectedValues.forEach((item: string) => {
-                if (tagSelectedValues) {
-                    const listItem: HTMLElement = document.createElement("LI");
-                    // this.config.displayEle.value = [].join(",")
-                    listItem.textContent = item || "";
-                    listItem.classList.add("selection-item");
-                    listItem.setAttribute("data-displayTextEn", JSON.stringify(item));
-                    if (tagSelectedValues) {
-                        this.tagDecorator(listItem);
-                    }
-                    this.view.appendChild(listItem);
+                const listItem: HTMLElement = document.createElement("LI");
+                listItem.textContent = item || "";
+                listItem.classList.add("selection-item");
+                listItem.setAttribute("data-displayTextEn", JSON.stringify(item));
+                switch (displayBehaviour) {
+                case "tag":
+                    this.tagDecorator(listItem);
+                    break;
                 }
+                this.view.appendChild(listItem);
             });
             return this.view;
         } catch (err) {
@@ -46,7 +45,7 @@ class SelectDisplay implements TObserver {
                 displayElement.innerHTML = "";
                 displayElement.appendChild(selectedHtml);
             } else if (displayElement && displayElement.nodeName === "INPUT") {
-                console.log("selected HTml text", selectedHtml);
+                console.log("selected Html text", selectedHtml);
             }
         } catch (err) {
             console.log(err.message);
@@ -57,13 +56,15 @@ class SelectDisplay implements TObserver {
         try {
             const { selection, hasSelectionUpdated } = state;
 
-            const { tagSelectedValues } = this.subject.config;
+            const { displayBehaviour } = this.subject.config;
             if (hasSelectionUpdated === true) {
-                if (tagSelectedValues) {
-                    const selectedHtml: HTMLElement = this.generateDisplayHtml(selection);
-                    this.appendMarkup(selectedHtml);
-                } else {
+                switch (displayBehaviour) {
+                case "default":
                     this.generateDefaultDisplay(state);
+                    break;
+                default:
+                    this.appendMarkup(this.generateDisplayHtml(selection));
+                    break;
                 }
 
                 console.info("[Notified]: Suggester Select Observer with UPDATE");

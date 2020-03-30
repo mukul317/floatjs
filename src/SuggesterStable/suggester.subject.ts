@@ -33,7 +33,7 @@ const defaultConfig: TSugConfig = {
     displayListOnFocus: true,
     displayDecorationList: ["chips"],
     noResultErrorMessage: "No result for your query",
-    tagSelectedValues: false,
+    displayBehaviour: "default",
     specialCharactersAllowedList: [],
     sanitiseString: false,
     checkboxes: true,
@@ -147,7 +147,7 @@ class SelectBoxInput implements TSubject {
                     }
                 });
             } else {
-                throw new Error("Droope list element undefined");
+                throw new Error("Suggester list element undefined");
             }
         } catch (err) {
             console.warn(err.message);
@@ -211,7 +211,7 @@ class SelectBoxInput implements TSubject {
         try {
             if (e.which === 8) {
                 const { config } = this;
-                if (config.inputElement && config.tagSelectedValues === false) {
+                if (config.inputElement && config.displayBehaviour === "default") {
                     this.state.query = this.extractQuery(config.inputElement.value, 8);
                 }
                 const query = this.state.query;
@@ -712,7 +712,7 @@ class SelectBoxInput implements TSubject {
      * Fn `notifyObservers` can be invoked directly. However, `setData` acts as a controller
      * to manipulate state before notifying observers.
      *
-     * It is also responsible for constructing the droope after every observer is registered.
+     * It is also responsible for constructing the suggester after every observer is registered.
      * It consumes addtional parameter in `TSetState` i.e. `construct: {boolean}`
      * that notifies the oberveres for the first time. 'construct` param is primarily required
      * to populate `List Observer`.
@@ -795,7 +795,7 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * replaces old list elements in the droope by mutating the state object.
+     * replaces old list elements in the suggester by mutating the state object.
      * Every replacement in listing shall be driven by this function acting as a developer API
      *
      * @access public
@@ -819,7 +819,7 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * Adds new list elemts in the droope by mutating the state object.
+     * Adds new list elemts in the suggester by mutating the state object.
      * Every addition in listing shall be driven by this function acting as a developer API
      *
      * @access public
@@ -843,7 +843,7 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * Removes an item from the droope by mutating the state object.
+     * Removes an item from the suggester by mutating the state object.
      * Every removal shall be driven by this function acting as a developer API
      *
      * @access public
@@ -868,7 +868,7 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * Adds new item in the droope by mutating the state object.
+     * Adds new item in the suggester by mutating the state object.
      * Every addition shall be driven by this function acting as a developer API
      *
      * @access public
@@ -931,9 +931,9 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * Devloper's API to access full internal state of Droope i.e including `LIST`.
+     * Devloper's API to access full internal state of suggester i.e including `LIST`.
      * For individual access to state properties like selection. Recommended way is to
-     * access `DroopeInstance.state.selection`
+     * access `SuggesterInstance.state.selection`
      *
      * @access public
      * @returns {TState | null}

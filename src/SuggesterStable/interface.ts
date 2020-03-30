@@ -86,12 +86,11 @@ interface TSugConfig {
     readonly displayListOnFocus?: boolean;
     readonly displayDecorationList?: string[];
     readonly noResultErrorMessage?: string;
-    readonly tagSelectedValues: boolean;
+    readonly displayBehaviour?: string;
     readonly listLimit?: number;
     readonly checkboxes?: boolean;
     readonly sanitiseString?: boolean;
     readonly isPrefetch?: boolean;
-    readonly displayListStyle?: string;
     readonly isRelatedConceptsSupported?: boolean;
     readonly suggesterHeadingElementText?: string | null;
     readonly relatedConceptsHeadingElementText?: string | null;
