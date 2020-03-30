@@ -46,10 +46,19 @@ import Suggester from "./SuggesterStable";
             checkboxes: false,
             sanitiseString: false,
             specialCharactersAllowedList: [";"],
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            relatedConcept_dataLayer: true,
             source: "server",
             category: "top",
             maxSuggestions: 15,
-            edge: 0
+            edge: 0,
+            placeholder: false,
+            trackUserInteraction: false, // to track user Interaction
+            grouping: true,
+            isPrefetch: true,
+            relatedConceptsLimit: 5,
+            doneTypingInterval: 500,
+            defaultPrefetchLookup: true
         };
         const SuggesterInstance = Suggester(options, suggesterData);
         console.log("Suggester", SuggesterInstance);

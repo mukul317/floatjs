@@ -91,11 +91,18 @@ interface TSugConfig {
     readonly startSearchAfter?: number;
     readonly checkboxes?: boolean;
     readonly sanitiseString?: boolean;
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    readonly relatedConcept_dataLayer?: boolean;
     readonly isPrefetch?: boolean;
     readonly isRelatedConceptsSupported?: boolean;
     readonly suggesterHeadingElementText?: string | null;
-    readonly relatedConceptsHeadingElementText?: string | null;
-    readonly debounceTimeout?: number;
+    readonly relatedConceptText?: string | null;
+    readonly doneTypingInterval?: number;
+    readonly placeholder?: boolean;
+    readonly trackUserInteraction: boolean; // to track user Interaction
+    readonly grouping?: boolean;
+    readonly relatedConceptsLimit: number;
+    readonly defaultPrefetchLookup: boolean;
 }
 interface TSuggesterResponse extends TResponse {
     resultList: any;

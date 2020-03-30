@@ -38,9 +38,17 @@ const defaultConfig: TSugConfig = {
     specialCharactersAllowedList: [],
     sanitiseString: false,
     checkboxes: true,
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    relatedConcept_dataLayer: true,
+    placeholder: false,
+    trackUserInteraction: false, // to track user Interaction
+    grouping: true,
+    isPrefetch: true,
+    relatedConceptsLimit: 5,
     suggesterHeadingElementText: "Suggestions",
-    relatedConceptsHeadingElementText: "Related Concepts",
-    debounceTimeout: 500
+    relatedConceptText: "Related Concepts",
+    doneTypingInterval: 500,
+    defaultPrefetchLookup: true
 };
 
 class SelectBoxInput implements TSubject {
@@ -69,6 +77,7 @@ class SelectBoxInput implements TSubject {
     public arrowCounter: number = -1;
     public modelInstance: Model | null = null;
     private userLanguage: TLanguage = "EN";
+    private recentSelectCount: number = 0;
 
     constructor(options: TSugConfig) {
         try {
@@ -111,7 +120,7 @@ class SelectBoxInput implements TSubject {
                 switch (listingType) {
                 case "rc":
                     this.headingElement.style.display = "block";
-                    this.headingElement.innerHTML = config.relatedConceptsHeadingElementText ? config.relatedConceptsHeadingElementText : "Related Concepts";
+                    this.headingElement.innerHTML = config.relatedConceptText ? config.relatedConceptText : "Related Concepts";
                     break;
                 case "sug":
                     this.headingElement.style.display = "block";
@@ -201,8 +210,9 @@ class SelectBoxInput implements TSubject {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
             const translatedText: string = target.getAttribute("data-textsuggest") || "";
             if (selectedDisplayText && this.config.selectLimit) {
-                this.sendRelatedSearchRequest(selectedDisplayText);
+                if (this.recentSelectCount < this.config.relatedConceptsLimit) { this.sendRelatedSearchRequest(selectedDisplayText); this.recentSelectCount++; } else { this.emulateEventOnListObserver("focusout"); }
                 const isEligible: boolean = this.checkIfSelectionEligible(selectedDisplayText);
+                console.log("is  Eligible", isEligible);
                 if (isEligible) {
                     this.onLastSelection();
                     this.addSelection(selectedDisplayText, translatedText);
@@ -338,7 +348,7 @@ class SelectBoxInput implements TSubject {
             case 38: this.onArrowPress("up"); break;
             case 40: this.onArrowPress("down"); break;
             case 188: this.initialiseRelatedSearch(this.state.query); break;
-            default: this.debounceRequest(this.config.debounceTimeout).then((result) => { if (result) { this.sendSuggesterRequest(); } }); break;
+            default: this.debounceRequest(this.config.doneTypingInterval).then((result) => { if (result) { this.sendSuggesterRequest(); } }); break;
             }
         } catch (err) {
             console.warn(err.message);
@@ -435,7 +445,7 @@ class SelectBoxInput implements TSubject {
      */
     public initialiseRelatedSearch(query: string): void {
         try {
-            if (query.length > 1) {
+            if (query.length > 1 && this.config.relatedConcept_dataLayer) {
                 const selectedDisplayText: string = query.split(",")[this.state.selection.length];
                 if (selectedDisplayText) {
                     this.sendRelatedSearchRequest(selectedDisplayText);
@@ -448,7 +458,7 @@ class SelectBoxInput implements TSubject {
                     }
                 }
             } else {
-                throw new Error("Query not passed in the function");
+                throw new Error("Query not passed in the function Or Related Search is not activates in the config");
             }
         } catch (err) {
             console.warn(err.message);
