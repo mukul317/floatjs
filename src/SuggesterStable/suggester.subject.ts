@@ -14,7 +14,7 @@ const defaultConfig: TSugConfig = {
         trackingURL: "http://suggest.naukrigulf.com/suggestlg.naukrigulf.com/logger/log?invoker=ng&"
     },
     category: "top",
-    appId: 2050,
+    appId: 205,
     version: "1.2.0",
     source: "server",
     maxSuggestions: 15,
@@ -247,7 +247,7 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-   * This method detects if text enetred is english,arabic or a special character
+   * This method detects if text entered is english,arabic or a special character
    * @access public
    * @param query
    * @returns {TLanguage}
@@ -338,7 +338,7 @@ class SelectBoxInput implements TSubject {
             case 38: this.onArrowPress("up"); break;
             case 40: this.onArrowPress("down"); break;
             case 188: this.initialiseRelatedSearch(this.state.query); break;
-            default: this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest()); break;
+            default: this.debounceRequest(this.config.debounceTimeout).then((result) => { if (result) { this.sendSuggesterRequest(); } }); break;
             }
         } catch (err) {
             console.warn(err.message);
@@ -404,7 +404,7 @@ class SelectBoxInput implements TSubject {
      * @returns Promise<void>
      */
 
-    public debounceRequest(debounceInterval: number = 0): Promise<void> {
+    public debounceRequest(debounceInterval: number = 0): Promise<boolean> {
         try {
             const { config } = this;
             const { query } = this.state;
@@ -414,12 +414,13 @@ class SelectBoxInput implements TSubject {
                 }
                 return new Promise((resolve: Function): void => {
                     this.debounceTimer = setTimeout(
-                        (): void => resolve(),
+                        (): void => resolve(true),
                         debounceInterval
                     );
                 });
             } else {
-                throw new Error("Query length is less than the startSerachAfter config param");
+                console.warn("Query length is less than the startSerachAfter config param");
+                return Promise.resolve(false);
             }
         } catch (err) {
             console.warn(err.message);
@@ -519,7 +520,7 @@ class SelectBoxInput implements TSubject {
     public sendRelatedSearchRequest(selectedObject: string): void {
         try {
             if (this.config.urls && this.config.urls.relatedConcept && this.modelInstance && selectedObject) {
-                const query = selectedObject.toLowerCase();
+                const query = selectedObject.toLowerCase().trim();
                 const category = "top";
                 const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.relatedConcept, {
                     query,
