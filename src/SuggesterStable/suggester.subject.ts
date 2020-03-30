@@ -579,7 +579,7 @@ class SelectBoxInput implements TSubject {
                     item.name = item.displayTextEn;
                     const lowerItem = item.displayTextEn.toLowerCase();
                     const lowerQuery = query.toLowerCase();
-                    const includesSupported = (Array.prototype as any).includes !== undefined;
+                    const includesSupported = Array.prototype.includes !== undefined;
                     return includesSupported
                         ? lowerItem.includes(lowerQuery)
                         : lowerItem.indexOf(lowerQuery) !== -1;
