@@ -68,7 +68,7 @@ interface TSugOptions {
 }
 
 interface TSugConfig {
-    urls: { [keys: string]: string };
+    urls?: { [keys: string]: string };
     readonly source?: string | undefined;
     readonly category?: string | undefined;
     readonly maxSuggestions?: number | undefined;
@@ -76,7 +76,7 @@ interface TSugConfig {
     readonly edge?: number | undefined;
     readonly invoker?: string | undefined;
     readonly version?: string | undefined;
-    readonly storageKey: { [keys: string]: string };
+    readonly storageKey?: { [keys: string]: string };
     readonly keywords?: string;
     readonly appId?: number | undefined;
     readonly domId: string;
@@ -100,12 +100,12 @@ interface TSugConfig {
     readonly relatedConceptText?: string | null;
     readonly debounceTimeout?: number;
     readonly placeholder?: boolean;
-    readonly trackUserInteraction: boolean; // to track user Interaction
-    vertical: string;
-    relatedConceptCategory: string;
+    readonly trackUserInteraction?: boolean; // to track user Interaction
+    vertical?: string;
+    relatedConceptCategory?: string;
     readonly grouping?: boolean;
-    readonly relatedConceptsLimit: number;
-    readonly defaultPrefetchLookup: boolean;
+    readonly relatedConceptsLimit?: number;
+    readonly defaultPrefetchLookup?: boolean;
 }
 interface TSuggesterResponse extends TResponse {
     resultList: any;

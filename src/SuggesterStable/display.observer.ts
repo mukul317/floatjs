@@ -79,7 +79,7 @@ class SelectDisplay implements TObserver {
             const { selection, query } = state;
             const selectionLength: number = selection.length;
             const selectionInString: string = selection.join(", ");
-            const completeSelectionString: string = selectionLength > 0 ? `${selectionInString}, ${query}` : `${query}, `;
+            const completeSelectionString: string = selectionLength > 0 ? query ? `${selectionInString}, ${query},` : `${selectionInString}, ${query}` : query ? `${query}, ` : "";
             (this.subject.config.displayElement as HTMLInputElement).value = completeSelectionString;
         } catch (err) {
             console.warn(err.message);

@@ -100,12 +100,12 @@ class SelectBoxInput implements TSubject {
     public initiatePrefetchingSuggesterSuggestions(params: TSugConfig): void {
         try {
             const { config } = this;
-            if (config.isPrefetch) {
+            if (config.isPrefetch && config.urls) {
                 const url = config.urls.prefetch + Math.random();
                 this.fetchVersion().then((response: TVersionResponse): void => {
-                    Model.setInStorage(config.storageKey.versionKey, response);
+                    Model.setInStorage(config.storageKey ? config.storageKey.versionKey : "", response);
 
-                    const prefetchedData = Model.getFromStorage(config.storageKey.prefetchKey);
+                    const prefetchedData = Model.getFromStorage(config.storageKey ? config.storageKey.prefetchKey : "");
                     // todo:logic for when to fetch next
                     if (prefetchedData) {
                         /**
@@ -118,7 +118,7 @@ class SelectBoxInput implements TSubject {
                         }
                     } else {
                         this.modelInstance.sendXhr(url + "?segments=''", null).then(function (resp) {
-                            Model.setInStorage(config.storageKey.prefetchKey, resp);
+                            Model.setInStorage(config.storageKey ? config.storageKey.prefetchKey : "", resp);
                         });
                     }
                 });
@@ -140,7 +140,7 @@ class SelectBoxInput implements TSubject {
      */
     private fetchVersion = (): Promise<TResponse> => {
         const { config } = this;
-        const url = config.urls.checkVersion + Math.random() + "&";
+        const url = config.urls ? config.urls.checkVersion + Math.random() + "&" : "";
         return this.modelInstance.sendXhr(url, null);
     };
 
@@ -150,9 +150,11 @@ class SelectBoxInput implements TSubject {
     private fetchKeywordBasedData = (prefetchedData: TObject): void => {
         try {
             const { config } = this;
-            this.modelInstance.sendXhr(config.urls.prefetch + "segments=" + prefetchedData.segments, null).then((rData) => {
-                Model.setInStorage(config.storageKey.prefetchKey, this.mergeData(prefetchedData, rData));
-            });
+            if (config.urls) {
+                this.modelInstance.sendXhr(config.urls.prefetch + "segments=" + prefetchedData.segments, null).then((rData) => {
+                    Model.setInStorage(config.storageKey ? config.storageKey.prefetchKey : "", this.mergeData(prefetchedData, rData));
+                });
+            }
         } catch (e) {
             console.warn(e.message);
         }
@@ -182,7 +184,7 @@ class SelectBoxInput implements TSubject {
             }
             for (const key in newRC) {
                 for (const k in newRC[key]) {
-                    if (rcCategory[(k as any)]) {
+                    if (rcCategory && rcCategory[(k as any)]) {
                         const premKey = k + "_" + config.vertical;
                         newRC[key][premKey] = newRC[key][k];
                         delete newRC[key][k];
@@ -251,7 +253,7 @@ class SelectBoxInput implements TSubject {
         try {
             const { config } = this;
             if (config.inputElement) {
-                config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e));
+                config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e, false));
                 config.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
                 if (config.displayListOnFocus === true) {
                     document.addEventListener("click", (e) => this.handleDocumentBlur(e));
@@ -322,7 +324,7 @@ class SelectBoxInput implements TSubject {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
             const translatedText: string = target.getAttribute("data-textsuggest") || "";
             if (selectedDisplayText && this.config.selectLimit) {
-                if (this.recentSelectCount < this.config.relatedConceptsLimit) { this.sendRelatedSearchRequest(selectedDisplayText); this.recentSelectCount++; } else { this.emulateEventOnListObserver("focusout"); }
+                if (this.config.relatedConceptsLimit && this.recentSelectCount < this.config.relatedConceptsLimit) { this.sendRelatedSearchRequest(selectedDisplayText); this.recentSelectCount++; } else { this.emulateEventOnListObserver("focusout"); }
                 const isEligible: boolean = this.checkIfSelectionEligible(selectedDisplayText);
                 console.log("is  Eligible", isEligible);
                 if (isEligible) {
@@ -347,22 +349,23 @@ class SelectBoxInput implements TSubject {
      * @param e : keyboardEvent
      * @returns void
      */
-    public onBackspace(e: KeyboardEvent): void {
+    public onBackspace(e: KeyboardEvent, keyUpBoolean: boolean): void {
         try {
             if (e.which === 8) {
                 const { config } = this;
-                if (config.inputElement && config.displayBehaviour === "default") {
+                if (config.inputElement && config.displayBehaviour === "default" && !keyUpBoolean) {
                     this.setQueryToState(config.inputElement, 8);
                 }
-                const query = this.state.query;
-                const isQueryEmpty: boolean = query === "";
-                const lastIndexOfSelection: number = this.state.selection.length - 1;
-                const lastSelectionDisplayText: string = lastIndexOfSelection >= 0 ? (this.state.selection as string[])[lastIndexOfSelection] : "";
 
-                if (isQueryEmpty === true && lastSelectionDisplayText !== "") {
-                    this.removeSelection(lastSelectionDisplayText);
-                    this.emulateEventOnListObserver("focus");
-                    console.log(query, this.state.selection);
+                if (keyUpBoolean) {
+                    const query = this.state.query;
+                    const isQueryEmpty: boolean = query === "";
+                    const lastIndexOfSelection: number = this.state.selection.length - 1;
+                    const lastSelectionDisplayText: string = lastIndexOfSelection >= 0 ? (this.state.selection as string[])[lastIndexOfSelection] : "";
+                    if (isQueryEmpty === true && lastSelectionDisplayText !== "") {
+                        this.removeSelection(lastSelectionDisplayText);
+                        this.emulateEventOnListObserver("focus");
+                    }
                 }
             }
         } catch (err) {
@@ -424,9 +427,12 @@ class SelectBoxInput implements TSubject {
         try {
             if (target) {
                 const value: string = target.value;
-                const query = this.extractQuery(value.trim(), keyCode);
-                this.emulateEventOnListObserver(!query ? "focusout" : "focus");
-                this.state.query = this.userLanguage === "AR" ? query : this.sanitiseQuery(query);
+                console.log("input feild value", value);
+                if (value.trim() === "") { this.removeSelection("all"); } else {
+                    const query = this.extractQuery(value.trim(), keyCode);
+                    this.emulateEventOnListObserver(!query ? "focusout" : "focus");
+                    this.state.query = this.userLanguage === "AR" ? query : this.sanitiseQuery(query);
+                }
             } else {
                 throw new Error(`Could not set query in state. target : ${target}, keyCode: ${keyCode}`);
             }
@@ -458,7 +464,7 @@ class SelectBoxInput implements TSubject {
             this.setQueryToState(target, which);
             console.log("keyup");
             switch (which) {
-            case 8: break;
+            case 8: this.onBackspace(e, true); break;
             case 9: this.emulateEventOnListObserver("focusout"); break;
             case 13: this.onEnterPress(); break;
             case 38: this.onArrowPress("up"); break;
@@ -980,7 +986,7 @@ class SelectBoxInput implements TSubject {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
                 list: this.state.list,
-                query: (this.state.selection as string[]).splice(this.state.selection.indexOf(displayTextEn), 1)[0],
+                query: displayTextEn === "all" ? "" : this.state.selection.length > 0 ? (this.state.selection as string[]).splice(this.state.selection.indexOf(displayTextEn), 1)[0] : "",
                 selection: displayTextEn === "all" ? [] : this.state.selection,
                 selectionAr: []
             };
