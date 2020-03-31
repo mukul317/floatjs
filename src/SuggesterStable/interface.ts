@@ -20,7 +20,7 @@ interface TSubject {
     setData(data: TState): void;
 }
 
-interface TVersionResponse {
+interface TVersionResponse extends TResponse {
     "suggester_v": string;
     "prefetch_v": string;
     "autocorrect_v": string;
@@ -68,7 +68,7 @@ interface TSugOptions {
 }
 
 interface TSugConfig {
-    urls?: { [keys: string]: string };
+    urls: { [keys: string]: string };
     readonly source?: string | undefined;
     readonly category?: string | undefined;
     readonly maxSuggestions?: number | undefined;
@@ -76,7 +76,8 @@ interface TSugConfig {
     readonly edge?: number | undefined;
     readonly invoker?: string | undefined;
     readonly version?: string | undefined;
-    readonly storageKey?: { [keys: string]: string };
+    readonly storageKey: { [keys: string]: string };
+    readonly keywords?: string;
     readonly appId?: number | undefined;
     readonly domId: string;
     readonly inputElement: HTMLInputElement | null;
@@ -88,13 +89,23 @@ interface TSugConfig {
     readonly noResultErrorMessage?: string;
     readonly displayBehaviour?: string;
     readonly listLimit?: number;
+    readonly startSearchAfter?: number;
     readonly checkboxes?: boolean;
     readonly sanitiseString?: boolean;
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    readonly relatedConcept_dataLayer?: boolean;
     readonly isPrefetch?: boolean;
     readonly isRelatedConceptsSupported?: boolean;
     readonly suggesterHeadingElementText?: string | null;
-    readonly relatedConceptsHeadingElementText?: string | null;
-    readonly debounceTimeout?: number;
+    readonly relatedConceptText?: string | null;
+    readonly doneTypingInterval?: number;
+    readonly placeholder?: boolean;
+    readonly trackUserInteraction: boolean; // to track user Interaction
+    vertical: string;
+    relatedConceptCategory: string;
+    readonly grouping?: boolean;
+    readonly relatedConceptsLimit: number;
+    readonly defaultPrefetchLookup: boolean;
 }
 interface TSuggesterResponse extends TResponse {
     resultList: any;
@@ -106,6 +117,10 @@ interface TRecentSearchResponse extends TResponse {
 
 interface TResponse {
     [key: string]: any;
+    "suggester_v": string;
+    "prefetch_v": string;
+    "autocorrect_v": string;
+    "relatedconcepts_v": string;
     resultConcepts: any;
     resultList: any;
 }

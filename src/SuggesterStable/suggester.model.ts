@@ -1,9 +1,11 @@
 import { TPayload, TResponse, TSugConfig } from "./interface";
+import { CacheFactory, TLocalStorageCacheStorage } from "../Storage/CacheFactory";
 
 class Model {
     private appId: number = 0;
     private maxSuggestions: number = 0;
     private prefetch: string = "";
+    private static sugCache: TLocalStorageCacheStorage | null = CacheFactory.getCache("sgtr");
 
     constructor(config: TSugConfig) {
         try {
@@ -62,11 +64,19 @@ class Model {
         });
     }
 
-    public prefetchData = () => {
+    public prefetchData = (): void => {
         const url = this.prefetch + Math.random();
         this.sendXhr(url, null).then(function () {
             // set response in LS
         });
+    }
+
+    public static setInStorage(key: string, value: Record<string, any>): void {
+        this.sugCache && this.sugCache.setItem(key, value, null);
+    }
+
+    public static getFromStorage(key: string): Record<string, any> | null {
+        return this.sugCache && this.sugCache.getItem(key);
     }
 }
 
