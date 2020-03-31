@@ -98,7 +98,7 @@ interface TSugConfig {
     readonly isRelatedConceptsSupported?: boolean;
     readonly suggesterHeadingElementText?: string | null;
     readonly relatedConceptText?: string | null;
-    readonly doneTypingInterval?: number;
+    readonly debounceTimeout?: number;
     readonly placeholder?: boolean;
     readonly trackUserInteraction: boolean; // to track user Interaction
     vertical: string;

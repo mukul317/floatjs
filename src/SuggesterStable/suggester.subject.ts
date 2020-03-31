@@ -47,7 +47,7 @@ const defaultConfig: TSugConfig = {
     relatedConceptsLimit: 5,
     suggesterHeadingElementText: "Suggestions",
     relatedConceptText: "Related Concepts",
-    doneTypingInterval: 500,
+    debounceTimeout: 100,
     defaultPrefetchLookup: true,
     vertical: "",
     relatedConceptCategory: "top"
@@ -352,15 +352,17 @@ class SelectBoxInput implements TSubject {
             if (e.which === 8) {
                 const { config } = this;
                 if (config.inputElement && config.displayBehaviour === "default") {
-                    this.state.query = this.extractQuery(config.inputElement.value, 8);
+                    this.setQueryToState(config.inputElement, 8);
                 }
                 const query = this.state.query;
                 const isQueryEmpty: boolean = query === "";
                 const lastIndexOfSelection: number = this.state.selection.length - 1;
                 const lastSelectionDisplayText: string = lastIndexOfSelection >= 0 ? (this.state.selection as string[])[lastIndexOfSelection] : "";
+
                 if (isQueryEmpty === true && lastSelectionDisplayText !== "") {
                     this.removeSelection(lastSelectionDisplayText);
                     this.emulateEventOnListObserver("focus");
+                    console.log(query, this.state.selection);
                 }
             }
         } catch (err) {
@@ -454,13 +456,21 @@ class SelectBoxInput implements TSubject {
             const target: HTMLInputElement | null = (e.target as HTMLInputElement);
             this.detectLanguage();
             this.setQueryToState(target, which);
+            console.log("keyup");
             switch (which) {
+            case 8: break;
             case 9: this.emulateEventOnListObserver("focusout"); break;
             case 13: this.onEnterPress(); break;
             case 38: this.onArrowPress("up"); break;
             case 40: this.onArrowPress("down"); break;
             case 188: this.initialiseRelatedSearch(this.state.query); break;
-            default: this.debounceRequest(this.config.doneTypingInterval).then((result) => { if (result) { this.sendSuggesterRequest(); } }); break;
+            default: {
+                const isQueryEmpty: boolean = this.state.query === "";
+                isQueryEmpty === false
+                    ? this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest())
+                    : this.emulateEventOnListObserver("focusout");
+                break;
+            }
             }
         } catch (err) {
             console.warn(err.message);
@@ -528,22 +538,15 @@ class SelectBoxInput implements TSubject {
 
     public debounceRequest(debounceInterval: number = 0): Promise<boolean> {
         try {
-            const { config } = this;
-            const { query } = this.state;
-            if (config.startSearchAfter && query.length > config.startSearchAfter) {
-                if (this.debounceTimer) {
-                    clearTimeout(this.debounceTimer);
-                }
-                return new Promise((resolve: Function): void => {
-                    this.debounceTimer = setTimeout(
-                        (): void => resolve(true),
-                        debounceInterval
-                    );
-                });
-            } else {
-                console.warn("Query length is less than the startSerachAfter config param");
-                return Promise.resolve(false);
+            if (this.debounceTimer) {
+                clearTimeout(this.debounceTimer);
             }
+            return new Promise((resolve: Function): void => {
+                this.debounceTimer = setTimeout(
+                    (): void => resolve(true),
+                    debounceInterval
+                );
+            });
         } catch (err) {
             console.warn(err.message);
             return Promise.reject(err.message);
@@ -978,7 +981,7 @@ class SelectBoxInput implements TSubject {
                 hasSelectionUpdated: true,
                 list: this.state.list,
                 query: (this.state.selection as string[]).splice(this.state.selection.indexOf(displayTextEn), 1)[0],
-                selection: this.state.selection,
+                selection: displayTextEn === "all" ? [] : this.state.selection,
                 selectionAr: []
             };
             this.setData(result);

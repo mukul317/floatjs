@@ -57,7 +57,7 @@ import Suggester from "./SuggesterStable";
             grouping: true,
             isPrefetch: true,
             relatedConceptsLimit: 5,
-            doneTypingInterval: 500,
+            debounceTimeout: 500,
             defaultPrefetchLookup: true
         };
         const SuggesterInstance = Suggester(options, suggesterData);
