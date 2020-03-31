@@ -1,4 +1,4 @@
-import { TSugConfig, TData, TState, TSubject, TObserver, TRecentSearchResponse, TSuggesterResponse, TResponse, TLanguage, TPayload } from "./interface";
+import { TSugConfig, TData, TState, TSubject, TObserver, TRecentSearchResponse, TSuggesterResponse, TResponse, TLanguage, TPayload, TVersionResponse, TObject } from "./interface";
 import { Model } from "./suggester.model";
 interface TSetState extends TState {
     construct?: boolean;
@@ -14,10 +14,11 @@ const defaultConfig: TSugConfig = {
         trackingURL: "http://suggest.naukrigulf.com/suggestlg.naukrigulf.com/logger/log?invoker=ng&"
     },
     category: "top",
-    appId: 2050,
+    appId: 205,
     version: "1.2.0",
     source: "server",
     maxSuggestions: 15,
+    startSearchAfter: 2,
     edge: 0,
     invoker: "ng",
     storageKey: { // It is used to store prefetched data against pretetchKey and version value against versionKey in localStorage.
@@ -37,9 +38,19 @@ const defaultConfig: TSugConfig = {
     specialCharactersAllowedList: [],
     sanitiseString: false,
     checkboxes: true,
+    // eslint-disable-next-line @typescript-eslint/camelcase
+    relatedConcept_dataLayer: true,
+    placeholder: false,
+    trackUserInteraction: false, // to track user Interaction
+    grouping: true,
+    isPrefetch: true,
+    relatedConceptsLimit: 5,
     suggesterHeadingElementText: "Suggestions",
-    relatedConceptsHeadingElementText: "Related Concepts",
-    debounceTimeout: 500
+    relatedConceptText: "Related Concepts",
+    doneTypingInterval: 500,
+    defaultPrefetchLookup: true,
+    vertical: "",
+    relatedConceptCategory: "top"
 };
 
 class SelectBoxInput implements TSubject {
@@ -66,8 +77,9 @@ class SelectBoxInput implements TSubject {
     public dataSet: TData[] = [];
     public listObserverCollection: TObserver[] = [];
     public arrowCounter: number = -1;
-    public modelInstance: Model | null = null;
+    public modelInstance: Model;
     private userLanguage: TLanguage = "EN";
+    private recentSelectCount: number = 0;
 
     constructor(options: TSugConfig) {
         try {
@@ -77,12 +89,130 @@ class SelectBoxInput implements TSubject {
             this.registerInputEvents();
             this.createNoResultFragment();
             this.initialiseHeadingElement();
-            this.modelInstance = new Model(this.config);
         } catch (err) {
             console.warn(err.message);
         }
+
+        this.modelInstance = new Model(this.config);
+        this.initiatePrefetchingSuggesterSuggestions(options);
     }
 
+    public initiatePrefetchingSuggesterSuggestions(params: TSugConfig): void {
+        try {
+            const { config } = this;
+            if (config.isPrefetch) {
+                const url = config.urls.prefetch + Math.random();
+                this.fetchVersion().then((response: TVersionResponse): void => {
+                    Model.setInStorage(config.storageKey.versionKey, response);
+
+                    const prefetchedData = Model.getFromStorage(config.storageKey.prefetchKey);
+                    // todo:logic for when to fetch next
+                    if (prefetchedData) {
+                        /**
+                     *
+                     * @param  {String} prefetchedData.keyword_based_data [need to check with blank string,
+                     * because in some cases false is treated as a true]
+                     */
+                        if ((params.keywords && prefetchedData.keyword_based_data === false) || (+new Date(prefetchedData.ttl)) - (+new Date()) < 0) {
+                            this.fetchKeywordBasedData(prefetchedData);
+                        }
+                    } else {
+                        this.modelInstance.sendXhr(url + "?segments=''", null).then(function (resp) {
+                            Model.setInStorage(config.storageKey.prefetchKey, resp);
+                        });
+                    }
+                });
+            } else {
+                throw new Error("Prefetching not enabled in the config");
+            }
+        } catch (e) {
+            console.warn(e.message);
+        }
+    }
+
+    /**
+     * To check the version of suggester apis to be used.
+     * Must be called only once on page load even if page has multiple suggesters.
+     * Sets the version number received in the storage.
+     * This version no must be passed in later api calls to fetch suggestions.
+     * @returns {void}
+     * @access : private
+     */
+    private fetchVersion = (): Promise<TResponse> => {
+        const { config } = this;
+        const url = config.urls.checkVersion + Math.random() + "&";
+        return this.modelInstance.sendXhr(url, null);
+    };
+
+    /**
+     *
+     */
+    private fetchKeywordBasedData = (prefetchedData: TObject): void => {
+        try {
+            const { config } = this;
+            this.modelInstance.sendXhr(config.urls.prefetch + "segments=" + prefetchedData.segments, null).then((rData) => {
+                Model.setInStorage(config.storageKey.prefetchKey, this.mergeData(prefetchedData, rData));
+            });
+        } catch (e) {
+            console.warn(e.message);
+        }
+    }
+
+    private mergeData = (prefetchedData: any, newData: any): TObject => {
+        const { config } = this;
+        config.vertical = newData.vertical;
+        let ac, rc;
+
+        if (config.vertical) {
+            const newAC: any = newData.ac;
+            const newRC: any = newData.rc;
+
+            const category = config.category;
+            const rcCategory = config.relatedConceptCategory;
+            for (const key in newAC) {
+                for (const k in newAC[key]) {
+                    if (category && category[(k as any)]) {
+                        const premKey = k + "_" + config.vertical;
+                        newAC[key][premKey] = newAC[key][k];
+                        delete newAC[key][k];
+                    } else {
+                        delete newAC[key][k];
+                    }
+                }
+            }
+            for (const key in newRC) {
+                for (const k in newRC[key]) {
+                    if (rcCategory[(k as any)]) {
+                        const premKey = k + "_" + config.vertical;
+                        newRC[key][premKey] = newRC[key][k];
+                        delete newRC[key][k];
+                    } else {
+                        delete newRC[key][k];
+                    }
+                }
+            }
+            ac = { ...prefetchedData.ac, ...newAC };
+            rc = { ...prefetchedData.rc, ...newRC };
+        } else {
+            ac = { ...prefetchedData.ac, ...newData.ac };
+            rc = { ...prefetchedData.rc, ...newData.rc };
+        }
+
+        return {
+            ac: ac,
+            rc: rc,
+            ttl: newData.ttl,
+            segments: newData.segments,
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            keyword_based_data: newData.keyword_based_data
+        };
+    }
+
+    /**
+     * Initialises the
+     * @param {null}
+     * @returns {void}
+     */
     public initialiseHeadingElement(): void {
         try {
             this.headingElement.classList.add("no-result");
@@ -102,7 +232,7 @@ class SelectBoxInput implements TSubject {
                 switch (listingType) {
                 case "rc":
                     this.headingElement.style.display = "block";
-                    this.headingElement.innerHTML = config.relatedConceptsHeadingElementText ? config.relatedConceptsHeadingElementText : "Related Concepts";
+                    this.headingElement.innerHTML = config.relatedConceptText ? config.relatedConceptText : "Related Concepts";
                     break;
                 case "sug":
                     this.headingElement.style.display = "block";
@@ -192,8 +322,9 @@ class SelectBoxInput implements TSubject {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
             const translatedText: string = target.getAttribute("data-textsuggest") || "";
             if (selectedDisplayText && this.config.selectLimit) {
-                this.sendRelatedSearchRequest(selectedDisplayText);
+                if (this.recentSelectCount < this.config.relatedConceptsLimit) { this.sendRelatedSearchRequest(selectedDisplayText); this.recentSelectCount++; } else { this.emulateEventOnListObserver("focusout"); }
                 const isEligible: boolean = this.checkIfSelectionEligible(selectedDisplayText);
+                console.log("is  Eligible", isEligible);
                 if (isEligible) {
                     this.onLastSelection();
                     this.addSelection(selectedDisplayText, translatedText);
@@ -238,7 +369,7 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-   * This method detects if text enetred is english,arabic or a special character
+   * This method detects if text entered is english,arabic or a special character
    * @access public
    * @param query
    * @returns {TLanguage}
@@ -292,6 +423,7 @@ class SelectBoxInput implements TSubject {
             if (target) {
                 const value: string = target.value;
                 const query = this.extractQuery(value.trim(), keyCode);
+                this.emulateEventOnListObserver(!query ? "focusout" : "focus");
                 this.state.query = this.userLanguage === "AR" ? query : this.sanitiseQuery(query);
             } else {
                 throw new Error(`Could not set query in state. target : ${target}, keyCode: ${keyCode}`);
@@ -328,13 +460,7 @@ class SelectBoxInput implements TSubject {
             case 38: this.onArrowPress("up"); break;
             case 40: this.onArrowPress("down"); break;
             case 188: this.initialiseRelatedSearch(this.state.query); break;
-            default: {
-                const isQueryEmpty: boolean = this.state.query === "";
-                isQueryEmpty === false
-                    ? this.debounceRequest(this.config.doneTypingInterval).then((result) => { if (result) { this.sendSuggesterRequest(); } })
-                    : this.emulateEventOnListObserver("focusout");
-                break;
-            }
+            default: this.debounceRequest(this.config.doneTypingInterval).then((result) => { if (result) { this.sendSuggesterRequest(); } }); break;
             }
         } catch (err) {
             console.warn(err.message);
@@ -400,15 +526,24 @@ class SelectBoxInput implements TSubject {
      * @returns Promise<void>
      */
 
-    public debounceRequest(debounceInterval: number = 0): Promise<void> {
+    public debounceRequest(debounceInterval: number = 0): Promise<boolean> {
         try {
-            if (this.debounceTimer) { clearTimeout(this.debounceTimer); }
-            return new Promise((resolve: Function): void => {
-                this.debounceTimer = setTimeout(
-                    (): void => resolve(),
-                    debounceInterval
-                );
-            });
+            const { config } = this;
+            const { query } = this.state;
+            if (config.startSearchAfter && query.length > config.startSearchAfter) {
+                if (this.debounceTimer) {
+                    clearTimeout(this.debounceTimer);
+                }
+                return new Promise((resolve: Function): void => {
+                    this.debounceTimer = setTimeout(
+                        (): void => resolve(true),
+                        debounceInterval
+                    );
+                });
+            } else {
+                console.warn("Query length is less than the startSerachAfter config param");
+                return Promise.resolve(false);
+            }
         } catch (err) {
             console.warn(err.message);
             return Promise.reject(err.message);
@@ -422,7 +557,7 @@ class SelectBoxInput implements TSubject {
      */
     public initialiseRelatedSearch(query: string): void {
         try {
-            if (query.length > 1) {
+            if (query.length > 1 && this.config.relatedConcept_dataLayer) {
                 const selectedDisplayText: string = query.split(",")[this.state.selection.length];
                 if (selectedDisplayText) {
                     this.sendRelatedSearchRequest(selectedDisplayText);
@@ -435,7 +570,7 @@ class SelectBoxInput implements TSubject {
                     }
                 }
             } else {
-                throw new Error("Query not passed in the function");
+                throw new Error("Query not passed in the function Or Related Search is not activates in the config");
             }
         } catch (err) {
             console.warn(err.message);
@@ -453,29 +588,6 @@ class SelectBoxInput implements TSubject {
             return false;
         }
     }
-
-    /**
-     * This sets the selected object values into the result set
-     * @access public
-     * @param selectedObj
-     * @returns void
-     */
-    // public onAfterRCRequest(selectedObj: string): void {
-    //     try {
-    //         const { config } = this;
-    //         if (selectedObj && config.selectLimit) {
-    //             const isUpdateEligible: boolean =;
-    //             if (isUpdateEligible) {
-    //                 this.onLastSelection();
-    //                 this.addSelection(selectedObj);
-    //             }
-    //         } else {
-    //             throw new Error();
-    //         }
-    //     } catch (e) {
-    //         throw console.warn("Error in selecting target in here" + e);
-    //     }
-    // }
 
     public checkIfDuplicate(selectedObj: string): boolean {
         try {
@@ -530,7 +642,7 @@ class SelectBoxInput implements TSubject {
     public sendRelatedSearchRequest(selectedObject: string): void {
         try {
             if (this.config.urls && this.config.urls.relatedConcept && this.modelInstance && selectedObject) {
-                const query = selectedObject.toLowerCase();
+                const query = selectedObject.toLowerCase().trim();
                 const category = "top";
                 const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.relatedConcept, {
                     query,
@@ -589,7 +701,7 @@ class SelectBoxInput implements TSubject {
                     item.name = item.displayTextEn;
                     const lowerItem = item.displayTextEn.toLowerCase();
                     const lowerQuery = query.toLowerCase();
-                    const includesSupported = (Array.prototype as any).includes !== undefined;
+                    const includesSupported = Array.prototype.includes !== undefined;
                     return includesSupported
                         ? lowerItem.includes(lowerQuery)
                         : lowerItem.indexOf(lowerQuery) !== -1;
