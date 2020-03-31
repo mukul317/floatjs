@@ -18,7 +18,7 @@ const defaultConfig: TSugConfig = {
     version: "1.2.0",
     source: "server",
     maxSuggestions: 15,
-    startSearchAfter: 2,
+    startSearchAfter: 1,
     edge: 0,
     invoker: "ng",
     storageKey: { // It is used to store prefetched data against pretetchKey and version value against versionKey in localStorage.
@@ -361,8 +361,9 @@ class SelectBoxInput implements TSubject {
                     const query = this.state.query;
                     const isQueryEmpty: boolean = query === "";
                     const lastIndexOfSelection: number = this.state.selection.length - 1;
+                    const shouldRemoveLastSelection: boolean = (e.target as HTMLInputElement).value.trim().lastIndexOf(",") === ((e.target as HTMLInputElement).value.trim().length - 1);
                     const lastSelectionDisplayText: string = lastIndexOfSelection >= 0 ? (this.state.selection as string[])[lastIndexOfSelection] : "";
-                    if (isQueryEmpty === true && lastSelectionDisplayText !== "") {
+                    if (isQueryEmpty === true && lastSelectionDisplayText !== "" && !shouldRemoveLastSelection) {
                         this.removeSelection(lastSelectionDisplayText);
                         this.emulateEventOnListObserver("focus");
                     }
@@ -429,7 +430,8 @@ class SelectBoxInput implements TSubject {
                 const value: string = target.value;
                 console.log("input feild value", value);
                 if (value.trim() === "") { this.removeSelection("all"); } else {
-                    const query = this.extractQuery(value.trim(), keyCode);
+                    const query = this.extractQuery(value, keyCode);
+                    console.log("query in here", query);
                     this.emulateEventOnListObserver(!query ? "focusout" : "focus");
                     this.state.query = this.userLanguage === "AR" ? query : this.sanitiseQuery(query);
                 }
@@ -526,7 +528,7 @@ class SelectBoxInput implements TSubject {
         } catch (e) {
             console.warn(e.message);
         }
-        return "";
+        return query;
     }
 
     /*
@@ -542,7 +544,7 @@ class SelectBoxInput implements TSubject {
      * @returns Promise<void>
      */
 
-    public debounceRequest(debounceInterval: number = 0): Promise<boolean> {
+    public debounceRequest(debounceInterval: number = 0): Promise<void> {
         try {
             if (this.debounceTimer) {
                 clearTimeout(this.debounceTimer);
@@ -567,10 +569,12 @@ class SelectBoxInput implements TSubject {
     public initialiseRelatedSearch(query: string): void {
         try {
             if (query.length > 1 && this.config.relatedConcept_dataLayer) {
-                const selectedDisplayText: string = query.split(",")[this.state.selection.length];
+                const selectedDisplayText: string = query.split(",")[this.state.selection.length].trim() ? query.split(",")[this.state.selection.length].trim() : query.split(",")[this.state.selection.length - 1].trim();
                 if (selectedDisplayText) {
                     this.sendRelatedSearchRequest(selectedDisplayText);
                     const isEligible: boolean = this.checkIfSelectionEligible(selectedDisplayText);
+
+                    console.log("isEliginle in here", isEligible);
                     if (isEligible) {
                         this.onLastSelection();
                         this.addSelection(selectedDisplayText);
