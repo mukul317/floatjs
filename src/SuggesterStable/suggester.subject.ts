@@ -474,7 +474,7 @@ class SelectBoxInput implements TSubject {
             case 188: this.initialiseRelatedSearch(this.state.query); break;
             default: {
                 const isQueryEmpty: boolean = this.state.query === "";
-                isQueryEmpty === false
+                isQueryEmpty === false && this.config.startSearchAfter && this.state.query.length > this.config.startSearchAfter
                     ? this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest())
                     : this.emulateEventOnListObserver("focusout");
                 break;
