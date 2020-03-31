@@ -349,15 +349,15 @@ class SelectBoxInput implements TSubject {
      * @param e : keyboardEvent
      * @returns void
      */
-    public onBackspace(e: KeyboardEvent, keyUpBoolean: boolean): void {
+    public onBackspace(e: KeyboardEvent, isKeyUp: boolean): void {
         try {
             if (e.which === 8) {
                 const { config } = this;
-                if (config.inputElement && config.displayBehaviour === "default" && !keyUpBoolean) {
+                if (config.inputElement && config.displayBehaviour === "default" && !isKeyUp) {
                     this.setQueryToState(config.inputElement, 8);
                 }
 
-                if (keyUpBoolean) {
+                if (isKeyUp) {
                     const query = this.state.query;
                     const isQueryEmpty: boolean = query === "";
                     const lastIndexOfSelection: number = this.state.selection.length - 1;
@@ -464,7 +464,6 @@ class SelectBoxInput implements TSubject {
             const target: HTMLInputElement | null = (e.target as HTMLInputElement);
             this.detectLanguage();
             this.setQueryToState(target, which);
-            console.log("keyup");
             switch (which) {
             case 8: this.onBackspace(e, true); break;
             case 9: this.emulateEventOnListObserver("focusout"); break;
