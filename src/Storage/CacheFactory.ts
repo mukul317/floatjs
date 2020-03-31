@@ -26,14 +26,40 @@ interface TLSItem{
     lastAccessed: number;
 }
 
-class LocalStorageCacheStorage {
-    private prefix_: string;
-    private regexp_: RegExp;
-    private fillFactor = 0.75;
-    private debug = false;
+interface TStats{
+    hits: number;
+    misses: number;
+}
+interface TLocalStorageCacheStorage{
+readonly prefix_: string;
+readonly regexp_: RegExp;
+readonly fillFactor: number;
+readonly debug: boolean;
+readonly maxSize: number;
+readonly stats_: TStats;
+ get(key: string): null| TLSItem;
+ log_(message: string): void;
+ addItem (key: string, item: TLSItem, attemptedAlready: boolean): void;
+ _CacheItem (key: string, value: any, options: TOptions): TLSItem;
+ keys (): string[];
+ purge_ (): void ;
+ isExpired (item: TLSItem): boolean;
+ setItem (key: string, value: string|Record<string, string>, options: TOptions): void;
+ getItem (key: string): TObject|null;
+ removeItem (key: string): TObject|null;
+ clear(): void;
+getStats (): Record<string, number> ;
+size (): number ;
+}
+
+class LocalStorageCacheStorage implements TLocalStorageCacheStorage {
+    public prefix_: string;
+    public regexp_: RegExp;
+    public fillFactor = 0.75;
+    public debug = false;
     public maxSize = -1;
 
-    private stats_={
+    public stats_={
         hits: 0,
         misses: 0
     };
@@ -50,16 +76,16 @@ class LocalStorageCacheStorage {
     /**
      * This method fetches the entire item object stored in local storage for a
      * particular key in the namespace
-     * @method private
+     * @method public
      * @param key : name of the item stored in local storage
      */
-    private get (key: string): null|TLSItem {
+    public get (key: string): null|TLSItem {
         const item = window.localStorage[this.prefix_ + key];
         if (item) return JSON.parse(item);
         return null;
     }
 
-    private log_ (msg: string): void {
+    public log_ (msg: string): void {
         if (this.debug) {
             console.log(msg);
         }
@@ -73,7 +99,7 @@ class LocalStorageCacheStorage {
      * @param attemptedAlready : this is false by default;it is passed as true if
      * re attempt is done to stor the item in the storage
      */
-    private addItem (key: string, item: TLSItem, attemptedAlready = false): void {
+    public addItem (key: string, item: TLSItem, attemptedAlready = false): void {
         try {
             window.localStorage[this.prefix_ + key] = JSON.stringify(item);
         } catch (err) {
@@ -89,12 +115,12 @@ class LocalStorageCacheStorage {
 
     /**
      * This method creates an object of type TLSItem which is required to store in storage
-     * @method private
+     * @method public
      * @param key : name of the item stored in local storage
      * @param value : value to be stored
      * @param options contains options(including data about expiration) for the item to be stored
      */
-    private _CacheItem (key: string, value: any, options: TOptions): TLSItem {
+    public _CacheItem (key: string, value: any, options: TOptions): TLSItem {
         if (!key) {
             throw new Error("Key cannot be null or empty");
         }
@@ -113,7 +139,7 @@ class LocalStorageCacheStorage {
         };
     }
 
-    private keys (): string[] {
+    public keys (): string[] {
         const ret = []; let p;
         for (p in window.localStorage) {
             if (p.match(this.regexp_)) ret.push(p.replace(this.prefix_, ""));
@@ -123,9 +149,9 @@ class LocalStorageCacheStorage {
 
     /**
      * This removes expired items from the cache.
-     * @method : private
+     * @method : public
      */
-    private purge_ (): void {
+    public purge_ (): void {
         let tmparray = [];
         let purgeSize = Math.round(this.maxSize * this.fillFactor);
         if (this.maxSize < 0) { purgeSize = this.size() * this.fillFactor; }
@@ -167,7 +193,7 @@ class LocalStorageCacheStorage {
      * checks if the item stored in the storage has been expired or not
      * @param item : object of the item to be removed
      */
-    private isExpired (item: TLSItem): boolean {
+    public isExpired (item: TLSItem): boolean {
         const now = new Date().getTime();
         let expired = false;
         if (item.options && item.options.expirationAbsolute && (item.options.expirationAbsolute < now)) {
@@ -313,4 +339,4 @@ class CacheFactory {
     }
 }
 
-export { CacheFactory };
+export { CacheFactory, TLocalStorageCacheStorage, TLSItem };
