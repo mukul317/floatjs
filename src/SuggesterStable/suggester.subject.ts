@@ -512,7 +512,7 @@ class SelectBoxInput implements TSubject {
                         ? { ...basePayload, locale: "ar_AR", additionalfields: "textsuggest" }
                         : basePayload;
 
-                    const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.autoComplete, payload);
+                    const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.autoComplete, payload, this.config.storageKey ? this.config.storageKey.prefetchKey : "");
                     this.handleApiResponse(
                         xhrPromise,
                         "sug"
@@ -545,7 +545,7 @@ class SelectBoxInput implements TSubject {
                 const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.relatedConcept, {
                     query,
                     category
-                });
+                }, "");
                 this.handleApiResponse(
                     xhrPromise,
                     "rc"

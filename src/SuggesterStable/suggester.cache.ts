@@ -31,7 +31,7 @@ class CacheHandler {
                             this.fetchKeywordBasedData(prefetchedData);
                         }
                     } else {
-                        this.modelInstance.sendXhr(url + "?segments=''", null).then(function (resp) {
+                        this.modelInstance.sendXhr(url + "?segments=''", null, "").then(function (resp) {
                             if (config.storageKey) {
                                 Model.setInStorage(config.storageKey.prefetchKey, resp);
                             }
@@ -57,7 +57,7 @@ class CacheHandler {
     private fetchVersion = (): Promise<TResponse> => {
         const { config } = this;
         const url = config.urls ? config.urls.checkVersion + Math.random() + "&" : "";
-        return this.modelInstance.sendXhr(url, null);
+        return this.modelInstance.sendXhr(url, null, "");
     };
 
     /**
@@ -67,7 +67,7 @@ class CacheHandler {
         try {
             const { config } = this;
             if (config.urls && config.storageKey && config.storageKey.prefetchKey) {
-                this.modelInstance.sendXhr(config.urls.prefetch + "segments=" + prefetchedData.segments, null).then((rData) => {
+                this.modelInstance.sendXhr(config.urls.prefetch + "segments=" + prefetchedData.segments, null, "").then((rData) => {
                     Model.setInStorage(config.storageKey && config.storageKey.prefetchKey ? config.storageKey.prefetchKey : "", this.mergeData(prefetchedData, rData));
                 });
             }

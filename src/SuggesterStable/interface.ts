@@ -42,14 +42,17 @@ interface TObserver {
     update(arrayOfObjects: TState): void;
 }
 interface TPayload {
+
+    [key: string]: any;
     query: string;
     category: string;
     vertical?: string;
     source?: string;
-    appId?: string;
+    appId?: string | number;
     edge?: number;
     locale?: string;
     additionalfields?: string;
+    limit?: number;
 }
 
 interface TSugOptions {

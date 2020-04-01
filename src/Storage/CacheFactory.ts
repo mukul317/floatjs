@@ -80,6 +80,7 @@ class LocalStorageCacheStorage implements TLocalStorageCacheStorage {
      * @param key : name of the item stored in local storage
      */
     public get (key: string): null|TLSItem {
+        console.log("chekcing keyu in hrer", key, this.prefix_);
         const item = window.localStorage[this.prefix_ + key];
         if (item) return JSON.parse(item);
         return null;
@@ -237,8 +238,10 @@ class LocalStorageCacheStorage implements TLocalStorageCacheStorage {
      * @param key : an identifier for which the object is to be fetched in local storage
      */
     public getItem (key: string): TObject|null {
-    // retrieve the item from the cache
+        console.log("key in here", key);
+        // retrieve the item from the cache
         let item = this.get(key);
+        console.log("item in cachefactory", item);
 
         if (item != null) {
             if (!this.isExpired(item)) {
