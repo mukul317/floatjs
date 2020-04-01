@@ -219,7 +219,6 @@ class SelectBoxInput implements TSubject {
                     this.emulateEventOnListObserver("focusout");
                 }
                 const isEligible: boolean = this.checkIfSelectionEligible(selectedDisplayText);
-                console.log("is  Eligible", isEligible);
                 if (isEligible) {
                     this.onLastSelection();
                     this.addSelection(selectedDisplayText, translatedText);
@@ -319,23 +318,7 @@ class SelectBoxInput implements TSubject {
             this.detectLanguage();
             this.setQueryToState(target, which);
             switch (which) {
-            case 8: {
-                const { config } = this;
-                setTimeout(() => {
-                    if (config.inputElement && config.displayBehaviour === "default") {
-                        console.log(config.inputElement.value.split(", "));
-                        this.setData({
-                            hasListUpdated: false,
-                            selection: config.inputElement.value.split(", "),
-                            hasSelectionUpdated: false,
-                            list: this.state.list,
-                            query: this.state.query,
-                            selectionAr: this.state.selectionAr
-                        });
-                    }
-                }, 0);
-                break;
-            }
+            case 8: this.onBackSpacePress(); break;
             case 9: this.emulateEventOnListObserver("focusout"); break;
             case 13: this.onEnterPress(); break;
             case 38: this.onArrowPress("up"); break;
@@ -351,6 +334,29 @@ class SelectBoxInput implements TSubject {
             }
         } catch (err) {
             console.warn(err.message);
+        }
+    }
+
+    public onBackSpacePress(): void {
+        try {
+            const { displayBehaviour, inputElement } = this.config;
+            setTimeout(() => {
+                if (inputElement && displayBehaviour === "default") {
+                    const value: string = inputElement.value.trim();
+                    const selection: string[] = (value === "" || value === ",") ? [] : value.split(", ");
+                    this.setData({
+                        hasListUpdated: false,
+                        selection,
+                        hasSelectionUpdated: false,
+                        list: this.state.list,
+                        query: this.state.query,
+                        selectionAr: this.state.selectionAr
+                    });
+                }
+                console.log("onBackSpacePress state", this.state.selection);
+            }, 0);
+        } catch (err) {
+            console.log(err.message);
         }
     }
 
@@ -446,7 +452,7 @@ class SelectBoxInput implements TSubject {
                     const cleanValueBeforeComma: string = valueBeforeComma.trim().replace(",", "");
                     const isEligible: boolean = this.checkIfSelectionEligible(valueBeforeComma);
                     console.log("valueBeforeComma", cleanValueBeforeComma);
-                    console.log("value Before Comma State", cleanValueBeforeComma, "State in hrer", this.state);
+                    console.log("value Before Comma State", cleanValueBeforeComma, "State in here", this.state.selection);
 
                     if (isEligible) {
                         this.onLastSelection();
@@ -469,7 +475,12 @@ class SelectBoxInput implements TSubject {
             const { config } = this;
             const selectionLimitExceeded: boolean = config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
             const isDuplicate: boolean = this.checkIfDuplicate(selectedObj);
-            return !isDuplicate && !selectionLimitExceeded;
+            const isEmpty: boolean = selectedObj.trim() === "";
+            console.log(">> selectionLimitExceeded", selectionLimitExceeded);
+            console.log(">> isDuplicate", isDuplicate);
+            console.log(">> isEmpty", isEmpty);
+            console.log(">> checkIfSelectionEligible this.state.selection", this.state.selection);
+            return isDuplicate === false && selectionLimitExceeded === false && isEmpty === false;
         } catch (e) {
             console.warn("Error occurred while checking the eligibility of selection:", e);
             return false;
@@ -890,6 +901,7 @@ class SelectBoxInput implements TSubject {
                 return this.config.selectLimit === 1 ? [translatedText] : [...this.state.selectionAr, translatedText];
             };
             const selection = this.config.selectLimit === 1 ? [displayTextEn] : [...this.state.selection, displayTextEn];
+            console.log("addSelection", selection);
             const result: TState = {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
