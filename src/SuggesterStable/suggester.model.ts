@@ -30,10 +30,10 @@ class Model {
         return new Promise((resolve: Function, reject: Function) => {
             const xhr: XMLHttpRequest = new XMLHttpRequest();
             try {
-                if (!payload || !url) {
+                if (!url) {
                     throw Error("Received empty payload/url to send request");
                 }
-                if (!payload.query) {
+                if (payload && !payload.query) {
                     throw Error("Received empty query");
                 }
 
