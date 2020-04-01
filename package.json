@@ -1,6 +1,6 @@
 {
 	"name": "floatjs",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Extensible typescript plugins that float on your framework",
 	"main": "index.js",
 	"scripts": {
