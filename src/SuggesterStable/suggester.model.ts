@@ -1,7 +1,7 @@
 import { TPayload, TResponse, TSugConfig } from "./interface";
 import { CacheFactory, TLocalStorageCacheStorage } from "../Storage/CacheFactory";
 
-class Model {
+export default class Model {
     private appId: number = 0;
     private maxSuggestions: number = 0;
     private prefetch: string = "";
@@ -79,5 +79,3 @@ class Model {
         return this.sugCache && this.sugCache.getItem(key);
     }
 }
-
-export { Model };

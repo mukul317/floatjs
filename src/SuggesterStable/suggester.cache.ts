@@ -1,6 +1,6 @@
 
 import { TResponse, TSugConfig, TVersionResponse, TObject } from "./interface";
-import { Model } from "./suggester.model";
+import Model from "./suggester.model";
 
 class CacheHandler {
     public modelInstance: Model;
@@ -127,4 +127,4 @@ class CacheHandler {
     }
 }
 
-export { CacheHandler };
+export default CacheHandler;

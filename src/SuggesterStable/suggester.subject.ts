@@ -1,6 +1,6 @@
 import { TSugConfig, TData, TState, TSubject, TObserver, TRecentSearchResponse, TSuggesterResponse, TResponse, TLanguage, TPayload } from "./interface";
-import { Model } from "./suggester.model";
-import { CacheHandler } from "./suggester.cachehandler";
+import Model from "./suggester.model";
+import CacheHandler from "./suggester.cache";
 interface TSetState extends TState {
     construct?: boolean;
 }
