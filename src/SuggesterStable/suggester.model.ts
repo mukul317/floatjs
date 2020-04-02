@@ -64,7 +64,6 @@ export default class Model {
 
                     xhr.onload = (): void => {
                         if (xhr.status >= 200 && xhr.status < 300) {
-                            console.log(JSON.parse(xhr.response));
                             xhr.response && resolve(JSON.parse(xhr.response));
                         } else {
                             reject(xhr.statusText);
@@ -93,8 +92,6 @@ export default class Model {
     }
 
     public static getFromStorage(key: string): Record<string, any> | null {
-        console.log("suggester cache", this.sugCache);
-        console.log("suggester cache key", this.sugCache ? this.sugCache.getItem(key) : "");
         return this.sugCache && this.sugCache.getItem(key);
     }
 }
