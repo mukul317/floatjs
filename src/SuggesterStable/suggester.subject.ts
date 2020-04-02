@@ -287,8 +287,14 @@ class SelectBoxInput implements TSubject {
     public checkAndSetSelectionStateOnKeyUp(target: HTMLInputElement | null): void{
         try {
             if (target && target.value) {
+                console.log("target value", target, target.value, target.value.split(","));
                 if (target.value.split(",").length < this.state.selection.length) {
-                    this.state.selection = [];
+                    this.state.selection = target.value.split(",").map(function(selection) {
+                        return selection.trim();
+                    });
+                    if (target.value.lastIndexOf(",") !== target.value.length - 1) {
+                        this.state.selection.pop();
+                    }
                 }
             }
         } catch (err) {
