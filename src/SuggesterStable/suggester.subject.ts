@@ -75,6 +75,7 @@ class SelectBoxInput implements TSubject {
     public arrowCodisplayunter: number = -1;
     public config: TSugConfig = defaultConfig;
 
+    public keyIndexes: number[] = [9, 16, 18, 19, 20, 27, 33, 34, 35, 36, 37, 39, 45, 46, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 144];
     public dataSet: TData[] = [];
     public listObserverCollection: TObserver[] = [];
     public arrowCounter: number = -1;
@@ -221,7 +222,7 @@ class SelectBoxInput implements TSubject {
                 const isEligible: boolean = this.checkIfSelectionEligible(selectedDisplayText);
                 if (isEligible) {
                     this.onLastSelection();
-                    this.addSelection(selectedDisplayText, translatedText);
+                    this.addSelection(selectedDisplayText, translatedText || selectedDisplayText);
                     if (this.userLanguage === "AR") {
                         this.emulateEventOnListObserver("focusout");
                     }
@@ -339,23 +340,23 @@ class SelectBoxInput implements TSubject {
             this.detectLanguage();
             this.checkAndSetSelectionStateOnKeyUp(target);
             this.setQueryToState(target, which);
-            console.log("state in keyUp", this.state);
-            if (which !== 37 && which !== 39) {
-                switch (which) {
-                case 8: this.onBackSpacePress(); break;
-                case 9: this.emulateEventOnListObserver("focusout"); break;
-                case 13: this.onEnterPress(); break;
-                case 38: this.onArrowPress("up"); break;
-                case 40: this.onArrowPress("down"); break;
-                case 188: this.initialiseRelatedSearch(); break;
-                default: {
+            console.log("state in on key up", this.state);
+            switch (which) {
+            case 8: this.onBackSpacePress(); break;
+            case 9: this.emulateEventOnListObserver("focusout"); break;
+            case 13: this.onEnterPress(); break;
+            case 38: this.onArrowPress("up"); break;
+            case 40: this.onArrowPress("down"); break;
+            case 188: this.initialiseRelatedSearch(); break;
+            default: {
+                if (this.keyIndexes.indexOf(which) === -1) {
                     const isQueryEmpty: boolean = this.state.query === "";
                     isQueryEmpty === false
                         ? this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest())
                         : this.emulateEventOnListObserver("focusout");
                     break;
                 }
-                }
+            }
             }
         } catch (err) {
             console.warn(err.message);
@@ -369,14 +370,18 @@ class SelectBoxInput implements TSubject {
                 if (inputElement && displayBehaviour === "default") {
                     const value: string = inputElement.value.trim();
                     const selection: string[] = (value === "" || value === ",") ? [] : value.split(", ");
+                    console.log("value in herer", value);
                     if (value && value.lastIndexOf(",") === value.length - 1) {
                         selection[selection.length - 1] = selection[selection.length - 1].split(",")[0];
                     } else {
                         if (selection.length > 0) {
+                            console.log("selection length in here", selection.length);
                             this.state.query = selection[selection.length - 1];
                             selection.pop();
+                            console.log("selection length in here after pop", selection.length);
                         }
                     }
+
                     console.log("backspace selection", selection, this.state, "condition", value, value.lastIndexOf(",") === value.length - 1);
                     this.setData({
                         hasListUpdated: false,
@@ -384,7 +389,7 @@ class SelectBoxInput implements TSubject {
                         hasSelectionUpdated: false,
                         list: this.state.list,
                         query: this.state.query,
-                        selectionAr: this.state.selectionAr
+                        selectionAr: this.userLanguage === "AR" ? selection : this.state.selectionAr
                     });
                     if (this.state.query) {
                         const isQueryEmpty: boolean = this.state.query === "";
@@ -393,7 +398,7 @@ class SelectBoxInput implements TSubject {
                             : this.emulateEventOnListObserver("focusout");
                     }
                 }
-                console.log("onBackSpacePress state", this.state.selection);
+                console.log("onBackSpacePress state", this.state.selection, this.state);
             }, 0);
         } catch (err) {
             console.log(err.message);
@@ -496,7 +501,7 @@ class SelectBoxInput implements TSubject {
 
                     if (isEligible) {
                         this.onLastSelection();
-                        this.addSelection(cleanValueBeforeComma);
+                        this.addSelection(cleanValueBeforeComma, cleanValueBeforeComma);
                         this.sendRelatedSearchRequest(cleanValueBeforeComma);
                     } else {
                         throw new Error("Selection is not eligible");
@@ -950,6 +955,7 @@ class SelectBoxInput implements TSubject {
                 selectionAr: this.userLanguage === "AR" ? getArSelection() : [],
                 query: ""
             };
+            console.log("state set in add Selection", result);
             this.setData(result);
         } catch (err) {
             console.warn(err.message);
