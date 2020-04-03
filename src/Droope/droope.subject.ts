@@ -1,10 +1,10 @@
-import { TObserver, TData, TState, TSubject, TDroopeConfig } from "./interface";
+import { TObserver, TData, TState, TSubject, TDroopeConfig, TDirection } from "./interface";
 interface TSetState extends TState {
     construct?: boolean;
 }
 
 const defaultConfig: TDroopeConfig = {
-    domId: "",
+    domId: `droope_${Date.now()}`,
     inputElement: null,
     lisitingElement: null,
     displayElement: null,
@@ -14,7 +14,8 @@ const defaultConfig: TDroopeConfig = {
     displayDecorationList: ["chips"],
     noResultErrorMessage: "No result for your query",
     tagSelectedValues: false,
-    checkboxes: true
+    checkboxes: true,
+    listData: []
 };
 class SelectBoxInput implements TSubject {
     public state: TState = {
@@ -24,7 +25,6 @@ class SelectBoxInput implements TSubject {
         hasSelectionUpdated: false
     };
 
-    public noResultErrorMessage: boolean = true;
     public noResultElement: HTMLElement = document.createElement("p");
     public arrowCounter: number = -1;
     public config: TDroopeConfig = defaultConfig;
@@ -131,6 +131,7 @@ class SelectBoxInput implements TSubject {
                         throw new Error(`Maximum select limit reached. Configured limit droope id "${config.domId}" is ${config.selectLimit}`);
                     } else {
                         this.addSelection(selectedObj);
+                        this.clearInput();
                     }
                 }
             } else {
@@ -227,47 +228,56 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public onArrowPress(direction: string): void {
+    /**
+     * Callback to keycode 38 && 40 which are arrow down and arrow up keys
+     * on the execution of constructor the arrow counter is indexed at -1
+     * this method traverses through the list item from 0 to `list.length`
+     * and adds `active` class to currently active item
+     *
+     * @access public
+     * @returns {void}
+     * @param direction {TDirection}
+     */
+    public onArrowPress(direction: TDirection): void {
         try {
-            /** get list of all li items */
-            const { config } = this;
-            const listItems = config.lisitingElement ? config.lisitingElement.querySelectorAll("li") : null;
+            const { lisitingElement } = this.config;
+            const listItems = lisitingElement ? lisitingElement.querySelectorAll("li") : null;
 
-            /** determine the direction */
-            const isGoingUp = direction === "up";
-            const isGoingDown = direction === "down";
+            if (listItems) {
+                switch (direction) {
+                case "down" : {
+                    // counter is by default at -1 for first selection i.e. index 0
+                    const currentElement: HTMLElement = listItems[this.arrowCounter + 1];
 
-            if (isGoingDown === true && listItems) {
-                /** counter is by default at -1 for first selection i.e. index 0 */
-                const currentElement: HTMLElement = listItems[this.arrowCounter + 1];
-
-                if (currentElement) {
-                    // add active class to
-                    currentElement.classList.add("active");
-                    const prevElement = currentElement.previousElementSibling;
-                    if (prevElement) {
-                        prevElement.classList.remove("active");
+                    if (currentElement) {
+                        // add active class for highlighting
+                        currentElement.classList.add("active");
+                        const prevElement = currentElement.previousElementSibling;
+                        if (prevElement) {
+                            prevElement.classList.remove("active");
+                        }
                     }
+                    if (this.arrowCounter < listItems.length - 1) {
+                        this.arrowCounter++;
+                    }
+                    break;
                 }
-                if (this.arrowCounter < listItems.length - 1) {
-                    this.arrowCounter++;
+                case "up": {
+                    const currentElement = listItems[this.arrowCounter];
+                    if (currentElement) {
+                        currentElement.classList.remove("active");
+                        const prevElement = currentElement.previousElementSibling;
+                        if (prevElement) {
+                            prevElement.classList.add("active");
+                        }
+                    }
+                    if (this.arrowCounter > -1) {
+                        this.arrowCounter--;
+                    }
+                    break;
+                }
                 }
             }
-
-            if (isGoingUp === true && listItems) {
-                const currentElement = listItems[this.arrowCounter];
-                if (currentElement) {
-                    currentElement.classList.remove("active");
-                    const prevElement = currentElement.previousElementSibling;
-                    if (prevElement) {
-                        prevElement.classList.add("active");
-                    }
-                }
-                if (this.arrowCounter > -1) {
-                    this.arrowCounter--;
-                }
-            }
-            console.log(this.arrowCounter);
         } catch (err) {
             console.warn(err.message);
         }
@@ -450,6 +460,24 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
+     * Clears the value of registered input element
+     * Mostly invoked after a selection is made
+     *
+     * @access public
+     * @returns {void}
+     */
+    public clearInput(): void {
+        try {
+            const { inputElement } = this.config;
+            if (inputElement) {
+                inputElement.value = "";
+            }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    /**
      * Emulates focusout when last selection is made.
      * Last selection is determined by `selectLimit` configuration.
      * This function acts as a listener when `onSelect` executes
@@ -518,6 +546,27 @@ class SelectBoxInput implements TSubject {
         } catch (err) {
             console.warn(err.message);
             return null;
+        }
+    }
+
+    /**
+     * Constructs the droope for the first time
+     * internally calls setData with `construct`: true
+     * along with populating droope listing
+     *
+     * @returns {void}
+     */
+    public init(): void {
+        try {
+            this.setData({
+                hasSelectionUpdated: false,
+                hasListUpdated: false,
+                construct: true,
+                selection: [],
+                list: this.config.listData
+            });
+        } catch (err) {
+            console.warn(err.message);
         }
     }
 }

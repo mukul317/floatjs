@@ -29,6 +29,7 @@ module.exports = {
   ],
   rules: {
     "no-new": 0,
+    "arrow-body-style": ["error", "always"],
     "indent": ["error", 4],
     "semi": ["error", "always"],
     "quotes": ["error", "double"],

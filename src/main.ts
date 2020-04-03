@@ -18,9 +18,10 @@ import "./Suggester";
             displayDecorationList: [],
             noResultErrorMessage: "Sorry no result",
             tagSelectedValues: true,
-            checkboxes: true
+            checkboxes: true,
+            listData: droopeData
         };
-        const DroopeInstance = Droope(options, droopeData);
+        const DroopeInstance = Droope(options);
         console.log(DroopeInstance);
     }
 })();
