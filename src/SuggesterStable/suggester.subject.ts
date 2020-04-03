@@ -272,7 +272,7 @@ class SelectBoxInput implements TSubject {
                 if (matches) {
                     return matches[1];
                 } else if (query.lastIndexOf(",") === query.length - 1) {
-                    return query.split(",")[0];
+                    return query.split(",")[query.split(",").length - 1];
                 } else {
                     return "";
                 }
@@ -340,7 +340,6 @@ class SelectBoxInput implements TSubject {
             this.detectLanguage();
             this.checkAndSetSelectionStateOnKeyUp(target);
             this.setQueryToState(target, which);
-            console.log("state in on key up", this.state);
             switch (which) {
             case 8: this.onBackSpacePress(); break;
             case 9: this.emulateEventOnListObserver("focusout"); break;
@@ -378,7 +377,7 @@ class SelectBoxInput implements TSubject {
                             console.log("selection length in here", selection.length);
                             this.state.query = selection[selection.length - 1];
                             selection.pop();
-                            console.log("selection length in here after pop", selection.length);
+                            console.log("selection length in here after pop", selection.length, this.state.query);
                         }
                     }
 
@@ -952,7 +951,7 @@ class SelectBoxInput implements TSubject {
                 hasSelectionUpdated: true,
                 list: this.state.list,
                 selection,
-                selectionAr: this.userLanguage === "AR" ? getArSelection() : [],
+                selectionAr: getArSelection(),
                 query: ""
             };
             console.log("state set in add Selection", result);

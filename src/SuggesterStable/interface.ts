@@ -18,6 +18,7 @@ interface TSubject {
     notifyObservers(): void;
     removeSelection(displayTextEn: string): void;
     setData(data: TState): void;
+    getCompleteState(): TState | null;
 }
 
 interface TVersionResponse extends TResponse {

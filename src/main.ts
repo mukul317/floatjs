@@ -62,5 +62,11 @@ import Suggester from "./SuggesterStable";
         };
         const SuggesterInstance = Suggester(options, suggesterData);
         console.log("Suggester", SuggesterInstance);
+        const btn: HTMLElement | null = document.querySelector("#suggester button");
+        if (btn) {
+            btn.addEventListener("click", () => {
+                if (SuggesterInstance.getCompleteState) { console.log(SuggesterInstance.getCompleteState()); }
+            });
+        }
     }
 })();
