@@ -227,3 +227,7 @@ blockquote {
     line-height: 8px;
     cursor: pointer;
 }
+
+#suggester .active {
+    background-color: #ff0;
+}

@@ -143,10 +143,10 @@ class SelectBoxInput implements TSubject {
             const { config } = this;
             if (config.inputElement) {
                 // config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e));
-                config.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
+                config.inputElement.addEventListener("keyup", (e) => { return this.onKeyUp(e); });
                 if (config.displayListOnFocus === true) {
-                    document.addEventListener("click", (e) => this.handleDocumentBlur(e));
-                    config.inputElement.addEventListener("focus", (e) => this.emulateEventOnListObserver(e.type));
+                    document.addEventListener("click", (e) => { return this.handleDocumentBlur(e); });
+                    config.inputElement.addEventListener("focus", (e) => { return this.emulateEventOnListObserver(e.type); });
                     this.emulateEventOnListObserver("focusout");
                 }
             } else {
@@ -285,16 +285,33 @@ class SelectBoxInput implements TSubject {
         return "";
     }
 
-    public checkAndSetSelectionStateOnKeyUp(target: HTMLInputElement | null): void{
+    public getSelectedValueFromDom(): string[] {
         try {
-            if (target && target.value) {
-                console.log("target value", target, target.value, target.value.split(","));
-                if (target.value.split(",").length < this.state.selection.length) {
-                    this.state.selection = target.value.split(",").map(function(selection) {
-                        return selection.trim();
-                    });
-                    if (target.value.lastIndexOf(",") !== target.value.length - 1) {
+            const { inputElement } = this.config;
+            const selectedVals: string[] = inputElement ? inputElement.value.split(",") : [];
+            const validVals: string[] = selectedVals.filter((item) => item.trim() !== "");
+            const cleanVals: string[] = validVals.map((item) => item.trim());
+            return cleanVals;
+        } catch (err) {
+            console.warn(err.message);
+            return [];
+        }
+    }
+
+    public checkAndSetSelectionStateOnKeyUp(): void {
+        try {
+            const selectedDomVals: string[] = this.getSelectedValueFromDom();
+            const { inputElement } = this.config;
+            const domValsLength: number = selectedDomVals.length;
+            const currentSelectionLength: number = this.state.selection.length;
+            if (selectedDomVals && domValsLength > 0) {
+                if (domValsLength < currentSelectionLength) {
+                    this.state.selection = selectedDomVals;
+                    if (inputElement && inputElement.value.lastIndexOf(",") !== inputElement.value.length - 1) {
                         this.state.selection.pop();
+                    }
+                    if (this.userLanguage === "AR") {
+                        this.state.selectionAr = this.state.selection;
                     }
                 }
             }
@@ -338,7 +355,6 @@ class SelectBoxInput implements TSubject {
             const which: number = e.which;
             const target: HTMLInputElement | null = (e.target as HTMLInputElement);
             this.detectLanguage();
-            this.checkAndSetSelectionStateOnKeyUp(target);
             this.setQueryToState(target, which);
             switch (which) {
             case 8: this.onBackSpacePress(); break;
@@ -348,10 +364,12 @@ class SelectBoxInput implements TSubject {
             case 40: this.onArrowPress("down"); break;
             case 188: this.initialiseRelatedSearch(); break;
             default: {
+                this.checkAndSetSelectionStateOnKeyUp();
+
                 if (this.keyIndexes.indexOf(which) === -1) {
                     const isQueryEmpty: boolean = this.state.query === "";
                     isQueryEmpty === false
-                        ? this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest())
+                        ? this.debounceRequest(this.config.debounceTimeout).then(() => { return this.sendSuggesterRequest(); })
                         : this.emulateEventOnListObserver("focusout");
                     break;
                 }
@@ -366,22 +384,18 @@ class SelectBoxInput implements TSubject {
         try {
             const { displayBehaviour, inputElement } = this.config;
             setTimeout(() => {
-                if (inputElement && displayBehaviour === "default") {
+                if (displayBehaviour === "default" && inputElement) {
                     const value: string = inputElement.value.trim();
-                    const selection: string[] = (value === "" || value === ",") ? [] : value.split(", ");
-                    console.log("value in herer", value);
+                    const selection: string[] = this.getSelectedValueFromDom();
                     if (value && value.lastIndexOf(",") === value.length - 1) {
                         selection[selection.length - 1] = selection[selection.length - 1].split(",")[0];
                     } else {
                         if (selection.length > 0) {
-                            console.log("selection length in here", selection.length);
                             this.state.query = selection[selection.length - 1];
                             selection.pop();
-                            console.log("selection length in here after pop", selection.length, this.state.query);
                         }
                     }
 
-                    console.log("backspace selection", selection, this.state, "condition", value, value.lastIndexOf(",") === value.length - 1);
                     this.setData({
                         hasListUpdated: false,
                         selection,
@@ -393,14 +407,13 @@ class SelectBoxInput implements TSubject {
                     if (this.state.query) {
                         const isQueryEmpty: boolean = this.state.query === "";
                         isQueryEmpty === false
-                            ? this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest())
+                            ? this.debounceRequest(this.config.debounceTimeout).then(() => { return this.sendSuggesterRequest(); })
                             : this.emulateEventOnListObserver("focusout");
                     }
                 }
-                console.log("onBackSpacePress state", this.state.selection, this.state);
             }, 0);
         } catch (err) {
-            console.log(err.message);
+            console.warn(err.message);
         }
     }
 
@@ -470,7 +483,7 @@ class SelectBoxInput implements TSubject {
             }
             return new Promise((resolve: Function): void => {
                 this.debounceTimer = setTimeout(
-                    (): void => resolve(true),
+                    (): void => { return resolve(true); },
                     debounceInterval
                 );
             });
@@ -489,22 +502,26 @@ class SelectBoxInput implements TSubject {
         try {
             const { config } = this;
             if (config.relatedConcept_dataLayer) {
-                const { inputElement } = config;
-                if (inputElement) {
-                    const selectedVals: string[] = inputElement.value.split(",");
-                    const valueBeforeComma: string = selectedVals[this.state.selection.length];
-                    const cleanValueBeforeComma: string = valueBeforeComma.trim().replace(",", "");
-                    const isEligible: boolean = this.checkIfSelectionEligible(valueBeforeComma);
-                    console.log("valueBeforeComma", cleanValueBeforeComma);
-                    console.log("value Before Comma State", cleanValueBeforeComma, "State in here", this.state.selection);
-
-                    if (isEligible) {
-                        this.onLastSelection();
-                        this.addSelection(cleanValueBeforeComma, cleanValueBeforeComma);
-                        this.sendRelatedSearchRequest(cleanValueBeforeComma);
-                    } else {
-                        throw new Error("Selection is not eligible");
-                    }
+                const validVals: string[] = this.getSelectedValueFromDom();
+                console.log("valid vals", validVals);
+                const valueBeforeComma: string = validVals[this.state.selection.length] || validVals[validVals.length - 1];
+                const cleanValueBeforeComma: string = valueBeforeComma && valueBeforeComma.trim().replace(",", "");
+                const isEligible: boolean = this.checkIfSelectionEligible(valueBeforeComma);
+                console.log("valid Vals", validVals, valueBeforeComma, cleanValueBeforeComma, "sadsadsad");
+                if (isEligible) {
+                    this.onLastSelection();
+                    this.setData({
+                        hasListUpdated: false,
+                        hasSelectionUpdated: true,
+                        selection: validVals,
+                        selectionAr: validVals,
+                        list: this.state.list,
+                        query: this.state.query
+                    });
+                    console.log("cleanValueBeforeComma", cleanValueBeforeComma);
+                    this.sendRelatedSearchRequest(cleanValueBeforeComma);
+                } else {
+                    throw new Error("Selection is not eligible");
                 }
             } else {
                 throw new Error("NO RC");
@@ -519,12 +536,9 @@ class SelectBoxInput implements TSubject {
             const { config } = this;
             const selectionLimitExceeded: boolean = config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
             const isDuplicate: boolean = this.checkIfDuplicate(selectedObj);
-            const isEmpty: boolean = selectedObj.trim() === "";
-            console.log(">> selectionLimitExceeded", selectionLimitExceeded);
-            console.log(">> isDuplicate", isDuplicate);
-            console.log(">> isEmpty", isEmpty);
-            console.log(">> checkIfSelectionEligible this.state.selection", this.state.selection);
-            return isDuplicate === false && selectionLimitExceeded === false && isEmpty === false;
+            console.log("isDuplicate", isDuplicate, "selectionLimitExceeded", selectionLimitExceeded);
+            console.log("state here", this.state);
+            return isDuplicate === false && selectionLimitExceeded === false;
         } catch (e) {
             console.warn("Error occurred while checking the eligibility of selection:", e);
             return false;
@@ -542,6 +556,7 @@ class SelectBoxInput implements TSubject {
 
     public sendSuggesterRequest(): void {
         try {
+            this.detectLanguage();
             const query = this.state.query;
             const { config } = this;
             const category = config.category ? config.category : "top";
@@ -648,6 +663,8 @@ class SelectBoxInput implements TSubject {
                     return includesSupported
                         ? lowerItem.includes(lowerQuery)
                         : lowerItem.indexOf(lowerQuery) !== -1;
+                } else {
+                    return false;
                 }
             });
         } catch (e) {
@@ -945,7 +962,6 @@ class SelectBoxInput implements TSubject {
                 return this.config.selectLimit === 1 ? [translatedText] : [...this.state.selectionAr, translatedText];
             };
             const selection = this.config.selectLimit === 1 ? [displayTextEn] : [...this.state.selection, displayTextEn];
-            console.log("addSelection", selection);
             const result: TState = {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
@@ -954,7 +970,6 @@ class SelectBoxInput implements TSubject {
                 selectionAr: getArSelection(),
                 query: ""
             };
-            console.log("state set in add Selection", result);
             this.setData(result);
         } catch (err) {
             console.warn(err.message);

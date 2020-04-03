@@ -29,6 +29,7 @@ module.exports = {
   ],
   rules: {
     "no-new": 0,
+    "consistent-return": ["error", { "treatUndefinedAsUnspecified": true }],
     "indent": ["error", 4],
     "semi": ["error", "always"],
     "quotes": ["error", "double"],
