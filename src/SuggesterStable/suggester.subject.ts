@@ -277,7 +277,7 @@ class SelectBoxInput implements TSubject {
                     return "";
                 }
             } else {
-                throw new Error("Query not found that is to be sanitised");
+                throw new Error(`Query Expected but found none. Received query: ${query}`);
             }
         } catch (e) {
             console.warn(e.message);
@@ -315,20 +315,20 @@ class SelectBoxInput implements TSubject {
      * @returns {void}
      * @access {public}
     */
-    public setSelectionOnSelectedTextRemoval(): void {
+    public setSelectionOnTextRemoval(): void {
         try {
             const selectedDomVals: string[] = this.getSelectedValueFromDom();
             const { inputElement } = this.config;
             const domValsLength: number = selectedDomVals.length;
             const currentSelectionLength: number = this.state.selection.length;
-            if (selectedDomVals && domValsLength > 0) {
-                if (domValsLength < currentSelectionLength) {
-                    this.state.selection = selectedDomVals;
-                    if (inputElement && inputElement.value.lastIndexOf(",") !== inputElement.value.length - 1) {
-                        this.state.selection.pop();
-                    }
-                    this.state.selectionAr = this.state.selection;
+            if (selectedDomVals && domValsLength > 0 && domValsLength <= currentSelectionLength) {
+                const lastSelectedDomVal: string = selectedDomVals[selectedDomVals.length - 1];
+                const currentLastSelectionVal: string = this.state.selection[this.state.selection.length - 1];
+                const isLastInputCharComma: boolean | null = inputElement && inputElement.value.lastIndexOf(",") !== inputElement.value.length - 1;
+                if (isLastInputCharComma && lastSelectedDomVal !== currentLastSelectionVal) {
+                    selectedDomVals.pop();
                 }
+                this.state.selection = this.state.selectionAr = selectedDomVals;
             }
         } catch (err) {
             console.warn(err.message);
@@ -380,11 +380,12 @@ class SelectBoxInput implements TSubject {
             case 40: this.onArrowPress("down"); break;
             case 188: this.initialiseRelatedSearch(); break;
             default: {
-                if (e.ctrlKey && (which === 89 || which === 90)) {
+                if ((e.ctrlKey && (which === 89 || which === 90))) {
+                    this.setSelectionOnTextRemoval();
                     this.onUndoRedo();
                     break;
                 }
-                this.setSelectionOnSelectedTextRemoval();
+                this.setSelectionOnTextRemoval();
                 this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
                 break;
             }
@@ -396,8 +397,8 @@ class SelectBoxInput implements TSubject {
 
     public onUndoRedo(): void {
         try {
-            console.log("Undo Redo");
             const latest = this.getSelectedValueFromDom();
+            console.log("latest values ", latest);
             this.replaceSelection(latest, this.state.query);
             Boolean(this.state.query) === false
                 ? this.initialiseRelatedSearch()
@@ -482,7 +483,7 @@ class SelectBoxInput implements TSubject {
                 const patr = new RegExp("[^a-zA-Z0-9,\\s" + config.specialCharactersAllowedList + "]", "g");
                 return query.replace(patr, "");
             } else {
-                throw new Error("Query not found that is to be sanitised");
+                throw new Error(`Query Expected But Found None.Received query: ${query}`);
             }
         } catch (e) {
             console.warn(e.message);
@@ -536,28 +537,37 @@ class SelectBoxInput implements TSubject {
                 this.replaceSelection(validVals, valueBeforeComma);
                 this.sendRelatedSearchRequest(cleanValueBeforeComma);
             } else {
-                throw new Error("NO RC");
+                throw new Error("Related Concepts are disabled in the config");
             }
         } catch (err) {
             console.warn(err.message);
         }
     }
 
+    /**
+     * Repalces the selection in the state with the `selectedValues` being passed as a parameter to the function.
+     *
+     * @returns {void}
+     * @param selectedValues
+     * @param query
+     */
     public replaceSelection(selectedValues: string[], query: string): void {
         try {
             const isEligible: boolean = this.checkIfSelectionEligible(query);
+            selectedValues.length - this.state.selectionAr.length === 1 ? this.state.selectionAr.push(selectedValues[selectedValues.length - 1])
+                : this.state.selectionAr = selectedValues;
             if (isEligible) {
                 this.onLastSelection();
                 this.setData({
                     hasListUpdated: false,
                     hasSelectionUpdated: true,
                     selection: selectedValues,
-                    selectionAr: selectedValues,
+                    selectionAr: this.state.selectionAr,
                     list: this.state.list,
                     query: this.state.query
                 });
             } else {
-                throw new Error("Selection is not eligible");
+                throw new Error(`Selection is not eligible. Either the select Limit is reached or the item is duplicate. IsEligible Flag:${isEligible}`);
             }
         } catch (err) {
             console.warn(err.message);
@@ -608,7 +618,7 @@ class SelectBoxInput implements TSubject {
                         "sug"
                     );
                 } else {
-                    throw new Error("Suugestion autocomplete urls missing. Verify default configuration or pass them in suggester config");
+                    throw new Error("Suggestion autocomplete urls missing. Verify default configuration or pass them in suggester config");
                 }
             } else {
                 throw new Error(`Can't send suggestion request is query empty? Received query: ${query}`);
@@ -641,7 +651,7 @@ class SelectBoxInput implements TSubject {
                     "rc"
                 );
             } else {
-                throw new Error("Suugestion related concepts urls missing. Verify default configuration or pass them in suggester config");
+                throw new Error("Suggestion related concepts urls missing. Verify default configuration or pass them in suggester config");
             }
         } catch (e) {
             console.warn(e);
@@ -735,10 +745,10 @@ class SelectBoxInput implements TSubject {
                             }
                             this.filterAndFillDataIntoListing(listingType);
                         } else {
-                            throw new Error("listingType not passed as a param");
+                            throw new Error(`listingType not passed as a param. Received listingType: ${listingType}`);
                         }
                     } else {
-                        throw new Error("Promise resulted in Error - sendXHR-helper.ts");
+                        throw new Error("Promise resulted in Error - sendXHR-helper.ts. Check your Internet Connection.");
                     }
                 });
             } else {
