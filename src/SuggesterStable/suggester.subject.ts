@@ -227,7 +227,7 @@ class SelectBoxInput implements TSubject {
                         this.emulateEventOnListObserver("focusout");
                     }
                 } else {
-                    throw new Error("Selection is not eligible");
+                    throw new Error("initSelection : selection is not eligible");
                 }
             }
         } catch (e) {
@@ -287,14 +287,17 @@ class SelectBoxInput implements TSubject {
 
     public getSelectedValueFromDom(): string[] {
         try {
+            const finalValues: string[] = [];
             const { inputElement } = this.config;
             const selectedVals: string[] = inputElement ? inputElement.value.split(",") : [];
-            const validVals: string[] = selectedVals.filter((item) => item.trim() !== "");
-            const cleanVals: string[] = validVals.map((item) => item.trim());
-            return cleanVals;
+            selectedVals.forEach((item: string) => {
+                const cleanString: string = item.trim();
+                item.trim() !== "" && finalValues.push(cleanString);
+            });
+            return finalValues;
         } catch (err) {
             console.warn(err.message);
-            return [];
+            return this.config.inputElement ? this.config.inputElement.value.split(",") : [];
         }
     }
 
@@ -364,15 +367,21 @@ class SelectBoxInput implements TSubject {
             case 40: this.onArrowPress("down"); break;
             case 188: this.initialiseRelatedSearch(); break;
             default: {
-                this.checkAndSetSelectionStateOnKeyUp();
+                const isQueryEmpty: boolean = this.state.query === "";
 
-                if (this.keyIndexes.indexOf(which) === -1) {
-                    const isQueryEmpty: boolean = this.state.query === "";
-                    isQueryEmpty === false
-                        ? this.debounceRequest(this.config.debounceTimeout).then(() => { return this.sendSuggesterRequest(); })
-                        : this.emulateEventOnListObserver("focusout");
-                    break;
+                // Handles Ctrl + Z|Y case else @TODO : Rishabh Add Comment
+                if (e.ctrlKey && (which === 89 || which === 90)) {
+                    const latest = this.getSelectedValueFromDom();
+                    this.replaceSelection(latest, this.state.query);
+                    if (isQueryEmpty === true) {
+                        this.initialiseRelatedSearch();
+                    }
+                } else {
+                    this.checkAndSetSelectionStateOnKeyUp();
                 }
+
+                this.debounceRequest(this.config.debounceTimeout).then(() => { return this.sendSuggesterRequest(); });
+                break;
             }
             }
         } catch (err) {
@@ -506,25 +515,31 @@ class SelectBoxInput implements TSubject {
                 console.log("valid vals", validVals);
                 const valueBeforeComma: string = validVals[this.state.selection.length] || validVals[validVals.length - 1];
                 const cleanValueBeforeComma: string = valueBeforeComma && valueBeforeComma.trim().replace(",", "");
-                const isEligible: boolean = this.checkIfSelectionEligible(valueBeforeComma);
-                console.log("valid Vals", validVals, valueBeforeComma, cleanValueBeforeComma, "sadsadsad");
-                if (isEligible) {
-                    this.onLastSelection();
-                    this.setData({
-                        hasListUpdated: false,
-                        hasSelectionUpdated: true,
-                        selection: validVals,
-                        selectionAr: validVals,
-                        list: this.state.list,
-                        query: this.state.query
-                    });
-                    console.log("cleanValueBeforeComma", cleanValueBeforeComma);
-                    this.sendRelatedSearchRequest(cleanValueBeforeComma);
-                } else {
-                    throw new Error("Selection is not eligible");
-                }
+                this.replaceSelection(validVals, valueBeforeComma);
+                this.sendRelatedSearchRequest(cleanValueBeforeComma);
             } else {
                 throw new Error("NO RC");
+            }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    public replaceSelection(selectedValues: string[], query: string): void {
+        try {
+            const isEligible: boolean = this.checkIfSelectionEligible(query);
+            if (isEligible) {
+                this.onLastSelection();
+                this.setData({
+                    hasListUpdated: false,
+                    hasSelectionUpdated: true,
+                    selection: selectedValues,
+                    selectionAr: selectedValues,
+                    list: this.state.list,
+                    query: this.state.query
+                });
+            } else {
+                throw new Error("Selection is not eligible");
             }
         } catch (err) {
             console.warn(err.message);
@@ -536,11 +551,9 @@ class SelectBoxInput implements TSubject {
             const { config } = this;
             const selectionLimitExceeded: boolean = config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
             const isDuplicate: boolean = this.checkIfDuplicate(selectedObj);
-            console.log("isDuplicate", isDuplicate, "selectionLimitExceeded", selectionLimitExceeded);
-            console.log("state here", this.state);
             return isDuplicate === false && selectionLimitExceeded === false;
-        } catch (e) {
-            console.warn("Error occurred while checking the eligibility of selection:", e);
+        } catch (err) {
+            console.warn(err.warn);
             return false;
         }
     }
@@ -577,10 +590,10 @@ class SelectBoxInput implements TSubject {
                         "sug"
                     );
                 } else {
-                    throw new Error("Config urls not set for suggester autocomplete request ");
+                    throw new Error("Suugestion autocomplete urls missing. Verify default configuration or pass them in suggester config");
                 }
             } else {
-                throw new Error("Query is not passed into the function");
+                throw new Error(`Can't send suggestion request is query empty? Received query: ${query}`);
             }
         } catch (e) {
             console.warn(e.message);
@@ -610,7 +623,7 @@ class SelectBoxInput implements TSubject {
                     "rc"
                 );
             } else {
-                throw new Error("Config urls are not present for the related concepts");
+                throw new Error("Suugestion related concepts urls missing. Verify default configuration or pass them in suggester config");
             }
         } catch (e) {
             console.warn(e);
@@ -637,7 +650,7 @@ class SelectBoxInput implements TSubject {
                 this.arrowCounter = -1;
                 this.showNoResultMessage(hasResults);
             } else {
-                throw new Error("param not found: query");
+                throw new Error(`Query or category missing. Received query : '${query}', category: '${category}'`);
             }
         } catch (e) {
             console.warn(e.message);
@@ -667,8 +680,8 @@ class SelectBoxInput implements TSubject {
                     return false;
                 }
             });
-        } catch (e) {
-            console.warn("Some error occurred while filtering the listing");
+        } catch (err) {
+            console.warn(err.message);
             return this.dataSet;
         }
     }
