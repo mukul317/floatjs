@@ -357,6 +357,7 @@ class SelectBoxInput implements TSubject {
             const target: HTMLInputElement | null = (e.target as HTMLInputElement);
             this.detectLanguage();
             this.setQueryToState(target, which);
+            console.log(which);
             switch (which) {
             case 8: this.onBackSpacePress(); break;
             case 9: this.emulateEventOnListObserver("focusout"); break;
@@ -365,23 +366,28 @@ class SelectBoxInput implements TSubject {
             case 40: this.onArrowPress("down"); break;
             case 188: this.initialiseRelatedSearch(); break;
             default: {
-                const isQueryEmpty: boolean = this.state.query === "";
-
-                // Handles Ctrl + Z|Y case else @TODO : Rishabh Add Comment
                 if (e.ctrlKey && (which === 89 || which === 90)) {
-                    const latest = this.getSelectedValueFromDom();
-                    this.replaceSelection(latest, this.state.query);
-                    if (isQueryEmpty === true) {
-                        this.initialiseRelatedSearch();
-                    }
-                } else {
-                    this.checkAndSetSelectionStateOnKeyUp();
+                    this.onUndoRedo();
+                    break;
                 }
-
-                this.debounceRequest(this.config.debounceTimeout).then(() => { return this.sendSuggesterRequest(); });
+                this.checkAndSetSelectionStateOnKeyUp();
+                this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
                 break;
             }
             }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    public onUndoRedo(): void {
+        try {
+            console.log("Undo Redo");
+            const latest = this.getSelectedValueFromDom();
+            this.replaceSelection(latest, this.state.query);
+            Boolean(this.state.query) === false
+                ? this.initialiseRelatedSearch()
+                : this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
         } catch (err) {
             console.warn(err.message);
         }
