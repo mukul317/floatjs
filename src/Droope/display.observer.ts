@@ -44,7 +44,7 @@ class SelectDisplay implements TObserver {
                 displayElement.appendChild(selectedHtml);
             }
         } catch (err) {
-            console.log(err.message);
+            console.warn(err.message);
         }
     }
 

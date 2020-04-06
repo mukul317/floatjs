@@ -371,7 +371,6 @@ class SelectBoxInput implements TSubject {
             const target: HTMLInputElement | null = (e.target as HTMLInputElement);
             this.detectLanguage();
             this.setQueryToState(target, which);
-            console.log(which);
             switch (which) {
             case 8: this.onBackSpacePress(); break;
             case 9: this.emulateEventOnListObserver("focusout"); break;
@@ -398,7 +397,6 @@ class SelectBoxInput implements TSubject {
     public onUndoRedo(): void {
         try {
             const latest = this.getSelectedValueFromDom();
-            console.log("latest values ", latest);
             this.replaceSelection(latest, this.state.query);
             Boolean(this.state.query) === false
                 ? this.initialiseRelatedSearch()
@@ -483,7 +481,7 @@ class SelectBoxInput implements TSubject {
                 const patr = new RegExp("[^a-zA-Z0-9,\\s" + config.specialCharactersAllowedList + "]", "g");
                 return query.replace(patr, "");
             } else {
-                throw new Error(`Query Expected But Found None.Received query: ${query}`);
+                throw new Error(`Query Expected But Found None While sanitising query.Received query: ${query}`);
             }
         } catch (e) {
             console.warn(e.message);
@@ -531,7 +529,6 @@ class SelectBoxInput implements TSubject {
             const { config } = this;
             if (config.relatedConcept_dataLayer) {
                 const validVals: string[] = this.getSelectedValueFromDom();
-                console.log("valid vals", validVals);
                 const valueBeforeComma: string = validVals[this.state.selection.length] || validVals[validVals.length - 1];
                 const cleanValueBeforeComma: string = valueBeforeComma && valueBeforeComma.trim().replace(",", "");
                 this.replaceSelection(validVals, valueBeforeComma);
