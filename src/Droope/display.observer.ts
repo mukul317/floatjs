@@ -3,12 +3,13 @@ import { TSubject, TObserver, TData, TState } from "./interface";
 class SelectDisplay implements TObserver {
     public subject: TSubject;
     private view: HTMLElement;
+    private isNodeList: boolean = false;
 
     constructor(subject: TSubject) {
         this.subject = subject;
         this.subject.registerObserver(this);
         this.view = document.createElement("UL");
-
+        this.isNodeList = subject.config.displayElement instanceof NodeList;
         if (this.subject.config.tagSelectedValues) {
             this.onCrossClick();
         }
@@ -39,9 +40,20 @@ class SelectDisplay implements TObserver {
     public appendMarkup(selectedHtml: HTMLElement): void {
         try {
             const { displayElement } = this.subject.config;
+
+            const populateMarkUp = (element: HTMLElement): void => {
+                try {
+                    element.innerHTML = "";
+                    element.appendChild(selectedHtml.cloneNode(true));
+                } catch (err) {
+                    console.warn(err.message);
+                }
+            };
+
             if (displayElement) {
-                displayElement.innerHTML = "";
-                displayElement.appendChild(selectedHtml);
+                this.isNodeList
+                    ? (displayElement as NodeList).forEach((element: Node) => populateMarkUp((element as HTMLElement)))
+                    : populateMarkUp((displayElement as HTMLElement));
             }
         } catch (err) {
             console.log(err.message);
@@ -84,18 +96,26 @@ class SelectDisplay implements TObserver {
 
     public onCrossClick(): void {
         try {
-            this.view.addEventListener("click", (e: MouseEvent) => {
-                if (e.target) {
-                    try {
-                        const toBeDeletedId = (e.target as HTMLElement).getAttribute("data-id");
-                        if (toBeDeletedId && toBeDeletedId !== "") {
-                            this.subject.removeSelection(toBeDeletedId);
+            const { displayElement } = this.subject.config;
+            const attachCrossEvent = (element: HTMLElement): void => {
+                element.addEventListener("click", (e: MouseEvent) => {
+                    if (e.target) {
+                        try {
+                            const toBeDeletedId = (e.target as HTMLElement).getAttribute("data-id");
+                            if (toBeDeletedId && toBeDeletedId !== "") {
+                                this.subject.removeSelection(toBeDeletedId);
+                            }
+                        } catch (err) {
+                            console.warn(err.message);
                         }
-                    } catch (err) {
-                        console.warn(err.message);
                     }
-                }
-            });
+                });
+            };
+            if (displayElement) {
+                this.isNodeList === false
+                    ? attachCrossEvent((displayElement as HTMLElement))
+                    : (displayElement as NodeList).forEach((element: Node) => attachCrossEvent((element as HTMLElement)));
+            }
         } catch (err) {
             console.warn(err);
         }

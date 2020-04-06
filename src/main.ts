@@ -8,7 +8,7 @@ import Suggester from "./SuggesterStable";
 ((): void => {
     const inputElement: HTMLInputElement | null = document.querySelector(".select-box-input");
     const lisitingElement: HTMLElement | null = document.querySelector(".select-box-listing");
-    const displayElement: HTMLElement | null = document.querySelector(".select-box-display");
+    const displayElement: NodeList | null = document.querySelector(".select-box-display");
     if (inputElement && lisitingElement && displayElement) {
         const options: TDroopeConfig = {
             domId: "demoDroope",
@@ -21,6 +21,7 @@ import Suggester from "./SuggesterStable";
             noResultErrorMessage: "Sorry no result",
             tagSelectedValues: true,
             checkboxes: true
+            listData: droopeData
         };
         const DroopeInstance = Droope(options, droopeData);
         console.log(DroopeInstance);

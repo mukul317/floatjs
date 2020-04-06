@@ -1,20 +1,20 @@
-import { TObserver, TData, TState, TSubject, TDroopeConfig } from "./interface";
+import { TObserver, TData, TState, TSubject, TDroopeConfig, TDirection } from "./interface";
 interface TSetState extends TState {
     construct?: boolean;
 }
 
 const defaultConfig: TDroopeConfig = {
-    domId: "",
+    domId: `droope_${Date.now()}`,
     inputElement: null,
     lisitingElement: null,
     displayElement: null,
     listLimit: 10,
     selectLimit: 1,
     displayListOnFocus: true,
-    displayDecorationList: ["chips"],
     noResultErrorMessage: "No result for your query",
     tagSelectedValues: false,
-    checkboxes: true
+    checkboxes: true,
+    listData: []
 };
 class SelectBoxInput implements TSubject {
     public state: TState = {
@@ -24,7 +24,6 @@ class SelectBoxInput implements TSubject {
         hasSelectionUpdated: false
     };
 
-    public noResultErrorMessage: boolean = true;
     public noResultElement: HTMLElement = document.createElement("p");
     public arrowCounter: number = -1;
     public config: TDroopeConfig = defaultConfig;
@@ -48,11 +47,11 @@ class SelectBoxInput implements TSubject {
         try {
             const { config } = this;
             if (config.inputElement) {
-                config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e));
-                config.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
+                config.inputElement.addEventListener("keydown", (e) => { return this.onBackspace(e); });
+                config.inputElement.addEventListener("keyup", (e) => { return this.onKeyUp(e); });
                 if (config.displayListOnFocus === true) {
-                    document.addEventListener("click", (e) => this.handleDocumentBlur(e));
-                    config.inputElement.addEventListener("focus", (e) => this.emulateEventOnListObserver(e.type));
+                    document.addEventListener("click", (e) => { return this.handleDocumentBlur(e); });
+                    config.inputElement.addEventListener("focus", (e) => { return this.emulateEventOnListObserver(e.type); });
                     // Close listing on initialization
                     this.emulateEventOnListObserver("focusout");
                 }
@@ -119,7 +118,7 @@ class SelectBoxInput implements TSubject {
 
             if (selectedObj && config.selectLimit) {
                 const selectionLimitExceeded: boolean = config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
-                const isDuplicate: boolean = this.state.selection.filter((item) => item.id === selectedObj.id).length > 0;
+                const isDuplicate: boolean = this.state.selection.filter((item) => { return item.id === selectedObj.id; }).length > 0;
 
                 if (isDuplicate === true) {
                     if (config.checkboxes === true) {
@@ -131,6 +130,7 @@ class SelectBoxInput implements TSubject {
                         throw new Error(`Maximum select limit reached. Configured limit droope id "${config.domId}" is ${config.selectLimit}`);
                     } else {
                         this.addSelection(selectedObj);
+                        this.clearInput();
                     }
                 }
             } else {
@@ -160,104 +160,119 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Callback for keyUp event attached to the droope input field
+     * case 9   : Handles the Listing Display State and sets to blur
+     * case 13  : Enter
+     * case 38  : Up Arrow
+     * case 40  : Down Arrow
+     *
+     * @param e : KeyBoardEvent
+     * @returns {void}
+     */
     public onKeyUp(e: KeyboardEvent): void {
         try {
             const query: string = e && e.target && (e.target as HTMLInputElement).value ? (e.target as HTMLInputElement).value.trim() : "";
             const which: number = e.which;
 
             switch (which) {
-            case 9: { // Tab pressed
-                this.emulateEventOnListObserver("focusout");
-                return;
-            }
-            // ENter
-            case 13: {
-                const { config } = this;
-                const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
-                if (listItem) {
-                    this.onSelect(listItem);
-                }
-                return;
-            }
-
-            case 38: // Up arrow
-                this.onArrowPress("up");
-                return;
-
-            case 40: {
-                // Down arrow
-                this.onArrowPress("down");
-                return;
-            }
-
-            default: {
-                // Default filtering logic
-                const filteredList = this.dataSet.filter((item) => {
-                    const lowerItem = item.name.toLowerCase();
-                    const lowerQuery = query.toLowerCase();
-                    const includesSupported = Array.prototype.includes !== undefined;
-                    return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
-                });
-
-                const hasResults = filteredList.length !== 0;
-                const result: TState = {
-                    hasSelectionUpdated: false,
-                    hasListUpdated: true,
-                    list: hasResults ? filteredList : this.dataSet,
-                    selection: [...this.state.selection]
-                };
-                this.setData(result);
-                // Reset counter for arrow keys
-                this.arrowCounter = -1;
-                this.showNoResultMessage(hasResults);
-            }
+            case 9: this.emulateEventOnListObserver("focusout"); break;
+            case 13: this.onEnterPress(); break;
+            case 38: this.onArrowPress("up"); break;
+            case 40: this.onArrowPress("down"); break;
+            default: this.initSelection(query); break;
             }
         } catch (err) {
             console.warn(err.message);
         }
     }
 
-    public onArrowPress(direction: string): void {
+    public onEnterPress(): void {
         try {
-            /** get list of all li items */
             const { config } = this;
-            const listItems = config.lisitingElement ? config.lisitingElement.querySelectorAll("li") : null;
+            const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
+            if (listItem) {
+                this.onSelect(listItem);
+            }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
 
-            /** determine the direction */
-            const isGoingUp = direction === "up";
-            const isGoingDown = direction === "down";
+    public initSelection(query: string): void {
+        try {
+            // Default filtering logic
+            const filteredList = this.dataSet.filter((item) => {
+                const lowerItem = item.name.toLowerCase();
+                const lowerQuery = query.toLowerCase();
+                const includesSupported = Array.prototype.includes !== undefined;
+                return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
+            });
+            const hasResults = filteredList.length !== 0;
+            const result: TState = {
+                hasSelectionUpdated: false,
+                hasListUpdated: true,
+                list: hasResults ? filteredList : this.dataSet,
+                selection: [...this.state.selection]
+            };
+            this.setData(result);
+            this.arrowCounter = -1;
+            this.showNoResultMessage(hasResults);
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
 
-            if (isGoingDown === true && listItems) {
-                /** counter is by default at -1 for first selection i.e. index 0 */
-                const currentElement: HTMLElement = listItems[this.arrowCounter + 1];
+    /**
+     * Callback to keycode 38 && 40 which are arrow down and arrow up keys
+     * on the execution of constructor the arrow counter is indexed at -1
+     * this method traverses through the list item from 0 to `list.length`
+     * and adds `active` class to currently active item
+     *
+     * @access public
+     * @returns {void}
+     * @param direction {TDirection}
+     */
+    public onArrowPress(direction: TDirection): void {
+        try {
+            const { lisitingElement } = this.config;
+            const listItems = lisitingElement ? lisitingElement.querySelectorAll("li") : null;
 
-                if (currentElement) {
-                    // add active class to
-                    currentElement.classList.add("active");
-                    const prevElement = currentElement.previousElementSibling;
-                    if (prevElement) {
-                        prevElement.classList.remove("active");
+            if (listItems) {
+                switch (direction) {
+                case "down" : {
+                    // counter is by default at -1 for first selection i.e. index 0
+                    const currentElement: HTMLElement = listItems[this.arrowCounter + 1];
+
+                    if (currentElement) {
+                        // add active class for highlighting
+                        currentElement.classList.add("active");
+                        const prevElement = currentElement.previousElementSibling;
+                        if (prevElement) {
+                            prevElement.classList.remove("active");
+                        }
                     }
+                    if (this.arrowCounter < listItems.length - 1) {
+                        this.arrowCounter++;
+                    }
+                    break;
                 }
-                if (this.arrowCounter < listItems.length - 1) {
-                    this.arrowCounter++;
+                case "up": {
+                    const currentElement = listItems[this.arrowCounter];
+                    if (currentElement) {
+                        currentElement.classList.remove("active");
+                        const prevElement = currentElement.previousElementSibling;
+                        if (prevElement) {
+                            prevElement.classList.add("active");
+                        }
+                    }
+                    if (this.arrowCounter > -1) {
+                        this.arrowCounter--;
+                    }
+                    break;
+                }
                 }
             }
-
-            if (isGoingUp === true && listItems) {
-                const currentElement = listItems[this.arrowCounter];
-                if (currentElement) {
-                    currentElement.classList.remove("active");
-                    const prevElement = currentElement.previousElementSibling;
-                    if (prevElement) {
-                        prevElement.classList.add("active");
-                    }
-                }
-                if (this.arrowCounter > -1) {
-                    this.arrowCounter--;
-                }
-            }
-            console.log(this.arrowCounter);
         } catch (err) {
             console.warn(err.message);
         }
@@ -407,7 +422,7 @@ class SelectBoxInput implements TSubject {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
                 list: this.state.list,
-                selection: [...this.state.selection.filter((item) => parseInt(item.id, 10) !== parseInt(id, 10))]
+                selection: [...this.state.selection.filter((item) => { return parseInt(item.id, 10) !== parseInt(id, 10); })]
             };
             this.setData(result);
         } catch (err) {
@@ -434,6 +449,24 @@ class SelectBoxInput implements TSubject {
                 selection
             };
             this.setData(result);
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    /**
+     * Clears the value of registered input element
+     * Mostly invoked after a selection is made
+     *
+     * @access public
+     * @returns {void}
+     */
+    public clearInput(): void {
+        try {
+            const { inputElement } = this.config;
+            if (inputElement) {
+                inputElement.value = "";
+            }
         } catch (err) {
             console.warn(err.message);
         }
@@ -508,6 +541,27 @@ class SelectBoxInput implements TSubject {
         } catch (err) {
             console.warn(err.message);
             return null;
+        }
+    }
+
+    /**
+     * Constructs the droope for the first time
+     * internally calls setData with `construct`: true
+     * along with populating droope listing
+     *
+     * @returns {void}
+     */
+    public init(): void {
+        try {
+            this.setData({
+                hasSelectionUpdated: false,
+                hasListUpdated: false,
+                construct: true,
+                selection: [],
+                list: this.config.listData
+            });
+        } catch (err) {
+            console.warn(err.message);
         }
     }
 }
