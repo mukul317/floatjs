@@ -526,13 +526,14 @@ class SelectBoxInput implements TSubject {
     public replaceSelection(selectedValues: string[], query: string): void {
         try {
             const isEligible: boolean = this.checkIfSelectionEligible(query);
+            const selectedArValues: string[] = [...this.state.selectionAr, selectedValues[selectedValues.length - 1]];
             if (isEligible) {
                 this.onLastSelection();
                 this.setData({
                     hasListUpdated: false,
                     hasSelectionUpdated: true,
                     selection: selectedValues,
-                    selectionAr: selectedValues,
+                    selectionAr: selectedArValues,
                     list: this.state.list,
                     query: this.state.query
                 });
