@@ -313,9 +313,7 @@ class SelectBoxInput implements TSubject {
                     if (inputElement && inputElement.value.lastIndexOf(",") !== inputElement.value.length - 1) {
                         this.state.selection.pop();
                     }
-                    if (this.userLanguage === "AR") {
-                        this.state.selectionAr = this.state.selection;
-                    }
+                    this.state.selectionAr = this.state.selection;
                 }
             }
         } catch (err) {
@@ -411,7 +409,7 @@ class SelectBoxInput implements TSubject {
                         hasSelectionUpdated: false,
                         list: this.state.list,
                         query: this.state.query,
-                        selectionAr: this.userLanguage === "AR" ? selection : this.state.selectionAr
+                        selectionAr: selection
                     });
                     if (this.state.query) {
                         const isQueryEmpty: boolean = this.state.query === "";
