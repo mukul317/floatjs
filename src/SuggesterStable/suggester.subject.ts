@@ -285,6 +285,12 @@ class SelectBoxInput implements TSubject {
         return "";
     }
 
+    /**
+     * Extract selectiom from the suggester input feild by splitting the value of the input
+     * feild of the suggester based on `,`;
+     * @returns {string[]}
+     * @access {public}
+     */
     public getSelectedValueFromDom(): string[] {
         try {
             const finalValues: string[] = [];
@@ -301,7 +307,15 @@ class SelectBoxInput implements TSubject {
         }
     }
 
-    public checkAndSetSelectionStateOnKeyUp(): void {
+    /**
+     * Updates the Selection in the Suggester state when user selects the text in the input feild
+     * and start typing without explicitly entering backspace for deletion.
+     * What it does it picks the selecteddomvals from the input elements and updates the selection
+     * state of suggester.
+     * @returns {void}
+     * @access {public}
+    */
+    public setSelectionOnSelectedTextRemoval(): void {
         try {
             const selectedDomVals: string[] = this.getSelectedValueFromDom();
             const { inputElement } = this.config;
@@ -370,7 +384,7 @@ class SelectBoxInput implements TSubject {
                     this.onUndoRedo();
                     break;
                 }
-                this.checkAndSetSelectionStateOnKeyUp();
+                this.setSelectionOnSelectedTextRemoval();
                 this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
                 break;
             }
