@@ -34,7 +34,6 @@ interface TDroopeConfig {
     readonly displayElement: HTMLElement | NodeList | null;
     readonly selectLimit?: number;
     readonly displayListOnFocus?: boolean;
-    readonly displayDecorationList?: string[];
     readonly noResultErrorMessage?: string;
     readonly tagSelectedValues: boolean;
     readonly listLimit?: number;

@@ -11,7 +11,6 @@ const defaultConfig: TDroopeConfig = {
     listLimit: 10,
     selectLimit: 1,
     displayListOnFocus: true,
-    displayDecorationList: ["chips"],
     noResultErrorMessage: "No result for your query",
     tagSelectedValues: false,
     checkboxes: true,
@@ -48,11 +47,11 @@ class SelectBoxInput implements TSubject {
         try {
             const { config } = this;
             if (config.inputElement) {
-                config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e));
-                config.inputElement.addEventListener("keyup", (e) => this.onKeyUp(e));
+                config.inputElement.addEventListener("keydown", (e) => { return this.onBackspace(e); });
+                config.inputElement.addEventListener("keyup", (e) => { return this.onKeyUp(e); });
                 if (config.displayListOnFocus === true) {
-                    document.addEventListener("click", (e) => this.handleDocumentBlur(e));
-                    config.inputElement.addEventListener("focus", (e) => this.emulateEventOnListObserver(e.type));
+                    document.addEventListener("click", (e) => { return this.handleDocumentBlur(e); });
+                    config.inputElement.addEventListener("focus", (e) => { return this.emulateEventOnListObserver(e.type); });
                     // Close listing on initialization
                     this.emulateEventOnListObserver("focusout");
                 }
@@ -119,7 +118,7 @@ class SelectBoxInput implements TSubject {
 
             if (selectedObj && config.selectLimit) {
                 const selectionLimitExceeded: boolean = config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
-                const isDuplicate: boolean = this.state.selection.filter((item) => item.id === selectedObj.id).length > 0;
+                const isDuplicate: boolean = this.state.selection.filter((item) => { return item.id === selectedObj.id; }).length > 0;
 
                 if (isDuplicate === true) {
                     if (config.checkboxes === true) {
@@ -177,52 +176,48 @@ class SelectBoxInput implements TSubject {
             const which: number = e.which;
 
             switch (which) {
-            case 9: { // Tab pressed
-                this.emulateEventOnListObserver("focusout");
-                return;
+            case 9: this.emulateEventOnListObserver("focusout"); break;
+            case 13: this.onEnterPress(); break;
+            case 38: this.onArrowPress("up"); break;
+            case 40: this.onArrowPress("down"); break;
+            default: this.initSelection(query); break;
             }
-            // ENter
-            case 13: {
-                const { config } = this;
-                const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
-                if (listItem) {
-                    this.onSelect(listItem);
-                }
-                return;
-            }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
 
-            case 38: // Up arrow
-                this.onArrowPress("up");
-                return;
-
-            case 40: {
-                // Down arrow
-                this.onArrowPress("down");
-                return;
+    public onEnterPress(): void {
+        try {
+            const { config } = this;
+            const listItem: HTMLElement | null = config.lisitingElement && config.lisitingElement.querySelector(".active");
+            if (listItem) {
+                this.onSelect(listItem);
             }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
 
-            default: {
-                // Default filtering logic
-                const filteredList = this.dataSet.filter((item) => {
-                    const lowerItem = item.name.toLowerCase();
-                    const lowerQuery = query.toLowerCase();
-                    const includesSupported = Array.prototype.includes !== undefined;
-                    return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
-                });
-
-                const hasResults = filteredList.length !== 0;
-                const result: TState = {
-                    hasSelectionUpdated: false,
-                    hasListUpdated: true,
-                    list: hasResults ? filteredList : this.dataSet,
-                    selection: [...this.state.selection]
-                };
-                this.setData(result);
-                // Reset counter for arrow keys
-                this.arrowCounter = -1;
-                this.showNoResultMessage(hasResults);
-            }
-            }
+    public initSelection(query: string): void {
+        try {
+            // Default filtering logic
+            const filteredList = this.dataSet.filter((item) => {
+                const lowerItem = item.name.toLowerCase();
+                const lowerQuery = query.toLowerCase();
+                const includesSupported = Array.prototype.includes !== undefined;
+                return includesSupported ? lowerItem.includes(lowerQuery) : lowerItem.indexOf(lowerQuery) !== -1;
+            });
+            const hasResults = filteredList.length !== 0;
+            const result: TState = {
+                hasSelectionUpdated: false,
+                hasListUpdated: true,
+                list: hasResults ? filteredList : this.dataSet,
+                selection: [...this.state.selection]
+            };
+            this.setData(result);
+            this.arrowCounter = -1;
+            this.showNoResultMessage(hasResults);
         } catch (err) {
             console.warn(err.message);
         }
@@ -427,7 +422,7 @@ class SelectBoxInput implements TSubject {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
                 list: this.state.list,
-                selection: [...this.state.selection.filter((item) => parseInt(item.id, 10) !== parseInt(id, 10))]
+                selection: [...this.state.selection.filter((item) => { return parseInt(item.id, 10) !== parseInt(id, 10); })]
             };
             this.setData(result);
         } catch (err) {

@@ -15,7 +15,6 @@ import "./Suggester";
             displayElement,
             selectLimit: 2,
             displayListOnFocus: true,
-            displayDecorationList: [],
             noResultErrorMessage: "Sorry no result",
             tagSelectedValues: true,
             checkboxes: true,
