@@ -1,4 +1,4 @@
-import { TSubject, TObserver, TData, TState } from "./interface";
+import { TSubject, TObserver, TState } from "./interface";
 
 class SelectDisplay implements TObserver {
     public subject: TSubject;
@@ -9,23 +9,25 @@ class SelectDisplay implements TObserver {
         this.subject.registerObserver(this);
         this.view = document.createElement("UL");
 
-        if (this.subject.config.tagSelectedValues) {
+        if (this.subject.config.displayBehaviour === "tag") {
             this.onCrossClick();
         }
     }
 
-    public generateDisplayHtml(selectedValues: TData[]): HTMLElement {
-        const { tagSelectedValues } = this.subject.config;
+    public generateDisplayHtml(selectedValues: string[]): HTMLElement {
         try {
             /** @todo: Object vs DOM difffing */
             this.view.innerHTML = "";
-            selectedValues.forEach((item: TData) => {
+            const { displayBehaviour } = this.subject.config;
+            selectedValues.forEach((item: string) => {
                 const listItem: HTMLElement = document.createElement("LI");
-                listItem.textContent = item.name;
+                listItem.textContent = item || "";
                 listItem.classList.add("selection-item");
-                listItem.setAttribute("data-obj", JSON.stringify(item));
-                if (tagSelectedValues) {
+                listItem.setAttribute("data-displayTextEn", JSON.stringify(item));
+                switch (displayBehaviour) {
+                case "tag":
                     this.tagDecorator(listItem);
+                    break;
                 }
                 this.view.appendChild(listItem);
             });
@@ -36,27 +38,49 @@ class SelectDisplay implements TObserver {
         }
     }
 
-    public appendMarkup(selectedHtml: HTMLElement): void {
+    public appendMarkup(selectedHtml: Element): void {
         try {
-            const { displayElement } = this.subject.config;
+            const { displayElement, inputElement } = this.subject.config;
             if (displayElement) {
                 displayElement.innerHTML = "";
                 displayElement.appendChild(selectedHtml);
             }
+            if (inputElement) {
+                inputElement.value = "";
+            }
         } catch (err) {
-            console.log(err.message);
+            console.warn(err.message);
         }
     }
 
     public update(state: TState): void {
         try {
             const { selection, hasSelectionUpdated } = state;
-            if (hasSelectionUpdated === true) {
-                const selectedHtml: HTMLElement = this.generateDisplayHtml(selection);
-                this.appendMarkup(selectedHtml);
 
-                console.info("[Notified]: Droope Select Observer with UPDATE");
+            const { displayBehaviour } = this.subject.config;
+            if (hasSelectionUpdated === true) {
+                switch (displayBehaviour) {
+                case "default":
+                    this.generateDefaultDisplay(state);
+                    break;
+                default:
+                    this.appendMarkup(this.generateDisplayHtml(selection));
+                    break;
+                }
+                console.info("[Notified]: Suggester Select Observer with UPDATE");
             }
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    public generateDefaultDisplay(state: TState): void {
+        try {
+            const { selection, query } = state;
+            const selectionLength: number = selection.length;
+            const selectionInString: string = selection.join(", ");
+            const completeSelectionString: string = selectionLength > 0 ? `${selectionInString}, ` : `${query}, `;
+            (this.subject.config.displayElement as HTMLInputElement).value = completeSelectionString;
         } catch (err) {
             console.warn(err.message);
         }
@@ -87,9 +111,9 @@ class SelectDisplay implements TObserver {
             this.view.addEventListener("click", (e: MouseEvent) => {
                 if (e.target) {
                     try {
-                        const toBeDeletedId = (e.target as HTMLElement).getAttribute("data-id");
-                        if (toBeDeletedId && toBeDeletedId !== "") {
-                            this.subject.removeSelection(toBeDeletedId);
+                        const toBeDeletedSelection = (e.target as HTMLElement).getAttribute("data-displayTextEn");
+                        if (toBeDeletedSelection && toBeDeletedSelection !== "") {
+                            this.subject.removeSelection(toBeDeletedSelection);
                         }
                     } catch (err) {
                         console.warn(err.message);
