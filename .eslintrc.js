@@ -30,7 +30,6 @@ module.exports = {
   rules: {
     "no-new": 0,
     "consistent-return": ["error", { "treatUndefinedAsUnspecified": true }],
-    "arrow-body-style": ["error", "always"],
     "indent": ["error", 4],
     "semi": ["error", "always"],
     "quotes": ["error", "double"],
