@@ -1,3 +1,4 @@
+type TDirection = "up" | "down";
 interface TData {
     id: string;
     name: string;
@@ -12,6 +13,8 @@ interface TSubject {
     notifyObservers(): void;
     setData(data: TState): void;
     removeSelection(id: string): void;
+    getCompleteState(): TState | null;
+    init(): void;
 }
 
 interface TState {
@@ -28,14 +31,14 @@ interface TDroopeConfig {
     readonly domId: string;
     readonly inputElement: HTMLInputElement | null;
     readonly lisitingElement: HTMLElement | null;
-    readonly displayElement: HTMLElement | null;
+    readonly displayElement: HTMLElement | NodeList | null;
     readonly selectLimit?: number;
     readonly displayListOnFocus?: boolean;
-    readonly displayDecorationList?: string[];
     readonly noResultErrorMessage?: string;
     readonly tagSelectedValues: boolean;
     readonly listLimit?: number;
     readonly checkboxes?: boolean;
+    readonly listData: TData[];
 }
 
 export {
@@ -43,5 +46,6 @@ export {
     TSubject,
     TState,
     TObserver,
-    TDroopeConfig
+    TDroopeConfig,
+    TDirection
 };
