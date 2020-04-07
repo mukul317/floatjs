@@ -24,6 +24,7 @@ import Suggester from "./SuggesterStable";
         };
         const DroopeInstance = Droope(options);
         console.log(DroopeInstance);
+    }
 })();
 
 ((): void => {
