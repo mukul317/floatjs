@@ -56,7 +56,7 @@ class SelectDisplay implements TObserver {
                     : populateMarkUp((displayElement as HTMLElement));
             }
         } catch (err) {
-            console.log(err.message);
+            console.warn(err.message);
         }
     }
 
