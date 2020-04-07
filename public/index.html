@@ -12,7 +12,6 @@
 
 <body>
 
-
     <div class="container-fluid">
         <a href="#" data-target="slide-out" class="sidenav-trigger">
             <i class="material-icons medium">menu</i>
@@ -30,7 +29,6 @@
         </div>
 
         <div class="row section" id="droope">
-            <div class="select-box-display"></div>
             <div class="col s10 offset-s1 ">
                 <h2>Droope</h2>
                 <div class="select-box">
@@ -48,9 +46,23 @@
             </div>
         </div>
 
+
         <div class="row section" id="suggester">
-            <div class="col s12 l5 offset-l1 ">
+            <div class="col s10 offset-s1">
+                <button type="button">Submit</button>
                 <h2>Suggester</h2>
+                <div class="suggester-select-box">
+                    <fieldset>
+                        <legend>Display + Input</legend>
+                        <div class="suggester-select-box-display"></div>
+                        <input class="suggester-select-box-input" type="text" />
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>List</legend>
+                        <section class="suggester-select-box-listing"></section>
+                    </fieldset>
+                </div>
             </div>
         </div>
         <div class="row section" id="documentation">

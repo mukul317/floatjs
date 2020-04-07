@@ -1,6 +1,6 @@
 {
 	"name": "floatjs",
-	"version": "1.0.0",
+	"version": "0.0.1",
 	"description": "Extensible typescript plugins that float on your framework",
 	"main": "index.js",
 	"scripts": {
@@ -39,12 +39,5 @@
 		"webpack": "^4.41.6",
 		"webpack-cli": "^3.3.11",
 		"webpack-dev-server": "^3.10.3"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/mukul317/floatjs.git"
-	},
-	"publishConfig": {
-		"registry": "https://npm.pkg.github.com/@mukul317"
 	}
 }
