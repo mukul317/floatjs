@@ -75,7 +75,7 @@ class SelectBoxInput implements TSubject {
     public arrowCodisplayunter: number = -1;
     public config: TSugConfig = defaultConfig;
 
-    public keyIndexes: number[] = [9, 16, 18, 19, 20, 27, 33, 34, 35, 36, 37, 39, 45, 46, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 144];
+    public keyIndexes: number[] = [9, 16, 18, 19, 20, 27, 33, 34, 35, 36, 37, 39, 45, 46, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 144, 38, 40];
     public dataSet: TData[] = [];
     public listObserverCollection: TObserver[] = [];
     public arrowCounter: number = -1;
@@ -196,6 +196,7 @@ class SelectBoxInput implements TSubject {
             const { config } = this;
             if (config.listingElement) {
                 config.listingElement.style.display = eventType === "focus" ? "block" : "none";
+                if (eventType === "focusout") { this.arrowCounter = -1; }
             }
         } catch (err) {
             console.warn(err.message);
@@ -212,7 +213,7 @@ class SelectBoxInput implements TSubject {
         try {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
             const translatedText: string = target.getAttribute("data-textsuggest") || "";
-            if (selectedDisplayText && this.config.selectLimit) {
+            if (selectedDisplayText && this.config.selectLimit && this.state.selection.length < this.config.selectLimit) {
                 if (this.config && this.config.relatedConceptsLimit && this.recentSelectCount < this.config.relatedConceptsLimit) {
                     this.sendRelatedSearchRequest(selectedDisplayText);
                     this.recentSelectCount++;
@@ -346,7 +347,7 @@ class SelectBoxInput implements TSubject {
             if (target) {
                 const value: string = target.value;
                 const query = this.extractQuery(value.trim());
-                this.emulateEventOnListObserver(!query ? "focusout" : "focus");
+                if (this.keyIndexes.indexOf(keyCode) === -1) this.emulateEventOnListObserver(!query ? "focusout" : "focus");
                 this.state.query = this.userLanguage === "AR" ? query : this.sanitiseQuery(query);
             } else {
                 throw new Error(`Could not set query in state. target : ${target}, keyCode: ${keyCode}`);
@@ -391,7 +392,7 @@ class SelectBoxInput implements TSubject {
                     break;
                 }
                 this.setSelectionOnTextRemoval();
-                this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
+                if (this.keyIndexes.indexOf(e.which) === -1) { this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest()); }
                 break;
             }
             }
