@@ -315,7 +315,11 @@ class SelectBoxInput implements TSubject {
      * @returns {void}
      * @access {public}
     */
+<<<<<<< Updated upstream
     public setSelectionOnTextRemoval(): void {
+=======
+    public setSelectionOnSelectedTextRemoval(): void {
+>>>>>>> Stashed changes
         try {
             const selectedDomVals: string[] = this.getSelectedValueFromDom();
             const { inputElement } = this.config;
@@ -385,10 +389,23 @@ class SelectBoxInput implements TSubject {
             case 40: this.onArrowPress("down"); break;
             case 188: this.initialiseRelatedSearch(); break;
             default: {
+<<<<<<< Updated upstream
                 if ((e.ctrlKey && (which === 89 || which === 90))) {
                     this.setSelectionOnTextRemoval();
                     this.onUndoRedo();
                     break;
+=======
+                const isQueryEmpty: boolean = this.state.query === "";
+
+                if (e.ctrlKey && (which === 89 || which === 90)) {
+                    const latest = this.getSelectedValueFromDom();
+                    this.replaceSelection(latest, this.state.query);
+                    if (isQueryEmpty === true) {
+                        this.initialiseRelatedSearch();
+                    }
+                } else {
+                    this.setSelectionOnSelectedTextRemoval();
+>>>>>>> Stashed changes
                 }
                 this.setSelectionOnTextRemoval();
                 this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
