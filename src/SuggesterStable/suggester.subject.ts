@@ -213,7 +213,7 @@ class SelectBoxInput implements TSubject {
         try {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
             const translatedText: string = target.getAttribute("data-textsuggest") || "";
-            if (selectedDisplayText && this.config.selectLimit && this.state.selection.length < this.config.selectLimit) {
+            if (selectedDisplayText && this.config.selectLimit && this.state.selection.length + 1 < this.config.selectLimit) {
                 if (this.config && this.config.relatedConceptsLimit && this.recentSelectCount < this.config.relatedConceptsLimit) {
                     this.sendRelatedSearchRequest(selectedDisplayText);
                     this.recentSelectCount++;
@@ -444,17 +444,19 @@ class SelectBoxInput implements TSubject {
                     }
 
                     this.setData({
-                        hasListUpdated: false,
+                        hasListUpdated: true,
                         selection,
                         hasSelectionUpdated: false,
-                        list: this.state.list,
+                        list: [],
                         query: this.state.query,
                         selectionAr: selection
                     });
+                    this.hideHeading(false);
+                    this.emulateEventOnListObserver("focusout");
                     if (this.state.query) {
                         const isQueryEmpty: boolean = this.state.query === "";
                         isQueryEmpty === false
-                            ? this.debounceRequest(this.config.debounceTimeout).then(() => { return this.sendSuggesterRequest(); })
+                            ? this.debounceRequest(500).then(() => { return this.sendSuggesterRequest(); })
                             : this.emulateEventOnListObserver("focusout");
                     }
                 }
@@ -706,7 +708,6 @@ class SelectBoxInput implements TSubject {
      */
     public filterAndFillDataIntoListing(listingType: string): void {
         try {
-            this.emulateEventOnListObserver("focus");
             const { config } = this;
             const query: string = listingType === "rc" ? "" : this.state.query;
             const category = config.category;
@@ -717,6 +718,7 @@ class SelectBoxInput implements TSubject {
                 this.setHeadingElement(listingType);
                 this.arrowCounter = -1;
                 this.showNoResultMessage(hasResults);
+                this.emulateEventOnListObserver("focus");
             } else {
                 throw new Error(`Query or category missing. Received query : '${query}', category: '${category}'`);
             }
