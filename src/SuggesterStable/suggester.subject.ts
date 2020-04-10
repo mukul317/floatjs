@@ -75,7 +75,7 @@ class SelectBoxInput implements TSubject {
     public arrowCodisplayunter: number = -1;
     public config: TSugConfig = defaultConfig;
 
-    public keyIndexes: number[] = [9, 16, 18, 19, 20, 27, 33, 34, 35, 36, 37, 39, 45, 46, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 144];
+    public keyIndexes: number[] = [9, 16, 18, 19, 20, 27, 33, 34, 35, 36, 37, 39, 45, 46, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 144, 38, 40];
     public dataSet: TData[] = [];
     public listObserverCollection: TObserver[] = [];
     public arrowCounter: number = -1;
@@ -196,6 +196,7 @@ class SelectBoxInput implements TSubject {
             const { config } = this;
             if (config.listingElement) {
                 config.listingElement.style.display = eventType === "focus" ? "block" : "none";
+                if (eventType === "focusout") { this.arrowCounter = -1; }
             }
         } catch (err) {
             console.warn(err.message);
@@ -212,7 +213,7 @@ class SelectBoxInput implements TSubject {
         try {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
             const translatedText: string = target.getAttribute("data-textsuggest") || "";
-            if (selectedDisplayText && this.config.selectLimit) {
+            if (selectedDisplayText && this.config.selectLimit && this.state.selection.length + 1 < this.config.selectLimit) {
                 if (this.config && this.config.relatedConceptsLimit && this.recentSelectCount < this.config.relatedConceptsLimit) {
                     this.sendRelatedSearchRequest(selectedDisplayText);
                     this.recentSelectCount++;
@@ -335,12 +336,18 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Sets the Query to the state  by extracting the query first from the `target` : HTMLInputElement
+     * and then sets the query into state.
+     * @param {target : HTMLInputElement}
+     * @param {keyCode:number}
+     */
     public setQueryToState(target: HTMLInputElement | null, keyCode: number): void {
         try {
             if (target) {
                 const value: string = target.value;
                 const query = this.extractQuery(value.trim());
-                this.emulateEventOnListObserver(!query ? "focusout" : "focus");
+                if (this.keyIndexes.indexOf(keyCode) === -1) this.emulateEventOnListObserver(!query ? "focusout" : "focus");
                 this.state.query = this.userLanguage === "AR" ? query : this.sanitiseQuery(query);
             } else {
                 throw new Error(`Could not set query in state. target : ${target}, keyCode: ${keyCode}`);
@@ -385,7 +392,7 @@ class SelectBoxInput implements TSubject {
                     break;
                 }
                 this.setSelectionOnTextRemoval();
-                this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
+                if (this.keyIndexes.indexOf(e.which) === -1) { this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest()); }
                 break;
             }
             }
@@ -394,6 +401,13 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Handling for the ctrl+z and ctrl+y events.Calls the 'getSelectedValueFromDom' to get the current Selection items.
+     * Replaces the Selection item in the state with the current selection obtained. And if the query is there the initiates
+     * the suggester request else initiate related search request.
+     * @returns {void}
+     * @access {public}
+     */
     public onUndoRedo(): void {
         try {
             const latest = this.getSelectedValueFromDom();
@@ -406,6 +420,13 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Handles the Backspace Key press and sets the query into the suggester state by calling 'getSelectedValueFromDom' that returns the
+     * selected values by reading the input element.Also initiates the suggester request if the query is eligible for suggestion. Eligibility
+     * here means that query must not be empty.
+     * @returns {void}
+     * @access {public}
+     */
     public onBackSpacePress(): void {
         try {
             const { displayBehaviour, inputElement } = this.config;
@@ -423,17 +444,19 @@ class SelectBoxInput implements TSubject {
                     }
 
                     this.setData({
-                        hasListUpdated: false,
+                        hasListUpdated: true,
                         selection,
                         hasSelectionUpdated: false,
-                        list: this.state.list,
+                        list: [],
                         query: this.state.query,
                         selectionAr: selection
                     });
+                    this.hideHeading(false);
+                    this.emulateEventOnListObserver("focusout");
                     if (this.state.query) {
                         const isQueryEmpty: boolean = this.state.query === "";
                         isQueryEmpty === false
-                            ? this.debounceRequest(this.config.debounceTimeout).then(() => { return this.sendSuggesterRequest(); })
+                            ? this.debounceRequest(500).then(() => { return this.sendSuggesterRequest(); })
                             : this.emulateEventOnListObserver("focusout");
                     }
                 }
@@ -571,6 +594,14 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Checks if the selection is eligible by checking if the selectedObj is not a duplicate or if the selection is exceeding the
+     * selection limit.Based on this it returns true or false. Function is used when a selection is made by selecting from the listing
+     * then this function checks if the listing item being clicked is eligible or not.
+     * @param selectedObj
+     * @returns {Boolean}
+     * @access public
+     */
     public checkIfSelectionEligible(selectedObj: string): boolean {
         try {
             const { config } = this;
@@ -583,6 +614,12 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+     * Checks if the selection is duplicate or not.
+     * @param {selectedObj:string}
+     * @returns {boolean}
+     * @access public
+     */
     public checkIfDuplicate(selectedObj: string): boolean {
         try {
             return this.state.selection.indexOf(selectedObj) !== -1;
@@ -592,6 +629,14 @@ class SelectBoxInput implements TSubject {
         }
     }
 
+    /**
+        * Initiates suggester functionality that takes selectedObject selected by clicking on the listing
+        * element . The resposibility of this function is to fetch the query and then send the
+        * ajax request to get suggestions.
+        * @returns {void}
+        * @throws {null}
+        *
+        */
     public sendSuggesterRequest(): void {
         try {
             this.detectLanguage();
@@ -663,7 +708,6 @@ class SelectBoxInput implements TSubject {
      */
     public filterAndFillDataIntoListing(listingType: string): void {
         try {
-            this.emulateEventOnListObserver("focus");
             const { config } = this;
             const query: string = listingType === "rc" ? "" : this.state.query;
             const category = config.category;
@@ -674,6 +718,7 @@ class SelectBoxInput implements TSubject {
                 this.setHeadingElement(listingType);
                 this.arrowCounter = -1;
                 this.showNoResultMessage(hasResults);
+                this.emulateEventOnListObserver("focus");
             } else {
                 throw new Error(`Query or category missing. Received query : '${query}', category: '${category}'`);
             }

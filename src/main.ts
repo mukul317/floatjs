@@ -38,7 +38,7 @@ import Suggester from "./SuggesterStable";
             listingElement,
             displayElement,
             selectLimit: 6,
-            displayListOnFocus: true,
+            displayListOnFocus: false,
             displayDecorationList: [],
             startSearchAfter: 2,
             // displayBehaviour: "tag",
