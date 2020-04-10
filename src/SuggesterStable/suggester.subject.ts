@@ -144,8 +144,8 @@ class SelectBoxInput implements TSubject {
             if (config.inputElement) {
                 // config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e));
                 config.inputElement.addEventListener("keyup", (e) => { return this.onKeyUp(e); });
+                document.addEventListener("click", (e) => { return this.handleDocumentBlur(e); });
                 if (config.displayListOnFocus === true) {
-                    document.addEventListener("click", (e) => { return this.handleDocumentBlur(e); });
                     config.inputElement.addEventListener("focus", (e) => { return this.emulateEventOnListObserver(e.type); });
                     this.emulateEventOnListObserver("focusout");
                 }
