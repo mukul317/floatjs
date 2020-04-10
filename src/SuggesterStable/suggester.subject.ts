@@ -144,10 +144,10 @@ class SelectBoxInput implements TSubject {
             if (config.inputElement) {
                 // config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e));
                 config.inputElement.addEventListener("keyup", (e) => { return this.onKeyUp(e); });
+                document.addEventListener("click", (e) => { return this.handleDocumentBlur(e); });
+                this.emulateEventOnListObserver("focusout");
                 if (config.displayListOnFocus === true) {
-                    document.addEventListener("click", (e) => { return this.handleDocumentBlur(e); });
                     config.inputElement.addEventListener("focus", (e) => { return this.emulateEventOnListObserver(e.type); });
-                    this.emulateEventOnListObserver("focusout");
                 }
             } else {
                 throw new Error("Suggester input element undefined");
@@ -213,11 +213,14 @@ class SelectBoxInput implements TSubject {
         try {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
             const translatedText: string = target.getAttribute("data-textsuggest") || "";
-            if (selectedDisplayText && this.config.selectLimit && this.state.selection.length + 1 < this.config.selectLimit) {
-                if (this.config && this.config.relatedConceptsLimit && this.recentSelectCount < this.config.relatedConceptsLimit) {
+            console.log("sleection length", this.state.selection.length, "selectLimit", this.config.selectLimit);
+            if (selectedDisplayText && this.config.selectLimit) {
+                if (this.config && this.config.relatedConceptsLimit && this.recentSelectCount < this.config.relatedConceptsLimit && this.state.selection.length + 1 < this.config.selectLimit) {
                     this.sendRelatedSearchRequest(selectedDisplayText);
                     this.recentSelectCount++;
                 } else {
+                    this.showNoResultMessage(false);
+                    this.updateListing([]);
                     this.emulateEventOnListObserver("focusout");
                 }
                 const isEligible: boolean = this.checkIfSelectionEligible(selectedDisplayText);
