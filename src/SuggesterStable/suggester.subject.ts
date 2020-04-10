@@ -213,7 +213,6 @@ class SelectBoxInput implements TSubject {
         try {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
             const translatedText: string = target.getAttribute("data-textsuggest") || "";
-            console.log("sleection length", this.state.selection.length, "selectLimit", this.config.selectLimit);
             if (selectedDisplayText && this.config.selectLimit) {
                 if (this.config && this.config.relatedConceptsLimit && this.recentSelectCount < this.config.relatedConceptsLimit && this.state.selection.length + 1 < this.config.selectLimit) {
                     this.sendRelatedSearchRequest(selectedDisplayText);
