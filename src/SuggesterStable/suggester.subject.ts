@@ -75,6 +75,7 @@ class SelectBoxInput implements TSubject {
     public arrowCodisplayunter: number = -1;
     public config: TSugConfig = defaultConfig;
 
+    public limitAllowedKeyIndexes: number[] = [8, 37, 39, 46];
     public keyIndexes: number[] = [9, 16, 18, 19, 20, 27, 33, 34, 35, 36, 37, 39, 45, 46, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 144, 38, 40];
     public dataSet: TData[] = [];
     public listObserverCollection: TObserver[] = [];
@@ -142,8 +143,18 @@ class SelectBoxInput implements TSubject {
         try {
             const { config } = this;
             if (config.inputElement) {
-                // config.inputElement.addEventListener("keydown", (e) => this.onBackspace(e));
-                config.inputElement.addEventListener("keyup", (e) => { return this.onKeyUp(e); });
+                config.inputElement.addEventListener("keydown", (e) => {
+                    if (this.hasLimitExceeded() && this.limitAllowedKeyIndexes.indexOf(e.which) === -1) {
+                        e.preventDefault();
+                    }
+                });
+                config.inputElement.addEventListener("keyup", (e) => {
+                    if (this.hasLimitExceeded() && this.limitAllowedKeyIndexes.indexOf(e.which) === -1) {
+                        e.preventDefault();
+                    } else {
+                        this.onKeyUp(e);
+                    }
+                });
                 document.addEventListener("click", (e) => { return this.handleDocumentBlur(e); });
                 this.emulateEventOnListObserver("focusout");
                 if (config.displayListOnFocus === true) {
@@ -606,12 +617,21 @@ class SelectBoxInput implements TSubject {
      */
     public checkIfSelectionEligible(selectedObj: string): boolean {
         try {
-            const { config } = this;
-            const selectionLimitExceeded: boolean = config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
+            const selectionLimitExceeded: boolean = this.hasLimitExceeded();
             const isDuplicate: boolean = this.checkIfDuplicate(selectedObj);
             return isDuplicate === false && selectionLimitExceeded === false;
         } catch (err) {
             console.warn(err.warn);
+            return false;
+        }
+    }
+
+    public hasLimitExceeded(): boolean {
+        try {
+            const { config } = this;
+            return config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
+        } catch (err) {
+            console.warn(err.message);
             return false;
         }
     }
