@@ -40,7 +40,7 @@ const defaultConfig: TSugConfig = {
     sanitiseString: false,
     checkboxes: true,
     // eslint-disable-next-line @typescript-eslint/camelcase
-    relatedConcept_dataLayer: true,
+    relatedConceptDataLayer: true,
     placeholder: false,
     trackUserInteraction: false, // to track user Interaction
     grouping: true,
@@ -75,8 +75,7 @@ class SelectBoxInput implements TSubject {
     public arrowCodisplayunter: number = -1;
     public config: TSugConfig = defaultConfig;
 
-    public limitAllowedKeyIndexes: number[] = [8, 37, 39, 46];
-    public keyIndexes: number[] = [9, 16, 18, 19, 20, 27, 33, 34, 35, 36, 37, 39, 45, 46, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 144, 38, 40];
+    public keysAllowedAfterLimitReach: number[] = [8, 37, 39, 46];
     public dataSet: TData[] = [];
     public listObserverCollection: TObserver[] = [];
     public arrowCounter: number = -1;
@@ -90,6 +89,7 @@ class SelectBoxInput implements TSubject {
 
             this.registerListEvents();
             this.registerInputEvents();
+            this.registerDocumentEvents();
             this.createNoResultFragment();
             this.initialiseHeadingElement();
             new CacheHandler(this.config);
@@ -101,7 +101,19 @@ class SelectBoxInput implements TSubject {
     }
 
     /**
-     * Initialises the
+     * Registers the Document event listeners with diffrent callbacks.
+     * @returns {void}
+     */
+    public registerDocumentEvents(): void{
+        try {
+            document.addEventListener("click", (e) => this.handleDocumentBlur(e));
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    /**
+     * Initialises the Heading Element by adding no-result class toe the heading element
      * @param {null}
      * @returns {void}
      */
@@ -142,20 +154,9 @@ class SelectBoxInput implements TSubject {
     public registerInputEvents(): void {
         try {
             const { config } = this;
+            const checkIfValidInputEvent: Function = (e: KeyboardEvent): boolean => e.ctrlKey === false && this.hasLimitExceeded() && this.keysAllowedAfterLimitReach.indexOf(e.which) === -1;
             if (config.inputElement) {
-                config.inputElement.addEventListener("keydown", (e) => {
-                    if (this.hasLimitExceeded() && this.limitAllowedKeyIndexes.indexOf(e.which) === -1) {
-                        e.preventDefault();
-                    }
-                });
-                config.inputElement.addEventListener("keyup", (e) => {
-                    if (this.hasLimitExceeded() && this.limitAllowedKeyIndexes.indexOf(e.which) === -1) {
-                        e.preventDefault();
-                    } else {
-                        this.onKeyUp(e);
-                    }
-                });
-                document.addEventListener("click", (e) => { return this.handleDocumentBlur(e); });
+                config.inputElement.addEventListener("keydown", (e: KeyboardEvent) => checkIfValidInputEvent(e) ? e.preventDefault() : setTimeout(() => this.onKeyUp(e), 0));
                 this.emulateEventOnListObserver("focusout");
                 if (config.displayListOnFocus === true) {
                     config.inputElement.addEventListener("focus", (e) => { return this.emulateEventOnListObserver(e.type); });
@@ -360,7 +361,7 @@ class SelectBoxInput implements TSubject {
             if (target) {
                 const value: string = target.value;
                 const query = this.extractQuery(value.trim());
-                if (this.keyIndexes.indexOf(keyCode) === -1) this.emulateEventOnListObserver(!query ? "focusout" : "focus");
+                this.emulateEventOnListObserver(!query ? "focusout" : "focus");
                 this.state.query = this.userLanguage === "AR" ? query : this.sanitiseQuery(query);
             } else {
                 throw new Error(`Could not set query in state. target : ${target}, keyCode: ${keyCode}`);
@@ -387,6 +388,7 @@ class SelectBoxInput implements TSubject {
      */
     public onKeyUp(e: KeyboardEvent): void {
         try {
+            console.log("up");
             const which: number = e.which;
             const target: HTMLInputElement | null = (e.target as HTMLInputElement);
             this.detectLanguage();
@@ -405,7 +407,7 @@ class SelectBoxInput implements TSubject {
                     break;
                 }
                 this.setSelectionOnTextRemoval();
-                if (this.keyIndexes.indexOf(e.which) === -1) { this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest()); }
+                this.debounceRequest(this.config.debounceTimeout).then(() => this.sendSuggesterRequest());
                 break;
             }
             }
@@ -443,37 +445,37 @@ class SelectBoxInput implements TSubject {
     public onBackSpacePress(): void {
         try {
             const { displayBehaviour, inputElement } = this.config;
-            setTimeout(() => {
-                if (displayBehaviour === "default" && inputElement) {
-                    const value: string = inputElement.value.trim();
-                    const selection: string[] = this.getSelectedValueFromDom();
-                    if (value && value.lastIndexOf(",") === value.length - 1) {
-                        selection[selection.length - 1] = selection[selection.length - 1].split(",")[0];
-                    } else {
-                        if (selection.length > 0) {
-                            this.state.query = selection[selection.length - 1];
-                            selection.pop();
-                        }
-                    }
-
-                    this.setData({
-                        hasListUpdated: true,
-                        selection,
-                        hasSelectionUpdated: false,
-                        list: [],
-                        query: this.state.query,
-                        selectionAr: selection
-                    });
-                    this.hideHeading(false);
-                    this.emulateEventOnListObserver("focusout");
-                    if (this.state.query) {
-                        const isQueryEmpty: boolean = this.state.query === "";
-                        isQueryEmpty === false
-                            ? this.debounceRequest(500).then(() => { return this.sendSuggesterRequest(); })
-                            : this.emulateEventOnListObserver("focusout");
+            // setTimeout(() => {
+            if (displayBehaviour === "default" && inputElement) {
+                const value: string = inputElement.value.trim();
+                const selection: string[] = this.getSelectedValueFromDom();
+                if (value && value.lastIndexOf(",") === value.length - 1) {
+                    selection[selection.length - 1] = selection[selection.length - 1].split(",")[0];
+                } else {
+                    if (selection.length > 0) {
+                        this.state.query = selection[selection.length - 1];
+                        selection.pop();
                     }
                 }
-            }, 0);
+
+                this.setData({
+                    hasListUpdated: true,
+                    selection,
+                    hasSelectionUpdated: false,
+                    list: [],
+                    query: this.state.query,
+                    selectionAr: selection
+                });
+                this.hideHeading(false);
+                this.emulateEventOnListObserver("focusout");
+                if (this.state.query) {
+                    const isQueryEmpty: boolean = this.state.query === "";
+                    isQueryEmpty === false
+                        ? this.debounceRequest(500).then(() => { return this.sendSuggesterRequest(); })
+                        : this.emulateEventOnListObserver("focusout");
+                }
+            }
+            // }, 0);
         } catch (err) {
             console.warn(err.message);
         }
@@ -563,7 +565,7 @@ class SelectBoxInput implements TSubject {
     public initialiseRelatedSearch(): void {
         try {
             const { config } = this;
-            if (config.relatedConcept_dataLayer) {
+            if (config.relatedConceptDataLayer) {
                 const validVals: string[] = this.getSelectedValueFromDom();
                 const valueBeforeComma: string = validVals[this.state.selection.length] || validVals[validVals.length - 1];
                 const cleanValueBeforeComma: string = valueBeforeComma && valueBeforeComma.trim().replace(",", "");

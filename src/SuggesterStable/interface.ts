@@ -96,8 +96,7 @@ interface TSugConfig {
     readonly startSearchAfter?: number;
     readonly checkboxes?: boolean;
     readonly sanitiseString?: boolean;
-    // eslint-disable-next-line @typescript-eslint/camelcase
-    readonly relatedConcept_dataLayer?: boolean;
+    readonly relatedConceptDataLayer?: boolean;
     readonly isPrefetch?: boolean;
     readonly isRelatedConceptsSupported?: boolean;
     readonly suggesterHeadingElementText?: string | null;

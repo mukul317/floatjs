@@ -37,7 +37,7 @@ import Suggester from "./SuggesterStable";
             inputElement,
             listingElement,
             displayElement,
-            selectLimit: 6,
+            selectLimit: 2,
             displayListOnFocus: false,
             displayDecorationList: [],
             startSearchAfter: 2,
@@ -46,8 +46,7 @@ import Suggester from "./SuggesterStable";
             checkboxes: false,
             sanitiseString: false,
             specialCharactersAllowedList: [";"],
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            relatedConcept_dataLayer: true,
+            relatedConceptDataLayer: true,
             source: "server",
             category: "top",
             maxSuggestions: 15,
