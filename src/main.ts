@@ -37,7 +37,7 @@ import Suggester from "./SuggesterStable";
             inputElement,
             listingElement,
             displayElement,
-            selectLimit: 2,
+            charLimit: 500,
             displayListOnFocus: false,
             displayDecorationList: [],
             startSearchAfter: 2,

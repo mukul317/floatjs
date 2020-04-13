@@ -31,7 +31,7 @@ const defaultConfig: TSugConfig = {
     listingElement: null,
     displayElement: null,
     listLimit: 10,
-    selectLimit: 1,
+    charLimit: 500,
     displayListOnFocus: true,
     displayDecorationList: ["chips"],
     noResultErrorMessage: "No result for your query",
@@ -82,6 +82,7 @@ class SelectBoxInput implements TSubject {
     public modelInstance: Model;
     private userLanguage: TLanguage = "EN";
     private recentSelectCount: number = 0;
+    public selectionDone: boolean = false;
 
     constructor(options: TSugConfig) {
         try {
@@ -154,9 +155,9 @@ class SelectBoxInput implements TSubject {
     public registerInputEvents(): void {
         try {
             const { config } = this;
-            const checkIfValidInputEvent: Function = (e: KeyboardEvent): boolean => e.ctrlKey === false && this.hasLimitExceeded() && this.keysAllowedAfterLimitReach.indexOf(e.which) === -1;
             if (config.inputElement) {
-                config.inputElement.addEventListener("keydown", (e: KeyboardEvent) => checkIfValidInputEvent(e) ? e.preventDefault() : setTimeout(() => this.onKeyUp(e), 0));
+                config.inputElement.maxLength = config.charLimit;
+                config.inputElement.addEventListener("keydown", (e: KeyboardEvent) => setTimeout(() => this.onkeyboardInput(e), 0));
                 this.emulateEventOnListObserver("focusout");
                 if (config.displayListOnFocus === true) {
                     config.inputElement.addEventListener("focus", (e) => { return this.emulateEventOnListObserver(e.type); });
@@ -225,24 +226,23 @@ class SelectBoxInput implements TSubject {
         try {
             const selectedDisplayText: string = target.getAttribute("data-displayTextEn") || "";
             const translatedText: string = target.getAttribute("data-textsuggest") || "";
-            if (selectedDisplayText && this.config.selectLimit) {
-                if (this.config && this.config.relatedConceptsLimit && this.recentSelectCount < this.config.relatedConceptsLimit && this.state.selection.length + 1 < this.config.selectLimit) {
-                    this.sendRelatedSearchRequest(selectedDisplayText);
-                    this.recentSelectCount++;
-                } else {
-                    this.showNoResultMessage(false);
-                    this.updateListing([]);
-                    this.emulateEventOnListObserver("focusout");
-                }
+            if (selectedDisplayText) {
                 const isEligible: boolean = this.checkIfSelectionEligible(selectedDisplayText);
                 if (isEligible) {
-                    this.onLastSelection();
                     this.addSelection(selectedDisplayText, translatedText || selectedDisplayText);
                     if (this.userLanguage === "AR") {
                         this.emulateEventOnListObserver("focusout");
                     }
                 } else {
                     throw new Error("initSelection : selection is not eligible");
+                }
+                if (this.config && this.config.relatedConceptsLimit && this.recentSelectCount < this.config.relatedConceptsLimit) {
+                    this.sendRelatedSearchRequest(selectedDisplayText);
+                    this.recentSelectCount++;
+                } else {
+                    this.showNoResultMessage(false);
+                    this.updateListing([]);
+                    this.emulateEventOnListObserver("focusout");
                 }
             }
         } catch (e) {
@@ -386,9 +386,8 @@ class SelectBoxInput implements TSubject {
      * @param e : KeyBoardEvent
      * @returns {void}
      */
-    public onKeyUp(e: KeyboardEvent): void {
+    public onkeyboardInput(e: KeyboardEvent): void {
         try {
-            console.log("up");
             const which: number = e.which;
             const target: HTMLInputElement | null = (e.target as HTMLInputElement);
             this.detectLanguage();
@@ -592,7 +591,6 @@ class SelectBoxInput implements TSubject {
             selectedValues.length - this.state.selectionAr.length === 1 ? this.state.selectionAr.push(selectedValues[selectedValues.length - 1])
                 : this.state.selectionAr = selectedValues;
             if (isEligible) {
-                this.onLastSelection();
                 this.setData({
                     hasListUpdated: false,
                     hasSelectionUpdated: true,
@@ -619,24 +617,24 @@ class SelectBoxInput implements TSubject {
      */
     public checkIfSelectionEligible(selectedObj: string): boolean {
         try {
-            const selectionLimitExceeded: boolean = this.hasLimitExceeded();
+            // const selectionLimitExceeded: boolean = this.hasLimitExceeded();
             const isDuplicate: boolean = this.checkIfDuplicate(selectedObj);
-            return isDuplicate === false && selectionLimitExceeded === false;
+            return isDuplicate === false;
         } catch (err) {
             console.warn(err.warn);
             return false;
         }
     }
 
-    public hasLimitExceeded(): boolean {
-        try {
-            const { config } = this;
-            return config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
-        } catch (err) {
-            console.warn(err.message);
-            return false;
-        }
-    }
+    // public hasLimitExceeded(): boolean {
+    //     try {
+    //         const { config } = this;
+    //         return config.selectLimit && config.selectLimit > 1 ? this.state.selection.length + 1 > config.selectLimit : false;
+    //     } catch (err) {
+    //         console.warn(err.message);
+    //         return false;
+    //     }
+    // }
 
     /**
      * Checks if the selection is duplicate or not.
@@ -667,7 +665,7 @@ class SelectBoxInput implements TSubject {
             const query = this.state.query;
             const { config } = this;
             const category = config.category ? config.category : "top";
-            if (query && this.modelInstance) {
+            if (this.checkIfCharLimitReached() === false && query && this.modelInstance) {
                 if (this.config.urls && this.config.urls.autoComplete) {
                     const basePayload: TPayload = {
                         query,
@@ -705,9 +703,9 @@ class SelectBoxInput implements TSubject {
         */
     public sendRelatedSearchRequest(selectedObject: string): void {
         try {
-            if (this.config.urls && this.config.urls.relatedConcept && this.modelInstance && selectedObject) {
+            if (this.checkIfCharLimitReached() === false && this.config.urls && this.config.urls.relatedConcept && this.modelInstance && selectedObject) {
                 const query = selectedObject.toLowerCase().trim();
-                const category = "top";
+                const category = "topsss";
                 const xhrPromise: Promise<TResponse> = this.modelInstance.sendXhr(this.config.urls.relatedConcept, {
                     query,
                     category
@@ -717,7 +715,7 @@ class SelectBoxInput implements TSubject {
                     "rc"
                 );
             } else {
-                throw new Error("Suggestion related concepts urls missing. Verify default configuration or pass them in suggester config");
+                throw new Error("Char limit reached hence avoiding RC request");
             }
         } catch (e) {
             console.warn(e);
@@ -1066,9 +1064,9 @@ class SelectBoxInput implements TSubject {
     public addSelection(displayTextEn: string, translatedText: string = ""): void {
         try {
             const getArSelection = (): string[] => {
-                return this.config.selectLimit === 1 ? [translatedText] : [...this.state.selectionAr, translatedText];
+                return [...this.state.selectionAr, translatedText];
             };
-            const selection = this.config.selectLimit === 1 ? [displayTextEn] : [...this.state.selection, displayTextEn];
+            const selection = [...this.state.selection, displayTextEn];
             const result: TState = {
                 hasListUpdated: false,
                 hasSelectionUpdated: true,
@@ -1091,16 +1089,21 @@ class SelectBoxInput implements TSubject {
      * @access protected
      * @returns {void}
      */
-    protected onLastSelection(): void {
+    protected checkIfCharLimitReached(): boolean {
         try {
-            if (this.config.selectLimit) {
-                const isLastSelectionNow: boolean = this.state.selection.length + 1 >= this.config.selectLimit;
+            const { charLimit, inputElement } = this.config;
+            if (charLimit && inputElement) {
+                const isLastSelectionNow: boolean = inputElement.value.length >= charLimit;
                 if (isLastSelectionNow) {
                     this.emulateEventOnListObserver("focusout");
+                    return true;
                 }
+                return false;
             }
+            return false;
         } catch (err) {
             console.warn(err.message);
+            return false;
         }
     }
 
